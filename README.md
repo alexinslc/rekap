@@ -14,11 +14,36 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 
 ## Installation
 
-Coming soon - will be available via Homebrew:
+Coming soon via Homebrew:
 
 ```bash
 brew tap alexinslc/rekap
 brew install rekap
+```
+
+### Manual Installation
+
+Download the latest release for your architecture:
+
+```bash
+# For Apple Silicon (M1/M2/M3)
+curl -L https://github.com/alexinslc/rekap/releases/latest/download/rekap-darwin-arm64 -o rekap
+chmod +x rekap
+sudo mv rekap /usr/local/bin/
+
+# For Intel Macs
+curl -L https://github.com/alexinslc/rekap/releases/latest/download/rekap-darwin-amd64 -o rekap
+chmod +x rekap
+sudo mv rekap /usr/local/bin/
+```
+
+### Build from Source
+
+```bash
+git clone https://github.com/alexinslc/rekap.git
+cd rekap
+make build
+sudo make install
 ```
 
 ## Usage
@@ -77,6 +102,26 @@ Optional permissions for full functionality (use `rekap init` to set up):
 ```bash
 go build -o rekap ./cmd/rekap
 ./rekap
+```
+
+## Troubleshooting
+
+**"Screen Time unavailable" message:**
+- Run `rekap init` to set up Full Disk Access
+- Grant permission to your terminal app in System Settings → Privacy & Security → Full Disk Access
+
+**No app data showing:**
+- Ensure Full Disk Access is granted (run `rekap doctor` to check)
+- Restart your terminal after granting permissions
+- macOS Screen Time must be enabled (System Settings → Screen Time)
+
+**Binary won't run:**
+- On first run, right-click the binary and select "Open" to bypass Gatekeeper
+- Or run: `xattr -d com.apple.quarantine /usr/local/bin/rekap`
+
+**Check permissions status:**
+```bash
+rekap doctor
 ```
 
 ## License

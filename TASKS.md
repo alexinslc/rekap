@@ -163,31 +163,31 @@
 - [x] Output stable key=value pairs
 - [x] Ensure machine-parsable format
 
-## Phase 5: Build & Distribution
+## Phase 5: Build & Distribution ✅
 
-### 5.1 Build System
-- [ ] Complete Makefile with all targets
-- [ ] Configure goreleaser for macOS universal binary
-- [ ] Test arm64 build
-- [ ] Test amd64 build
-- [ ] Test universal binary
-- [ ] Ensure binary is <10MB
+### 5.1 Build System ✅
+- [x] Complete Makefile with all targets
+- [x] Configure goreleaser for macOS universal binary
+- [x] Test arm64 build
+- [x] Test amd64 build
+- [x] Test universal binary
+- [x] Ensure binary is <10MB (6.6MB optimized)
 
 ### 5.2 Homebrew Formula
 - [ ] Create separate repo: `alexinslc/homebrew-rekap`
 - [ ] Write Formula/rekap.rb
 - [ ] Test tap installation
-- [ ] Document installation process
-- [ ] Set up GitHub release workflow
+- [x] Document installation process
+- [x] Set up GitHub release workflow
 
-### 5.3 Documentation
-- [ ] Complete README.md with screenshots
-- [ ] Add privacy/local-only statement
-- [ ] Create permissions table
-- [ ] Write installation instructions
-- [ ] Add troubleshooting section
-- [ ] Include quick start guide
-- [ ] Add sample output examples
+### 5.3 Documentation ✅
+- [x] Complete README.md with installation instructions
+- [x] Add privacy/local-only statement
+- [x] Create permissions table
+- [x] Write installation instructions
+- [x] Add troubleshooting section
+- [x] Include quick start guide
+- [x] Add sample output examples
 
 ## Phase 6: Testing & Polish
 

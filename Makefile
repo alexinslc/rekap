@@ -1,8 +1,8 @@
-.PHONY: build run clean install test
+.PHONY: build run clean install test release
 
 # Build the binary
 build:
-	go build -o rekap ./cmd/rekap
+	go build -ldflags="-s -w" -o rekap ./cmd/rekap
 
 # Run the application
 run: build
@@ -24,6 +24,17 @@ test:
 # Build for multiple architectures
 release:
 	@echo "Building for macOS arm64 and amd64..."
-	GOOS=darwin GOARCH=arm64 go build -o dist/rekap-darwin-arm64 ./cmd/rekap
-	GOOS=darwin GOARCH=amd64 go build -o dist/rekap-darwin-amd64 ./cmd/rekap
+	@mkdir -p dist
+	GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/rekap-darwin-arm64 ./cmd/rekap
+	GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/rekap-darwin-amd64 ./cmd/rekap
 	@echo "Binaries created in dist/"
+	@ls -lh dist/
+
+# Create universal binary
+universal:
+	@echo "Creating universal binary..."
+	@mkdir -p dist
+	$(MAKE) release
+	lipo -create -output dist/rekap-universal dist/rekap-darwin-arm64 dist/rekap-darwin-amd64
+	@echo "Universal binary created"
+	@ls -lh dist/rekap-universal
