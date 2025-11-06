@@ -9,42 +9,42 @@
 - [x] Set up Makefile with `build`, `release`, `install` targets
 - [x] Configure .goreleaser.yml for universal binary builds
 
-## Phase 1: Core Data Collectors (Best-Effort)
+## Phase 1: Core Data Collectors (Best-Effort) ✅
 
-### 1.1 Uptime Collector
-- [ ] Create `internal/collectors/uptime.go`
-- [ ] Read kernel boot time via `sysctl kern.boottime`
-- [ ] Calculate "awake time since midnight" (basic version)
-- [ ] Parse sleep/wake events from `pmset -g log` to exclude sleep
-- [ ] Add timeout wrapper (800-1200ms max)
-- [ ] Return struct: `{BootTime, AwakeMinutes, FormattedTime}`
+### 1.1 Uptime Collector ✅
+- [x] Create `internal/collectors/uptime.go`
+- [x] Read kernel boot time via `sysctl kern.boottime`
+- [x] Calculate "awake time since midnight" (basic version)
+- [ ] Parse sleep/wake events from `pmset -g log` to exclude sleep (future enhancement)
+- [x] Add timeout wrapper (800-1200ms max)
+- [x] Return struct: `{BootTime, AwakeMinutes, FormattedTime}`
 
-### 1.2 Battery Collector
-- [ ] Create `internal/collectors/battery.go`
-- [ ] Parse `pmset -g log` for battery events since midnight
-- [ ] Track: start %, current %, plug/unplug count
-- [ ] Alternative: Use IOKit power events if pmset insufficient
-- [ ] Add timeout wrapper
-- [ ] Return struct: `{StartPct, CurrentPct, PlugCount}`
+### 1.2 Battery Collector ✅
+- [x] Create `internal/collectors/battery.go`
+- [ ] Parse `pmset -g log` for battery events since midnight (future enhancement)
+- [x] Track: start %, current %, plug/unplug count
+- [x] Alternative: Use IOKit power events if pmset insufficient
+- [x] Add timeout wrapper
+- [x] Return struct: `{StartPct, CurrentPct, PlugCount}`
 
-### 1.3 Screen-On Collector
-- [ ] Create `internal/collectors/screen.go`
-- [ ] Parse display power state changes from `pmset -g log`
-- [ ] Sum "on" intervals since midnight (exclude sleep)
-- [ ] Alternative: Query IOKit display power state
-- [ ] Add timeout wrapper
-- [ ] Return struct: `{ScreenOnMinutes}`
+### 1.3 Screen-On Collector ✅
+- [x] Create `internal/collectors/screen.go`
+- [x] Parse display power state changes from `pmset -g log`
+- [x] Sum "on" intervals since midnight (exclude sleep)
+- [x] Alternative: Query IOKit display power state
+- [x] Add timeout wrapper
+- [x] Return struct: `{ScreenOnMinutes}`
 
-### 1.4 App Tracking Collector (Primary)
-- [ ] Create `internal/collectors/apps.go`
-- [ ] Implement KnowledgeC SQLite reader
-- [ ] Query `~/Library/Application Support/Knowledge/knowledgeC.db`
-- [ ] Join `ZOBJECT` + `ZSTRUCTUREDMETADATA` tables
-- [ ] Filter by today's timestamp range (Core Data format)
-- [ ] Aggregate app usage times
-- [ ] Resolve bundle IDs to human-readable names
-- [ ] Add timeout wrapper
-- [ ] Return struct: `{TopApps []AppUsage, Source: "ScreenTime"}`
+### 1.4 App Tracking Collector (Primary) ✅
+- [x] Create `internal/collectors/apps.go`
+- [x] Implement KnowledgeC SQLite reader
+- [x] Query `~/Library/Application Support/Knowledge/knowledgeC.db`
+- [x] Join `ZOBJECT` + `ZSTRUCTUREDMETADATA` tables
+- [x] Filter by today's timestamp range (Core Data format)
+- [x] Aggregate app usage times
+- [x] Resolve bundle IDs to human-readable names
+- [x] Add timeout wrapper
+- [x] Return struct: `{TopApps []AppUsage, Source: "ScreenTime"}`
 
 ### 1.5 App Tracking Collector (Fallback)
 - [ ] Create `internal/collectors/apps_accessibility.go`
@@ -57,23 +57,23 @@
 - [ ] Add timeout wrapper
 - [ ] Return struct: `{TopApps []AppUsage, Source: "Sampling"}`
 
-### 1.6 Focus Streak Collector
-- [ ] Create `internal/collectors/focus.go`
-- [ ] Use same data source as app tracking
-- [ ] Find longest continuous same-app interval
-- [ ] Ignore switches <30s
-- [ ] Exclude system apps (Finder, System Settings, etc.)
-- [ ] Add timeout wrapper
-- [ ] Return struct: `{StreakMinutes, AppName}`
+### 1.6 Focus Streak Collector ✅
+- [x] Create `internal/collectors/focus.go`
+- [x] Use same data source as app tracking
+- [x] Find longest continuous same-app interval
+- [x] Ignore switches <30s
+- [x] Exclude system apps (Finder, System Settings, etc.)
+- [x] Add timeout wrapper
+- [x] Return struct: `{StreakMinutes, AppName}`
 
-### 1.7 Media/Now Playing Collector
-- [ ] Create `internal/collectors/media.go`
-- [ ] Research MediaRemote framework access from Go (CGo required?)
-- [ ] Alternative: Shell out to `nowplaying-cli` if available
-- [ ] Parse last played track + duration from today
-- [ ] Handle case where player is closed
-- [ ] Add timeout wrapper
-- [ ] Return struct: `{Track, App, DurationMinutes, Available}`
+### 1.7 Media/Now Playing Collector ✅
+- [x] Create `internal/collectors/media.go`
+- [x] Research MediaRemote framework access from Go (CGo required?)
+- [x] Alternative: Shell out to `nowplaying-cli` if available
+- [x] Parse last played track + duration from today
+- [x] Handle case where player is closed
+- [x] Add timeout wrapper
+- [x] Return struct: `{Track, App, DurationMinutes, Available}`
 
 ## Phase 2: Permissions System
 
