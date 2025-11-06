@@ -11,23 +11,26 @@ import (
 )
 
 var (
-	// Color palette - vibrant and eye-catching
-	primaryColor   = lipgloss.Color("13") // Bright magenta
-	secondaryColor = lipgloss.Color("14") // Cyan
-	accentColor    = lipgloss.Color("11") // Bright yellow
-	successColor   = lipgloss.Color("10") // Bright green
-	warningColor   = lipgloss.Color("9")  // Bright red
-	mutedColor     = lipgloss.Color("8")  // Gray
-	textColor      = lipgloss.Color("7")  // White
+	// Color palette matching fang's aesthetic
+	primaryColor   = lipgloss.Color("13")  // Bright magenta/pink
+	secondaryColor = lipgloss.Color("14")  // Cyan
+	accentColor    = lipgloss.Color("11")  // Bright yellow
+	successColor   = lipgloss.Color("10")  // Bright green
+	warningColor   = lipgloss.Color("9")   // Bright red
+	mutedColor     = lipgloss.Color("240") // Darker gray
+	textColor      = lipgloss.Color("255") // White
 
-	// Styles with enhanced visual appeal
+	// Styles
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor)
+			Foreground(primaryColor).
+			MarginBottom(1)
 
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(secondaryColor)
+			Foreground(primaryColor).
+			MarginTop(1).
+			MarginBottom(1)
 
 	subtitleStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
@@ -37,17 +40,14 @@ var (
 			Foreground(textColor)
 
 	labelStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
-			Bold(true)
+			Foreground(secondaryColor)
 
 	valueStyle = lipgloss.NewStyle().
-			Foreground(accentColor)
+			Foreground(textColor)
 
 	highlightStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(accentColor).
-			Background(lipgloss.Color("0")).
-			Padding(0, 1)
+			Foreground(accentColor)
 
 	successStyle = lipgloss.NewStyle().
 			Foreground(successColor).
@@ -60,11 +60,6 @@ var (
 	hintStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
 			Italic(true)
-
-	boxStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(secondaryColor).
-			Padding(1, 2)
 
 	dividerStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
@@ -108,33 +103,20 @@ func RenderSummaryLine(parts []string) string {
 		return ""
 	}
 
-	// Create a visually appealing summary box
+	// Create a clean summary line with subtle styling
 	content := strings.Join(parts, " • ")
-	styledContent := dataStyle.Render(content)
-
-	return boxStyle.Render(styledContent)
+	return labelStyle.Render(content)
 }
 
 // RenderDataPoint formats a single data point with icon and enhanced styling
 func RenderDataPoint(icon, text string) string {
-	// Split text on bullets or colons to add colored labels
-	if strings.Contains(text, ":") {
-		parts := strings.SplitN(text, ":", 2)
-		if len(parts) == 2 {
-			label := labelStyle.Render(parts[0] + ":")
-			value := dataStyle.Render(parts[1])
-			return fmt.Sprintf("%s %s%s", icon, label, value)
-		}
-	}
-
-	return fmt.Sprintf("%s %s", icon, dataStyle.Render(text))
+	return fmt.Sprintf("  %s  %s", icon, dataStyle.Render(text))
 }
 
 // RenderHighlight formats highlighted text with extra emphasis
 func RenderHighlight(icon, text string) string {
-	// Add some visual flair to the highlight
-	styledText := highlightStyle.Render(" ✨ " + text + " ✨")
-	return fmt.Sprintf("%s %s", icon, styledText)
+	styledText := highlightStyle.Render(text)
+	return fmt.Sprintf("  %s  %s", icon, styledText)
 }
 
 // RenderSuccess formats a success message
