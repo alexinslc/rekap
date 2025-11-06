@@ -24,11 +24,27 @@ brew install rekap
 ## Usage
 
 ```bash
-rekap              # Default: today's summary with animations
+rekap              # Today's activity summary
 rekap init         # Permission setup wizard
+rekap doctor       # Check capabilities and permissions
+rekap demo         # See sample output with fake data
 rekap --quiet      # Machine-parsable key=value output
-rekap doctor       # Show capabilities matrix
-rekap demo         # Sample output with randomized data
+```
+
+### Quiet Mode Output
+
+The `--quiet` flag outputs stable key=value pairs for scripting:
+
+```
+awake_minutes=287
+boot_time=1730864122
+battery_start_pct=92
+battery_now_pct=68
+screen_on_minutes=215
+top_app_1=VS Code
+top_app_1_minutes=142
+focus_streak_minutes=87
+focus_streak_app=VS Code
 ```
 
 ## Permissions

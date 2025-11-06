@@ -99,43 +99,40 @@
 - [x] UI shows helpful hints ("run 'rekap init' to enable...")
 - [x] Never crash on permission denial
 
-## Phase 3: CLI Commands & Orchestration
+## Phase 3: CLI Commands & Orchestration ✅
 
-### 3.1 Main Command (`rekap`)
-- [ ] Create `cmd/rekap/main.go`
-- [ ] Set up CLI framework (cobra or basic flag parsing)
-- [ ] Orchestrate concurrent collector execution
-- [ ] Implement timeout wrapper for each collector
-- [ ] Aggregate results (even if some fail)
-- [ ] Pass results to UI renderer
-- [ ] Default to human-friendly animated output
+### 3.1 Main Command (`rekap`) ✅
+- [x] Create `cmd/rekap/main.go`
+- [x] Set up CLI framework (cobra or basic flag parsing)
+- [x] Orchestrate concurrent collector execution
+- [x] Implement timeout wrapper for each collector
+- [x] Aggregate results (even if some fail)
+- [x] Pass results to UI renderer
+- [x] Default to human-friendly animated output
 
-### 3.2 Init Command (`rekap init`)
-- [ ] Create `cmd/rekap/init.go`
-- [ ] Run permission setup wizard
-- [ ] Show live testing with spinners
-- [ ] Guide user through System Settings
-- [ ] Confirm successful grants
+### 3.2 Init Command (`rekap init`) ✅
+- [x] Run permission setup wizard
+- [x] Show live testing with spinners
+- [x] Guide user through System Settings
+- [x] Confirm successful grants
 
-### 3.3 Quiet Mode (`rekap --quiet`)
-- [ ] Create stable key=value output format
-- [ ] Skip animations, emojis, formatting
-- [ ] Exit 0 with parsable output
-- [ ] Document stable key names
+### 3.3 Quiet Mode (`rekap --quiet`) ✅
+- [x] Create stable key=value output format
+- [x] Skip animations, emojis, formatting
+- [x] Exit 0 with parsable output
+- [x] Document stable key names
 
-### 3.4 Doctor Command (`rekap doctor`)
-- [ ] Create `cmd/rekap/doctor.go`
-- [ ] Show capabilities matrix (✓/✗ for each source)
-- [ ] Test each collector's dependencies
-- [ ] Show permission status
-- [ ] Display helpful troubleshooting info
+### 3.4 Doctor Command (`rekap doctor`) ✅
+- [x] Show capabilities matrix (✓/✗ for each source)
+- [x] Test each collector's dependencies
+- [x] Show permission status
+- [x] Display helpful troubleshooting info
 
-### 3.5 Demo Command (`rekap demo`)
-- [ ] Create `cmd/rekap/demo.go`
-- [ ] Generate randomized plausible data
-- [ ] Show full animations/UI
-- [ ] Clearly label as demo data
-- [ ] Use same UI renderer as main command
+### 3.5 Demo Command (`rekap demo`) ✅
+- [x] Generate randomized plausible data
+- [x] Show full animations/UI
+- [x] Clearly label as demo data
+- [x] Use same UI renderer as main command
 
 ## Phase 4: UI/TUI (Charmbracelet Bubbletea)
 

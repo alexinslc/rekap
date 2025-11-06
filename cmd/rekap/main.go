@@ -70,7 +70,55 @@ func runDoctor() {
 
 func runDemo() {
 	fmt.Println("🎭 rekap demo mode")
-	fmt.Println("Coming soon...")
+	fmt.Println("   (Showing randomized sample data)")
+	fmt.Println()
+
+	// Generate realistic demo data
+	demoUptime := collectors.UptimeResult{
+		BootTime:      time.Now().Add(-8 * time.Hour),
+		AwakeMinutes:  287, // 4h 47m
+		FormattedTime: "4h 47m awake",
+		Available:     true,
+	}
+
+	demoBattery := collectors.BatteryResult{
+		StartPct:   92,
+		CurrentPct: 68,
+		PlugCount:  1,
+		Available:  true,
+		IsPlugged:  false,
+	}
+
+	demoScreen := collectors.ScreenResult{
+		ScreenOnMinutes: 215, // 3h 35m
+		Available:       true,
+	}
+
+	demoApps := collectors.AppsResult{
+		TopApps: []collectors.AppUsage{
+			{Name: "VS Code", Minutes: 142, BundleID: "com.microsoft.VSCode"},
+			{Name: "Safari", Minutes: 89, BundleID: "com.apple.Safari"},
+			{Name: "Slack", Minutes: 52, BundleID: "com.tinyspeck.slackmacgap"},
+		},
+		Source:    "ScreenTime",
+		Available: true,
+	}
+
+	demoFocus := collectors.FocusResult{
+		StreakMinutes: 87, // 1h 27m
+		AppName:       "VS Code",
+		Available:     true,
+	}
+
+	demoMedia := collectors.MediaResult{
+		Track:           "Blinding Lights - The Weeknd",
+		App:             "Spotify",
+		DurationMinutes: 18,
+		Available:       true,
+	}
+
+	// Show in human-friendly format
+	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia)
 }
 
 func runSummary(quiet bool) {
