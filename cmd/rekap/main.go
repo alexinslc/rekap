@@ -72,23 +72,25 @@ func runInit() error {
 }
 
 func runDoctor() {
-	fmt.Println("🩺 rekap capabilities check")
+	// Enhanced styling for doctor command
+	fmt.Println(ui.RenderTitle("🩺 rekap capabilities check", false))
 	fmt.Println()
-	
+
 	caps := permissions.Check()
 	fmt.Println(permissions.FormatCapabilities(caps))
 	fmt.Println()
-	
+
 	if !caps.FullDiskAccess {
-		fmt.Println("💡 Run 'rekap init' to enable Full Disk Access for app tracking")
+		fmt.Println(ui.RenderHint("Run 'rekap init' to enable Full Disk Access for app tracking"))
 	} else {
-		fmt.Println("✅ All major permissions granted!")
+		fmt.Println(ui.RenderSuccess("All major permissions granted!"))
 	}
 }
 
 func runDemo() {
-	fmt.Println("🎭 rekap demo mode")
-	fmt.Println("   (Showing randomized sample data)")
+	// Enhanced styling for demo mode
+	fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
+	fmt.Println(ui.RenderHint("Showing randomized sample data"))
 	fmt.Println()
 
 	// Generate realistic demo data
@@ -181,7 +183,7 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
 	}
-	
+
 	if battery.Available {
 		fmt.Printf("battery_start_pct=%d\n", battery.StartPct)
 		fmt.Printf("battery_now_pct=%d\n", battery.CurrentPct)
@@ -219,22 +221,18 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 }
 
 func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult) {
-	// Render title with animation if TTY
+	// Render animated title if TTY
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
 		fmt.Println(title)
+		fmt.Println()
 	}
-	fmt.Println()
 
-	// Build summary line
+	// Build enhanced summary line with visual box
 	var summaryParts []string
-	
+
 	if screen.Available {
 		summaryParts = append(summaryParts, ui.FormatDuration(screen.ScreenOnMinutes)+" screen-on")
-	}
-	
-	if battery.Available && battery.PlugCount > 0 {
-		summaryParts = append(summaryParts, fmt.Sprintf("%d plug-ins", battery.PlugCount))
 	}
 
 	if apps.Available && len(apps.TopApps) > 0 {
@@ -255,10 +253,14 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Println()
 	}
 
+	// System Status Section
+	fmt.Println(ui.RenderHeader("⚙️  System Status"))
+	fmt.Println()
+
 	// Uptime info
 	if uptime.Available {
-		text := fmt.Sprintf("Active since %s • %s", 
-			uptime.BootTime.Format("3:04 PM"), 
+		text := fmt.Sprintf("Active since %s • %s",
+			uptime.BootTime.Format("3:04 PM"),
 			uptime.FormattedTime)
 		fmt.Println(ui.RenderDataPoint("⏰", text))
 	}
@@ -271,25 +273,57 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 		var text string
 		if battery.StartPct != battery.CurrentPct {
-			text = fmt.Sprintf("Started at %d%%, now %d%% • %s", battery.StartPct, battery.CurrentPct, status)
+			text = fmt.Sprintf("%d%% → %d%% • %s", battery.StartPct, battery.CurrentPct, status)
 		} else {
 			text = fmt.Sprintf("%d%% • %s", battery.CurrentPct, status)
 		}
 		fmt.Println(ui.RenderDataPoint("🔋", text))
+
+		if battery.PlugCount > 0 {
+			plugText := fmt.Sprintf("%d plug event(s) today", battery.PlugCount)
+			fmt.Println(ui.RenderDataPoint("🔌", plugText))
+		}
 	}
 
-	// Focus streak
-	if focus.Available {
-		text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
-		fmt.Println(ui.RenderHighlight("⏱️ ", text))
+	fmt.Println()
+
+	// Productivity Section
+	if focus.Available || (apps.Available && len(apps.TopApps) > 0) {
+		fmt.Println(ui.RenderHeader("🎯 Productivity"))
+		fmt.Println()
+
+		// Focus streak (highlighted)
+		if focus.Available {
+			text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
+			fmt.Println(ui.RenderHighlight("⏱️", text))
+		}
+
+		// Top apps detail
+		if apps.Available && len(apps.TopApps) > 0 {
+			fmt.Println()
+			for i, app := range apps.TopApps {
+				if i >= 3 {
+					break
+				}
+				appText := fmt.Sprintf("%s • %s", app.Name, ui.FormatDuration(app.Minutes))
+				fmt.Println(ui.RenderDataPoint("  📱", appText))
+			}
+		}
+
+		fmt.Println()
 	}
 
-	// Media info
+	// Media Section
 	if media.Available {
-		text := fmt.Sprintf("Now playing: \"%s\" in %s", media.Track, media.App)
-		fmt.Println(ui.RenderDataPoint("🎵", text))
+		fmt.Println(ui.RenderHeader("🎵 Now Playing"))
+		fmt.Println()
+		text := fmt.Sprintf("\"%s\" in %s", media.Track, media.App)
+		fmt.Println(ui.RenderDataPoint("♫", text))
+		fmt.Println()
 	}
 
+	// Footer divider
+	fmt.Println(ui.RenderDivider())
 	fmt.Println()
 
 	// Show hints for missing data
