@@ -31,6 +31,18 @@ rekap doctor       # Show capabilities matrix
 rekap demo         # Sample output with randomized data
 ```
 
+## Permissions
+
+rekap works without any permissions but provides more data when granted:
+
+| Permission | Enables | Required For |
+|------------|---------|--------------|
+| **Full Disk Access** | App usage, screen time, focus streaks | Top apps, screen-on time |
+| **Accessibility** | Frontmost app detection | App tracking fallback |
+| **Media/Now Playing** | Track currently playing media | Now Playing section |
+
+Run `rekap init` for guided permission setup. Run `rekap doctor` to check current status.
+
 ## Privacy
 
 All data stays on your Mac. No telemetry, no cloud sync, no historical tracking. Only today's activity is analyzed.
@@ -38,10 +50,11 @@ All data stays on your Mac. No telemetry, no cloud sync, no historical tracking.
 ## Requirements
 
 - macOS 11.0 or later
-- Optional permissions for full functionality:
-  - **Accessibility** - Sample frontmost app/window (fallback method)
-  - **Full Disk Access** - Read Screen Time database (primary method)
-  - **Media/Now Playing** - Track currently/last played media
+
+Optional permissions for full functionality (use `rekap init` to set up):
+- **Full Disk Access** - Screen Time database access
+- **Accessibility** - Frontmost app detection (fallback)
+- **Media/Now Playing** - Track playing media
 
 ## Development
 

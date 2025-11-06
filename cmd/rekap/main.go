@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/alexinslc/rekap/internal/collectors"
+	"github.com/alexinslc/rekap/internal/permissions"
 )
 
 const version = "0.1.0"
@@ -45,14 +46,26 @@ func main() {
 }
 
 func runInit() {
-	fmt.Println("🔐 rekap permission setup")
-	fmt.Println("This wizard will help you grant permissions for full functionality.")
-	fmt.Println("\nComing soon...")
+	err := permissions.RequestFlow()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runDoctor() {
 	fmt.Println("🩺 rekap capabilities check")
-	fmt.Println("Coming soon...")
+	fmt.Println()
+	
+	caps := permissions.Check()
+	fmt.Println(permissions.FormatCapabilities(caps))
+	fmt.Println()
+	
+	if !caps.FullDiskAccess {
+		fmt.Println("💡 Run 'rekap init' to enable Full Disk Access for app tracking")
+	} else {
+		fmt.Println("✅ All major permissions granted!")
+	}
 }
 
 func runDemo() {

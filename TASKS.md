@@ -75,29 +75,29 @@
 - [x] Add timeout wrapper
 - [x] Return struct: `{Track, App, DurationMinutes, Available}`
 
-## Phase 2: Permissions System
+## Phase 2: Permissions System ✅
 
-### 2.1 Permission Checker
-- [ ] Create `internal/permissions/check.go`
-- [ ] Implement Accessibility permission check
-- [ ] Implement Full Disk Access check (try reading KnowledgeC)
-- [ ] Implement Now Playing permission check
-- [ ] Return capabilities matrix: `map[string]bool`
+### 2.1 Permission Checker ✅
+- [x] Create `internal/permissions/check.go`
+- [x] Implement Accessibility permission check
+- [x] Implement Full Disk Access check (try reading KnowledgeC)
+- [x] Implement Now Playing permission check
+- [x] Return capabilities matrix: `map[string]bool`
 
-### 2.2 Permission Request Flow (`rekap init`)
-- [ ] Create `internal/permissions/request.go`
-- [ ] Test each permission in real-time (show ✓/✗)
-- [ ] Open System Settings to exact pane for missing permissions
-- [ ] Use `open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"`
-- [ ] Re-test after user grants (polling loop)
-- [ ] Show explanations for each permission
-- [ ] Never block—annotate missing permissions
+### 2.2 Permission Request Flow (`rekap init`) ✅
+- [x] Create `internal/permissions/request.go`
+- [x] Test each permission in real-time (show ✓/✗)
+- [x] Open System Settings to exact pane for missing permissions
+- [x] Use `open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"`
+- [x] Re-test after user grants (polling loop)
+- [x] Show explanations for each permission
+- [x] Never block—annotate missing permissions
 
-### 2.3 Graceful Degradation
-- [ ] Each collector checks its required permissions first
-- [ ] Return "unavailable" status if permission missing
-- [ ] UI shows helpful hints ("run 'rekap init' to enable...")
-- [ ] Never crash on permission denial
+### 2.3 Graceful Degradation ✅
+- [x] Each collector checks its required permissions first
+- [x] Return "unavailable" status if permission missing
+- [x] UI shows helpful hints ("run 'rekap init' to enable...")
+- [x] Never crash on permission denial
 
 ## Phase 3: CLI Commands & Orchestration
 
