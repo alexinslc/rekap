@@ -1,13 +1,13 @@
 # rekap - Development Tasks
 
-## Phase 0: Project Setup
-- [ ] Initialize Go module (`go mod init github.com/alexinslc/rekap`)
-- [ ] Create directory structure (cmd/, internal/, docs/)
-- [ ] Add .gitignore (binaries, IDE files, macOS artifacts)
-- [ ] Install Charm dependencies (`github.com/charmbracelet/bubbletea`, `lipgloss`, `spinner`)
-- [ ] Create basic README.md with project overview
-- [ ] Set up Makefile with `build`, `release`, `install` targets
-- [ ] Configure .goreleaser.yml for universal binary builds
+## Phase 0: Project Setup ✅
+- [x] Initialize Go module (`go mod init github.com/alexinslc/rekap`)
+- [x] Create directory structure (cmd/, internal/, docs/)
+- [x] Add .gitignore (binaries, IDE files, macOS artifacts)
+- [x] Install Charm dependencies (`github.com/charmbracelet/bubbletea`, `lipgloss`, `spinner`)
+- [x] Create basic README.md with project overview
+- [x] Set up Makefile with `build`, `release`, `install` targets
+- [x] Configure .goreleaser.yml for universal binary builds
 
 ## Phase 1: Core Data Collectors (Best-Effort)
 
