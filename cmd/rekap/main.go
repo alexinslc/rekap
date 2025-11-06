@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -11,47 +10,65 @@ import (
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/permissions"
 	"github.com/alexinslc/rekap/internal/ui"
+	"github.com/charmbracelet/fang"
+	"github.com/spf13/cobra"
 )
 
 const version = "0.1.0"
 
 func main() {
-	quietFlag := flag.Bool("quiet", false, "Output machine-parsable key=value format")
-	versionFlag := flag.Bool("version", false, "Show version")
-	flag.Parse()
+	var quietFlag bool
 
-	if *versionFlag {
-		fmt.Printf("rekap v%s\n", version)
-		os.Exit(0)
+	rootCmd := &cobra.Command{
+		Use:   "rekap",
+		Short: "Daily Mac Activity Summary",
+		Long:  `A single-binary macOS CLI that summarizes today's computer activity in a friendly, animated terminal UI.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			runSummary(quietFlag)
+			return nil
+		},
 	}
 
-	// Parse subcommands
-	args := flag.Args()
-	if len(args) > 0 {
-		switch args[0] {
-		case "init":
-			runInit()
-		case "doctor":
+	rootCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output machine-parsable key=value format")
+
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Permission setup wizard",
+		Long:  `Run the guided permission setup wizard to enable Full Disk Access and other permissions.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runInit()
+		},
+	}
+
+	doctorCmd := &cobra.Command{
+		Use:   "doctor",
+		Short: "Check capabilities and permissions",
+		Long:  `Check the current status of permissions and capabilities.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			runDoctor()
-		case "demo":
-			runDemo()
-		default:
-			fmt.Fprintf(os.Stderr, "Unknown command: %s\n", args[0])
-			os.Exit(1)
-		}
-		return
+			return nil
+		},
 	}
 
-	// Default: run summary
-	runSummary(*quietFlag)
-}
+	demoCmd := &cobra.Command{
+		Use:   "demo",
+		Short: "See sample output with fake data",
+		Long:  `Display a demo with randomized sample data to preview the output format.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			runDemo()
+			return nil
+		},
+	}
 
-func runInit() {
-	err := permissions.RequestFlow()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
+
+	if err := fang.Execute(context.Background(), rootCmd, fang.WithVersion(version)); err != nil {
 		os.Exit(1)
 	}
+}
+
+func runInit() error {
+	return permissions.RequestFlow()
 }
 
 func runDoctor() {
