@@ -11,27 +11,58 @@ import (
 )
 
 var (
+	// Color palette matching fang's aesthetic
+	primaryColor   = lipgloss.Color("13")  // Bright magenta/pink
+	secondaryColor = lipgloss.Color("14")  // Cyan
+	accentColor    = lipgloss.Color("11")  // Bright yellow
+	successColor   = lipgloss.Color("10")  // Bright green
+	warningColor   = lipgloss.Color("9")   // Bright red
+	mutedColor     = lipgloss.Color("240") // Darker gray
+	textColor      = lipgloss.Color("255") // White
+
 	// Styles
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("6"))
+			Foreground(primaryColor).
+			MarginBottom(1)
+
+	headerStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(primaryColor).
+			MarginTop(1).
+			MarginBottom(1)
 
 	subtitleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
+			Foreground(mutedColor).
+			Italic(true)
 
 	dataStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("7"))
+			Foreground(textColor)
+
+	labelStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor)
+
+	valueStyle = lipgloss.NewStyle().
+			Foreground(textColor)
 
 	highlightStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("3"))
+			Foreground(accentColor)
+
+	successStyle = lipgloss.NewStyle().
+			Foreground(successColor).
+			Bold(true)
 
 	errorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("1"))
+			Foreground(warningColor).
+			Bold(true)
 
 	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8")).
+			Foreground(mutedColor).
 			Italic(true)
+
+	dividerStyle = lipgloss.NewStyle().
+			Foreground(mutedColor)
 )
 
 // IsTTY returns true if stdout is a terminal
@@ -47,6 +78,7 @@ func RenderTitle(text string, animate bool) string {
 			if i > 0 {
 				time.Sleep(30 * time.Millisecond)
 			}
+			// Print character without newline
 			fmt.Print(string(r))
 		}
 		fmt.Println()
@@ -55,22 +87,41 @@ func RenderTitle(text string, animate bool) string {
 	return titleStyle.Render(text)
 }
 
-// RenderSummaryLine formats the main summary line
+// RenderHeader renders a section header
+func RenderHeader(text string) string {
+	return headerStyle.Render(text)
+}
+
+// RenderDivider renders a visual divider
+func RenderDivider() string {
+	return dividerStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+}
+
+// RenderSummaryLine formats the main summary line with enhanced styling
 func RenderSummaryLine(parts []string) string {
 	if len(parts) == 0 {
 		return ""
 	}
-	return dataStyle.Render(strings.Join(parts, " • "))
+
+	// Create a clean summary line with subtle styling
+	content := strings.Join(parts, " • ")
+	return labelStyle.Render(content)
 }
 
-// RenderDataPoint formats a single data point with icon
+// RenderDataPoint formats a single data point with icon and enhanced styling
 func RenderDataPoint(icon, text string) string {
-	return fmt.Sprintf("%s %s", icon, dataStyle.Render(text))
+	return fmt.Sprintf("  %s  %s", icon, dataStyle.Render(text))
 }
 
-// RenderHighlight formats highlighted text (like focus streak)
+// RenderHighlight formats highlighted text with extra emphasis
 func RenderHighlight(icon, text string) string {
-	return fmt.Sprintf("%s %s", icon, highlightStyle.Render(text))
+	styledText := highlightStyle.Render(text)
+	return fmt.Sprintf("  %s  %s", icon, styledText)
+}
+
+// RenderSuccess formats a success message
+func RenderSuccess(text string) string {
+	return successStyle.Render("✓ " + text)
 }
 
 // RenderHint formats a hint message
@@ -87,7 +138,7 @@ func RenderError(text string) string {
 func FormatDuration(minutes int) string {
 	hours := minutes / 60
 	mins := minutes % 60
-	
+
 	if hours > 0 {
 		return fmt.Sprintf("%dh %dm", hours, mins)
 	}
@@ -98,7 +149,7 @@ func FormatDuration(minutes int) string {
 func FormatDurationCompact(minutes int) string {
 	hours := minutes / 60
 	mins := minutes % 60
-	
+
 	if hours > 0 && mins > 0 {
 		return fmt.Sprintf("%dh%dm", hours, mins)
 	} else if hours > 0 {
