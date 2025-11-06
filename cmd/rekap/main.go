@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/permissions"
+	"github.com/alexinslc/rekap/internal/ui"
 )
 
 const version = "0.1.0"
@@ -201,16 +202,18 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 }
 
 func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult) {
-	fmt.Println("📊 Today's rekap")
+	// Render title with animation if TTY
+	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
+	if title != "" {
+		fmt.Println(title)
+	}
 	fmt.Println()
 
 	// Build summary line
 	var summaryParts []string
 	
 	if screen.Available {
-		hours := screen.ScreenOnMinutes / 60
-		mins := screen.ScreenOnMinutes % 60
-		summaryParts = append(summaryParts, fmt.Sprintf("%dh %dm screen-on", hours, mins))
+		summaryParts = append(summaryParts, ui.FormatDuration(screen.ScreenOnMinutes)+" screen-on")
 	}
 	
 	if battery.Available && battery.PlugCount > 0 {
@@ -223,13 +226,7 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			if i >= 3 {
 				break
 			}
-			hours := app.Minutes / 60
-			mins := app.Minutes % 60
-			if hours > 0 {
-				appList = append(appList, fmt.Sprintf("%s (%dh%dm)", app.Name, hours, mins))
-			} else {
-				appList = append(appList, fmt.Sprintf("%s (%dm)", app.Name, mins))
-			}
+			appList = append(appList, fmt.Sprintf("%s (%s)", app.Name, ui.FormatDurationCompact(app.Minutes)))
 		}
 		if len(appList) > 0 {
 			summaryParts = append(summaryParts, "Top apps: "+strings.Join(appList, ", "))
@@ -237,15 +234,16 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	}
 
 	if len(summaryParts) > 0 {
-		fmt.Println(strings.Join(summaryParts, " • "))
+		fmt.Println(ui.RenderSummaryLine(summaryParts))
 		fmt.Println()
 	}
 
 	// Uptime info
 	if uptime.Available {
-		fmt.Printf("⏰ Active since %s • %s\n", 
+		text := fmt.Sprintf("Active since %s • %s", 
 			uptime.BootTime.Format("3:04 PM"), 
 			uptime.FormattedTime)
+		fmt.Println(ui.RenderDataPoint("⏰", text))
 	}
 
 	// Battery info
@@ -254,33 +252,31 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		if battery.IsPlugged {
 			status = "plugged in"
 		}
+		var text string
 		if battery.StartPct != battery.CurrentPct {
-			fmt.Printf("🔋 Battery: Started at %d%%, now %d%% • %s\n", battery.StartPct, battery.CurrentPct, status)
+			text = fmt.Sprintf("Started at %d%%, now %d%% • %s", battery.StartPct, battery.CurrentPct, status)
 		} else {
-			fmt.Printf("🔋 Battery: %d%% • %s\n", battery.CurrentPct, status)
+			text = fmt.Sprintf("%d%% • %s", battery.CurrentPct, status)
 		}
+		fmt.Println(ui.RenderDataPoint("🔋", text))
 	}
 
 	// Focus streak
 	if focus.Available {
-		hours := focus.StreakMinutes / 60
-		mins := focus.StreakMinutes % 60
-		if hours > 0 {
-			fmt.Printf("⏱️  Best focus: %dh %dm in %s\n", hours, mins, focus.AppName)
-		} else {
-			fmt.Printf("⏱️  Best focus: %dm in %s\n", mins, focus.AppName)
-		}
+		text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
+		fmt.Println(ui.RenderHighlight("⏱️ ", text))
 	}
 
 	// Media info
 	if media.Available {
-		fmt.Printf("🎵 Now playing: \"%s\" in %s\n", media.Track, media.App)
+		text := fmt.Sprintf("Now playing: \"%s\" in %s", media.Track, media.App)
+		fmt.Println(ui.RenderDataPoint("🎵", text))
 	}
 
 	fmt.Println()
 
 	// Show hints for missing data
 	if !apps.Available && apps.Error != nil {
-		fmt.Println("💡 Screen Time unavailable—run 'rekap init' to enable app tracking")
+		fmt.Println(ui.RenderHint("Screen Time unavailable—run 'rekap init' to enable app tracking"))
 	}
 }

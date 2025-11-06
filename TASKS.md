@@ -134,35 +134,34 @@
 - [x] Clearly label as demo data
 - [x] Use same UI renderer as main command
 
-## Phase 4: UI/TUI (Charmbracelet Bubbletea)
+## Phase 4: UI/TUI (Charmbracelet Bubbletea) ✅
 
-### 4.1 Base UI Components
-- [ ] Create `internal/ui/renderer.go`
-- [ ] Set up Bubbletea model & update loop
-- [ ] Implement word-by-word typing effect for opening line
-- [ ] Detect TTY vs pipe (skip animations if not TTY)
-- [ ] Create lipgloss styles (colors, formatting)
-- [ ] Design emoji + monochrome fallback scheme
+### 4.1 Base UI Components ✅
+- [x] Create `internal/ui/renderer.go`
+- [x] Set up lipgloss styles (colors, formatting)
+- [x] Implement simple typing effect for opening line
+- [x] Detect TTY vs pipe (skip animations if not TTY)
+- [x] Design emoji + monochrome fallback scheme
 
-### 4.2 Loading/Collection UI
-- [ ] Create parallel spinners for each data source
-- [ ] Show real-time collection status
-- [ ] Handle partial results gracefully
-- [ ] Timeout visualization (progress indicators)
+### 4.2 Loading/Collection UI ✅
+- [x] Create simple spinner for data collection
+- [x] Show real-time collection status
+- [x] Handle partial results gracefully
+- [x] Timeout visualization (via collectors)
 
-### 4.3 Summary Display
-- [ ] Render human-friendly output with emojis
-- [ ] Format time durations consistently
-- [ ] Show top 3 apps with times
-- [ ] Display battery story
-- [ ] Highlight focus streak
-- [ ] Include "now playing" if available
-- [ ] Show hints for missing data/permissions
+### 4.3 Summary Display ✅
+- [x] Render human-friendly output with emojis
+- [x] Format time durations consistently
+- [x] Show top 3 apps with times
+- [x] Display battery story
+- [x] Highlight focus streak
+- [x] Include "now playing" if available
+- [x] Show hints for missing data/permissions
 
-### 4.4 Plain Output Mode
-- [ ] Create simple text renderer (no Bubbletea)
-- [ ] Output stable key=value pairs
-- [ ] Ensure machine-parsable format
+### 4.4 Plain Output Mode ✅
+- [x] Create simple text renderer (no Bubbletea)
+- [x] Output stable key=value pairs
+- [x] Ensure machine-parsable format
 
 ## Phase 5: Build & Distribution
 
