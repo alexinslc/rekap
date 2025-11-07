@@ -37,39 +37,39 @@ func CollectScreen(ctx context.Context) ScreenResult {
 
 	outputStr := string(output)
 	lines := strings.Split(outputStr, "\n")
-	
+
 	var totalMinutes int
 	var lastOnTime time.Time
 	isOn := false
-	
+
 	// Parse display on/off events
 	timeRe := regexp.MustCompile(`(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})`)
-	
+
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
-		
+
 		matches := timeRe.FindStringSubmatch(line)
 		if len(matches) < 2 {
 			continue
 		}
-		
+
 		eventTime, err := time.ParseInLocation("2006-01-02 15:04:05", matches[1], time.Local)
 		if err != nil {
 			continue
 		}
-		
+
 		// Detect display on/off from log entries
 		lowerLine := strings.ToLower(line)
-		if strings.Contains(lowerLine, "display is turned on") || 
-		   strings.Contains(lowerLine, "backlight level") && !strings.Contains(lowerLine, "level 0") {
+		if strings.Contains(lowerLine, "display is turned on") ||
+			strings.Contains(lowerLine, "backlight level") && !strings.Contains(lowerLine, "level 0") {
 			if !isOn {
 				lastOnTime = eventTime
 				isOn = true
 			}
 		} else if strings.Contains(lowerLine, "display is turned off") ||
-		          strings.Contains(lowerLine, "display sleep") {
+			strings.Contains(lowerLine, "display sleep") {
 			if isOn && !lastOnTime.IsZero() {
 				duration := eventTime.Sub(lastOnTime)
 				totalMinutes += int(duration.Minutes())
@@ -77,19 +77,19 @@ func CollectScreen(ctx context.Context) ScreenResult {
 			}
 		}
 	}
-	
+
 	// If display is currently on, add time until now
 	if isOn && !lastOnTime.IsZero() {
 		duration := now.Sub(lastOnTime)
 		totalMinutes += int(duration.Minutes())
 	}
-	
+
 	// If we have no data, fall back to rough estimate
 	if totalMinutes == 0 {
 		totalMinutes = int(time.Since(midnight).Minutes())
 		result.Error = fmt.Errorf("no display events parsed, using estimate")
 	}
-	
+
 	result.ScreenOnMinutes = totalMinutes
 	result.Available = true
 	return result

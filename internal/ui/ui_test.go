@@ -53,7 +53,7 @@ func TestRenderDataPoint(t *testing.T) {
 	if result == "" {
 		t.Error("RenderDataPoint should not return empty string")
 	}
-	
+
 	// Should contain both icon and text
 	if len(result) < 5 {
 		t.Error("RenderDataPoint output seems too short")
@@ -77,7 +77,7 @@ func TestRenderError(t *testing.T) {
 func TestRenderSummaryLine(t *testing.T) {
 	parts := []string{"3h 35m screen-on", "2 plug-ins", "Top apps: VS Code"}
 	result := RenderSummaryLine(parts)
-	
+
 	if result == "" {
 		t.Error("RenderSummaryLine should not return empty string")
 	}
@@ -85,7 +85,7 @@ func TestRenderSummaryLine(t *testing.T) {
 
 func TestRenderSummaryLineEmpty(t *testing.T) {
 	result := RenderSummaryLine([]string{})
-	
+
 	if result != "" {
 		t.Error("RenderSummaryLine should return empty string for empty input")
 	}

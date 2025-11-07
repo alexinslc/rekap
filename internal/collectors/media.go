@@ -33,7 +33,7 @@ func CollectMedia(ctx context.Context) MediaResult {
 		end tell
 		return ""
 	`)
-	
+
 	output, err := cmd.Output()
 	if err == nil {
 		outputStr := strings.TrimSpace(string(output))
@@ -63,7 +63,7 @@ func CollectMedia(ctx context.Context) MediaResult {
 		end tell
 		return ""
 	`)
-	
+
 	output, err = cmd.Output()
 	if err == nil {
 		outputStr := strings.TrimSpace(string(output))
@@ -82,17 +82,17 @@ func CollectMedia(ctx context.Context) MediaResult {
 	// Check if nowplaying-cli is available
 	cmd = exec.CommandContext(ctx, "nowplaying-cli", "get", "title")
 	titleOutput, titleErr := cmd.Output()
-	
+
 	cmd = exec.CommandContext(ctx, "nowplaying-cli", "get", "artist")
 	artistOutput, artistErr := cmd.Output()
-	
+
 	cmd = exec.CommandContext(ctx, "nowplaying-cli", "get", "app")
 	appOutput, appErr := cmd.Output()
-	
+
 	if titleErr == nil && appErr == nil {
 		title := strings.TrimSpace(string(titleOutput))
 		app := strings.TrimSpace(string(appOutput))
-		
+
 		if title != "" && app != "" {
 			track := title
 			if artistErr == nil {
@@ -101,7 +101,7 @@ func CollectMedia(ctx context.Context) MediaResult {
 					track = fmt.Sprintf("%s - %s", title, artist)
 				}
 			}
-			
+
 			result.Track = track
 			result.App = app
 			result.Available = true

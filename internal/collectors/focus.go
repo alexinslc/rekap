@@ -19,12 +19,12 @@ type FocusResult struct {
 
 // systemApps are excluded from focus streak calculation
 var systemApps = map[string]bool{
-	"com.apple.finder":          true,
-	"com.apple.systempreferences": true,
-	"com.apple.preferences":     true,
-	"com.apple.dock":            true,
+	"com.apple.finder":               true,
+	"com.apple.systempreferences":    true,
+	"com.apple.preferences":          true,
+	"com.apple.dock":                 true,
 	"com.apple.notificationcenterui": true,
-	"com.apple.Spotlight":       true,
+	"com.apple.Spotlight":            true,
 }
 
 // CollectFocus calculates the longest focus streak from app usage data
@@ -38,7 +38,7 @@ func CollectFocus(ctx context.Context) FocusResult {
 	}
 
 	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	
+
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		result.Error = fmt.Errorf("Screen Time database not found")
 		return result
@@ -54,7 +54,7 @@ func CollectFocus(ctx context.Context) FocusResult {
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
 	endTimestamp := now.Sub(coreDataEpoch).Seconds()
 
@@ -81,17 +81,17 @@ func CollectFocus(ctx context.Context) FocusResult {
 	defer rows.Close()
 
 	type interval struct {
-		bundleID  string
-		start     float64
-		end       float64
-		minutes   int
+		bundleID string
+		start    float64
+		end      float64
+		minutes  int
 	}
 
 	var intervals []interval
 	for rows.Next() {
 		var bundleID string
 		var start, end float64
-		
+
 		if err := rows.Scan(&bundleID, &start, &end); err != nil {
 			continue
 		}
@@ -126,7 +126,7 @@ func CollectFocus(ctx context.Context) FocusResult {
 
 	for _, iv := range intervals {
 		gap := int((iv.start - lastEnd) / 60) // gap in minutes
-		
+
 		// If same app and gap < 30 seconds (0.5 minutes), continue streak
 		if iv.bundleID == currentApp && gap < 1 {
 			currentStreak += iv.minutes
@@ -139,7 +139,7 @@ func CollectFocus(ctx context.Context) FocusResult {
 			currentApp = iv.bundleID
 			currentStreak = iv.minutes
 		}
-		
+
 		lastEnd = iv.end
 	}
 

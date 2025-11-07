@@ -333,7 +333,7 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	if network.Available {
 		fmt.Println()
 		fmt.Println(ui.RenderHeader("NETWORK ACTIVITY"))
-		
+
 		// Display network name and data transfer
 		text := fmt.Sprintf("%s: \"%s\" • %s down / %s up",
 			network.InterfaceName,

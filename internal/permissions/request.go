@@ -16,7 +16,7 @@ func RequestFlow() error {
 
 	// Check current status
 	caps := Check()
-	
+
 	// Full Disk Access
 	fmt.Println("📊 Full Disk Access (Screen Time data)")
 	fmt.Println("   Enables: App usage tracking, screen-on time, focus streaks")
@@ -32,16 +32,16 @@ func RequestFlow() error {
 		fmt.Println()
 		fmt.Print("   Press Enter to open System Settings...")
 		fmt.Scanln()
-		
+
 		// Open System Settings to Privacy & Security
 		exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles").Run()
-		
+
 		// Wait for user to grant permission
 		fmt.Println()
 		fmt.Println("   Waiting for permission to be granted...")
 		fmt.Println("   (This window will auto-update when detected)")
 		fmt.Println()
-		
+
 		waitForPermission("Full Disk Access", func() bool {
 			return checkFullDiskAccess()
 		})
@@ -63,13 +63,13 @@ func RequestFlow() error {
 		fmt.Println()
 		fmt.Print("   Press Enter to open System Settings...")
 		fmt.Scanln()
-		
+
 		exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility").Run()
-		
+
 		fmt.Println()
 		fmt.Println("   Waiting for permission to be granted...")
 		fmt.Println()
-		
+
 		waitForPermission("Accessibility", func() bool {
 			return checkAccessibility()
 		})
@@ -85,7 +85,7 @@ func RequestFlow() error {
 	fmt.Println()
 	fmt.Println("Run 'rekap' to see your activity summary.")
 	fmt.Println("Run 'rekap doctor' anytime to check permissions.")
-	
+
 	return nil
 }
 
@@ -93,9 +93,9 @@ func RequestFlow() error {
 func waitForPermission(name string, checkFunc func() bool) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
-	
+
 	timeout := time.After(60 * time.Second)
-	
+
 	for {
 		select {
 		case <-ticker.C:

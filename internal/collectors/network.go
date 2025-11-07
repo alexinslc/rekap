@@ -11,12 +11,12 @@ import (
 
 // NetworkResult contains network usage information
 type NetworkResult struct {
-	InterfaceName    string
-	NetworkName      string // WiFi SSID or "Ethernet"
-	BytesReceived    int64
-	BytesSent        int64
-	Available        bool
-	Error            error
+	InterfaceName string
+	NetworkName   string // WiFi SSID or "Ethernet"
+	BytesReceived int64
+	BytesSent     int64
+	Available     bool
+	Error         error
 }
 
 // CollectNetwork retrieves current network usage statistics
@@ -152,10 +152,10 @@ func getInterfaceStats(ctx context.Context, iface string) (int64, int64, error) 
 		fieldIbytes = 6 // Default position for Ibytes
 		fieldObytes = 9 // Default position for Obytes
 	)
-	
+
 	headerLine := lines[0]
 	headerFields := strings.Fields(headerLine)
-	
+
 	// Try to find the actual positions of Ibytes and Obytes in case format changes
 	ibytesIdx := fieldIbytes
 	obytesIdx := fieldObytes

@@ -45,11 +45,11 @@ func CollectUptime(ctx context.Context) UptimeResult {
 	}
 
 	result.BootTime = time.Unix(bootTimeSec, 0)
-	
+
 	// Calculate awake time since midnight (basic version, no sleep tracking yet)
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	
+
 	// If system booted before midnight, use time since midnight
 	// If system booted after midnight, use time since boot
 	var awakeStart time.Time
@@ -58,10 +58,10 @@ func CollectUptime(ctx context.Context) UptimeResult {
 	} else {
 		awakeStart = result.BootTime
 	}
-	
+
 	awakeDuration := now.Sub(awakeStart)
 	result.AwakeMinutes = int(awakeDuration.Minutes())
-	
+
 	// Format time
 	hours := result.AwakeMinutes / 60
 	mins := result.AwakeMinutes % 60
@@ -70,7 +70,7 @@ func CollectUptime(ctx context.Context) UptimeResult {
 	} else {
 		result.FormattedTime = fmt.Sprintf("%dm awake", mins)
 	}
-	
+
 	result.Available = true
 	return result
 }
