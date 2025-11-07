@@ -62,7 +62,12 @@ func main() {
 
 	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
 
-	if err := fang.Execute(context.Background(), rootCmd, fang.WithVersion(version)); err != nil {
+	if err := fang.Execute(
+		context.Background(),
+		rootCmd,
+		fang.WithVersion(version),
+		fang.WithNotifySignal(os.Interrupt),
+	); err != nil {
 		os.Exit(1)
 	}
 }
