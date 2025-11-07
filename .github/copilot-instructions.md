@@ -56,7 +56,7 @@ make clean              # Remove build artifacts
 ## Code Style Guidelines
 
 ### Go Style
-- Follow [Effective Go](https://golang.org/doc/effective_go.html)
+- Follow [Effective Go](https://go.dev/doc/effective_go)
 - Use `gofmt` for formatting (auto-formatted by most Go editors)
 - Run `go vet` to check for common errors
 - Keep functions small and focused
@@ -173,7 +173,7 @@ make test               # Verify nothing broke
 - Uses GoReleaser (`.goreleaser.yml`)
 - Builds for macOS arm64 and amd64
 - Releases via GitHub Actions
-- Future: Homebrew tap at `alexinslc/rekap`
+- Planned: Homebrew tap for easy installation
 
 ## Questions or Issues?
 - Check existing issues on GitHub
