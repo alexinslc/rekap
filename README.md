@@ -11,6 +11,7 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Screen-on time calculation
 - Focus streak detection
 - Now Playing tracking (optional)
+- Network activity summary (data transferred, active connection)
 
 ## Installation
 
@@ -70,6 +71,10 @@ top_app_1=VS Code
 top_app_1_minutes=142
 focus_streak_minutes=87
 focus_streak_app=VS Code
+network_interface=en0
+network_name=Home-5GHz
+network_bytes_received=2469606195
+network_bytes_sent=471859200
 ```
 
 ## Permissions
