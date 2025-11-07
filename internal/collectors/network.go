@@ -35,7 +35,7 @@ func CollectNetwork(ctx context.Context) NetworkResult {
 
 	// Get WiFi SSID if on WiFi
 	if ifaceType == "WiFi" {
-		ssid, err := getWiFiSSID(ctx)
+		ssid, err := getWiFiSSID(ctx, iface)
 		if err == nil && ssid != "" {
 			result.NetworkName = ssid
 		} else {
@@ -99,14 +99,16 @@ func getActiveInterface(ctx context.Context) (string, string, error) {
 	return iface, ifaceType, nil
 }
 
-// getWiFiSSID returns the current WiFi SSID
-func getWiFiSSID(ctx context.Context) (string, error) {
+// getWiFiSSID returns the current WiFi SSID for the given interface
+func getWiFiSSID(ctx context.Context, iface string) (string, error) {
 	// Use airport command to get SSID (undocumented but reliable)
-	cmd := exec.CommandContext(ctx, "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I")
+	// Note: This is a private framework path and may change in future macOS versions
+	airportPath := "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport"
+	cmd := exec.CommandContext(ctx, airportPath, "-I")
 	output, err := cmd.Output()
 	if err != nil {
-		// Fallback to networksetup
-		cmd = exec.CommandContext(ctx, "networksetup", "-getairportnetwork", "en0")
+		// Fallback to networksetup with dynamic interface name
+		cmd = exec.CommandContext(ctx, "networksetup", "-getairportnetwork", iface)
 		output, err = cmd.Output()
 		if err != nil {
 			return "", err
@@ -139,10 +141,30 @@ func getInterfaceStats(ctx context.Context, iface string) (int64, int64, error) 
 	}
 
 	// Parse netstat output
-	// Format: Name Mtu Network Address Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll
+	// Expected format: Name Mtu Network Address Ipkts Ierrs Ibytes Opkts Oerrs Obytes Coll
 	lines := strings.Split(string(output), "\n")
 	if len(lines) < 2 {
 		return 0, 0, fmt.Errorf("unexpected netstat output format")
+	}
+
+	// Find header line to determine field positions
+	const (
+		fieldIbytes = 6 // Default position for Ibytes
+		fieldObytes = 9 // Default position for Obytes
+	)
+	
+	headerLine := lines[0]
+	headerFields := strings.Fields(headerLine)
+	
+	// Try to find the actual positions of Ibytes and Obytes in case format changes
+	ibytesIdx := fieldIbytes
+	obytesIdx := fieldObytes
+	for i, field := range headerFields {
+		if field == "Ibytes" {
+			ibytesIdx = i
+		} else if field == "Obytes" {
+			obytesIdx = i
+		}
 	}
 
 	// Find the line with the interface stats (not Link#)
@@ -170,17 +192,18 @@ func getInterfaceStats(ctx context.Context, iface string) (int64, int64, error) 
 
 	// Split by whitespace and extract bytes
 	fields := strings.Fields(statsLine)
-	if len(fields) < 10 {
-		return 0, 0, fmt.Errorf("unexpected number of fields in netstat output: %d", len(fields))
+	minFields := obytesIdx + 1
+	if len(fields) < minFields {
+		return 0, 0, fmt.Errorf("unexpected number of fields in netstat output: %d (expected at least %d)", len(fields), minFields)
 	}
 
-	// Ibytes is field 6, Obytes is field 9 (0-indexed: 6 and 9)
-	bytesRecv, err := strconv.ParseInt(fields[6], 10, 64)
+	// Parse bytes using the determined field indices
+	bytesRecv, err := strconv.ParseInt(fields[ibytesIdx], 10, 64)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to parse bytes received: %w", err)
 	}
 
-	bytesSent, err := strconv.ParseInt(fields[9], 10, 64)
+	bytesSent, err := strconv.ParseInt(fields[obytesIdx], 10, 64)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to parse bytes sent: %w", err)
 	}
