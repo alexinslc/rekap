@@ -137,8 +137,16 @@ func runDemo() {
 		Available:       true,
 	}
 
+	demoNetwork := collectors.NetworkResult{
+		InterfaceName: "en0",
+		NetworkName:   "Home-5GHz",
+		BytesReceived: 2469606195, // ~2.3 GB
+		BytesSent:     471859200,  // ~450 MB
+		Available:     true,
+	}
+
 	// Show in human-friendly format
-	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia)
+	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork)
 }
 
 func runSummary(quiet bool) {
@@ -153,6 +161,7 @@ func runSummary(quiet bool) {
 	appsCh := make(chan collectors.AppsResult, 1)
 	focusCh := make(chan collectors.FocusResult, 1)
 	mediaCh := make(chan collectors.MediaResult, 1)
+	networkCh := make(chan collectors.NetworkResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -160,6 +169,7 @@ func runSummary(quiet bool) {
 	go func() { appsCh <- collectors.CollectApps(ctx) }()
 	go func() { focusCh <- collectors.CollectFocus(ctx) }()
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
+	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -168,17 +178,18 @@ func runSummary(quiet bool) {
 	appsResult := <-appsCh
 	focusResult := <-focusCh
 	mediaResult := <-mediaCh
+	networkResult := <-networkCh
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult)
 	} else {
 		// Human-friendly output
-		printHuman(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult)
+		printHuman(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -218,9 +229,16 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Printf("media_track=%s\n", media.Track)
 		fmt.Printf("media_app=%s\n", media.App)
 	}
+
+	if network.Available {
+		fmt.Printf("network_interface=%s\n", network.InterfaceName)
+		fmt.Printf("network_name=%s\n", network.NetworkName)
+		fmt.Printf("network_bytes_received=%d\n", network.BytesReceived)
+		fmt.Printf("network_bytes_sent=%d\n", network.BytesSent)
+	}
 }
 
-func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult) {
+func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -309,6 +327,20 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Println(ui.RenderHeader("NOW PLAYING"))
 		text := fmt.Sprintf("\"%s\" in %s", media.Track, media.App)
 		fmt.Println(ui.RenderDataPoint("🎵", text))
+	}
+
+	// Network Activity Section
+	if network.Available {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("NETWORK ACTIVITY"))
+		
+		// Display network name and data transfer
+		text := fmt.Sprintf("%s: \"%s\" • %s down / %s up",
+			network.InterfaceName,
+			network.NetworkName,
+			collectors.FormatBytes(network.BytesReceived),
+			collectors.FormatBytes(network.BytesSent))
+		fmt.Println(ui.RenderDataPoint("🌐", text))
 	}
 
 	fmt.Println()
