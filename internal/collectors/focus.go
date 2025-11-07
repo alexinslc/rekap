@@ -40,7 +40,7 @@ func CollectFocus(ctx context.Context) FocusResult {
 	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
 	
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		result.Error = fmt.Errorf("Screen Time database not found")
+		result.Error = fmt.Errorf("screen Time database not found")
 		return result
 	}
 
@@ -49,7 +49,11 @@ func CollectFocus(ctx context.Context) FocusResult {
 		result.Error = fmt.Errorf("failed to open database: %w", err)
 		return result
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			result.Error = fmt.Errorf("failed to close database: %w", err)
+		}
+	}()
 
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -78,7 +82,11 @@ func CollectFocus(ctx context.Context) FocusResult {
 		result.Error = fmt.Errorf("failed to query data: %w", err)
 		return result
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			result.Error = fmt.Errorf("failed to close rows: %w", err)
+		}
+	}()
 
 	type interval struct {
 		bundleID  string

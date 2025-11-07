@@ -38,7 +38,9 @@ func checkFullDiskAccess() bool {
 	if err != nil {
 		return false
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Explicitly ignore error as we're just checking access
+	}()
 
 	// Try to read a byte to ensure we have actual read access
 	buf := make([]byte, 1)
@@ -113,13 +115,13 @@ func GetCapabilitiesMatrix() map[string]bool {
 func FormatCapabilities(caps Capabilities) string {
 	var lines []string
 	
-	lines = append(lines, fmt.Sprintf("✓ uptime          (kernel boot time)"))
-	lines = append(lines, fmt.Sprintf("✓ battery         (power management)"))
+	lines = append(lines, "✓ uptime          (kernel boot time)")
+	lines = append(lines, "✓ battery         (power management)")
 	
 	if caps.FullDiskAccess {
-		lines = append(lines, fmt.Sprintf("✓ screen_on       (Full Disk Access)"))
-		lines = append(lines, fmt.Sprintf("✓ apps            (Screen Time data)"))
-		lines = append(lines, fmt.Sprintf("✓ focus_streak    (Screen Time data)"))
+		lines = append(lines, "✓ screen_on       (Full Disk Access)")
+		lines = append(lines, "✓ apps            (Screen Time data)")
+		lines = append(lines, "✓ focus_streak    (Screen Time data)")
 	} else {
 		lines = append(lines, fmt.Sprintf("✗ screen_on       (needs Full Disk Access)"))
 		lines = append(lines, fmt.Sprintf("✗ apps            (needs Full Disk Access)"))
