@@ -1,8 +1,6 @@
 module github.com/alexinslc/rekap
 
-go 1.24.2
-
-toolchain go1.24.9
+go 1.25.4
 
 require (
 	github.com/charmbracelet/fang v0.4.3
