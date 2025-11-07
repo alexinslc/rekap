@@ -32,7 +32,7 @@ func checkFullDiskAccess() bool {
 	}
 
 	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	
+
 	// Try to open the file for reading
 	file, err := os.Open(dbPath)
 	if err != nil {
@@ -62,7 +62,7 @@ func checkAccessibility() bool {
 			end try
 		end tell
 	`)
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return false
@@ -84,7 +84,7 @@ func checkNowPlaying() bool {
 			end try
 		end tell
 	`)
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		// This might fail if Music isn't installed, but that's ok
@@ -101,13 +101,13 @@ func checkNowPlaying() bool {
 func GetCapabilitiesMatrix() map[string]bool {
 	caps := Check()
 	return map[string]bool{
-		"uptime":          true, // Always available
-		"battery":         true, // Always available
-		"screen_on":       caps.FullDiskAccess,
-		"apps":            caps.FullDiskAccess,
-		"focus_streak":    caps.FullDiskAccess,
-		"accessibility":   caps.Accessibility,
-		"media":           caps.NowPlaying,
+		"uptime":        true, // Always available
+		"battery":       true, // Always available
+		"screen_on":     caps.FullDiskAccess,
+		"apps":          caps.FullDiskAccess,
+		"focus_streak":  caps.FullDiskAccess,
+		"accessibility": caps.Accessibility,
+		"media":         caps.NowPlaying,
 	}
 }
 
@@ -127,18 +127,18 @@ func FormatCapabilities(caps Capabilities) string {
 		lines = append(lines, fmt.Sprintf("✗ apps            (needs Full Disk Access)"))
 		lines = append(lines, fmt.Sprintf("✗ focus_streak    (needs Full Disk Access)"))
 	}
-	
+
 	if caps.Accessibility {
 		lines = append(lines, fmt.Sprintf("✓ accessibility   (UI element access)"))
 	} else {
 		lines = append(lines, fmt.Sprintf("✗ accessibility   (not granted)"))
 	}
-	
+
 	if caps.NowPlaying {
 		lines = append(lines, fmt.Sprintf("✓ media           (Now Playing)"))
 	} else {
 		lines = append(lines, fmt.Sprintf("✗ media           (Music app or nowplaying-cli)"))
 	}
-	
+
 	return strings.Join(lines, "\n")
 }

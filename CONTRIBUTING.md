@@ -72,7 +72,7 @@ Before creating a new issue:
 
 ### Go Style
 
-- Follow [Effective Go](https://golang.org/doc/effective_go.html)
+- Follow [Effective Go](https://go.dev/doc/effective_go)
 - Use `gofmt` to format your code
 - Run `go vet` to check for common errors
 - Keep functions small and focused

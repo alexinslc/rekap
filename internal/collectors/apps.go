@@ -15,8 +15,8 @@ import (
 
 // AppUsage represents usage time for a single app
 type AppUsage struct {
-	Name    string
-	Minutes int
+	Name     string
+	Minutes  int
 	BundleID string
 }
 
@@ -40,7 +40,7 @@ func CollectApps(ctx context.Context) AppsResult {
 	}
 
 	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	
+
 	// Check if database exists
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		result.Error = fmt.Errorf("screen Time database not found (requires Full Disk Access)")
@@ -62,7 +62,7 @@ func CollectApps(ctx context.Context) AppsResult {
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
 	endTimestamp := now.Sub(coreDataEpoch).Seconds()
 
@@ -98,15 +98,15 @@ func CollectApps(ctx context.Context) AppsResult {
 	for rows.Next() {
 		var bundleID string
 		var durationSec float64
-		
+
 		if err := rows.Scan(&bundleID, &durationSec); err != nil {
 			continue
 		}
-		
+
 		// Resolve bundle ID to app name
 		appName := resolveAppName(bundleID)
 		minutes := int(durationSec / 60)
-		
+
 		if minutes > 0 {
 			apps = append(apps, AppUsage{
 				Name:     appName,
