@@ -43,7 +43,7 @@ func CollectApps(ctx context.Context) AppsResult {
 
 	// Check if database exists
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		result.Error = fmt.Errorf("Screen Time database not found (requires Full Disk Access)")
+		result.Error = fmt.Errorf("screen Time database not found (requires Full Disk Access)")
 		return result
 	}
 
@@ -52,7 +52,11 @@ func CollectApps(ctx context.Context) AppsResult {
 		result.Error = fmt.Errorf("failed to open Screen Time database: %w", err)
 		return result
 	}
-	defer db.Close()
+	defer func() {
+		if closeErr := db.Close(); closeErr != nil && result.Error == nil {
+			result.Error = fmt.Errorf("failed to close database: %w", closeErr)
+		}
+	}()
 
 	// Calculate today's timestamp range in Core Data format (seconds since 2001-01-01)
 	now := time.Now()
@@ -84,7 +88,11 @@ func CollectApps(ctx context.Context) AppsResult {
 		result.Error = fmt.Errorf("failed to query Screen Time data: %w", err)
 		return result
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && result.Error == nil {
+			result.Error = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	var apps []AppUsage
 	for rows.Next() {

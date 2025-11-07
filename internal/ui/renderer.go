@@ -32,9 +32,10 @@ var (
 			MarginTop(1).
 			MarginBottom(1)
 
-	subtitleStyle = lipgloss.NewStyle().
-			Foreground(mutedColor).
-			Italic(true)
+	// subtitleStyle is currently unused but reserved for future use
+	_ = lipgloss.NewStyle().
+		Foreground(mutedColor).
+		Italic(true)
 
 	dataStyle = lipgloss.NewStyle().
 			Foreground(textColor)
@@ -42,8 +43,9 @@ var (
 	labelStyle = lipgloss.NewStyle().
 			Foreground(secondaryColor)
 
-	valueStyle = lipgloss.NewStyle().
-			Foreground(textColor)
+	// valueStyle is currently unused but reserved for future use
+	_ = lipgloss.NewStyle().
+		Foreground(textColor)
 
 	highlightStyle = lipgloss.NewStyle().
 			Bold(true).

@@ -31,10 +31,11 @@ func RequestFlow() error {
 		fmt.Println("   3. Enable 'rekap' or your terminal app")
 		fmt.Println()
 		fmt.Print("   Press Enter to open System Settings...")
-		fmt.Scanln()
+
+		_, _ = fmt.Scanln() // Explicitly ignore return values
 
 		// Open System Settings to Privacy & Security
-		exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles").Run()
+		_ = exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles").Run()
 
 		// Wait for user to grant permission
 		fmt.Println()
@@ -62,9 +63,10 @@ func RequestFlow() error {
 		fmt.Println("   3. Enable 'rekap' or your terminal app")
 		fmt.Println()
 		fmt.Print("   Press Enter to open System Settings...")
-		fmt.Scanln()
 
-		exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility").Run()
+		_, _ = fmt.Scanln() // Explicitly ignore return values
+
+		_ = exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility").Run()
 
 		fmt.Println()
 		fmt.Println("   Waiting for permission to be granted...")
