@@ -160,9 +160,10 @@ func getInterfaceStats(ctx context.Context, iface string) (int64, int64, error) 
 	ibytesIdx := fieldIbytes
 	obytesIdx := fieldObytes
 	for i, field := range headerFields {
-		if field == "Ibytes" {
+		switch field {
+		case "Ibytes":
 			ibytesIdx = i
-		} else if field == "Obytes" {
+		case "Obytes":
 			obytesIdx = i
 		}
 	}

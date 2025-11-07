@@ -33,7 +33,7 @@ func RequestFlow() error {
 		fmt.Print("   Press Enter to open System Settings...")
 
 		_, _ = fmt.Scanln() // Explicitly ignore return values
-		
+
 		// Open System Settings to Privacy & Security
 		_ = exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles").Run()
 
@@ -65,9 +65,9 @@ func RequestFlow() error {
 		fmt.Print("   Press Enter to open System Settings...")
 
 		_, _ = fmt.Scanln() // Explicitly ignore return values
-		
+
 		_ = exec.Command("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility").Run()
-		
+
 		fmt.Println()
 		fmt.Println("   Waiting for permission to be granted...")
 		fmt.Println()

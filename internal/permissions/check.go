@@ -1,7 +1,6 @@
 package permissions
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -114,30 +113,30 @@ func GetCapabilitiesMatrix() map[string]bool {
 // FormatCapabilities returns a human-readable string of capabilities
 func FormatCapabilities(caps Capabilities) string {
 	var lines []string
-	
+
 	lines = append(lines, "✓ uptime          (kernel boot time)")
 	lines = append(lines, "✓ battery         (power management)")
-	
+
 	if caps.FullDiskAccess {
 		lines = append(lines, "✓ screen_on       (Full Disk Access)")
 		lines = append(lines, "✓ apps            (Screen Time data)")
 		lines = append(lines, "✓ focus_streak    (Screen Time data)")
 	} else {
-		lines = append(lines, fmt.Sprintf("✗ screen_on       (needs Full Disk Access)"))
-		lines = append(lines, fmt.Sprintf("✗ apps            (needs Full Disk Access)"))
-		lines = append(lines, fmt.Sprintf("✗ focus_streak    (needs Full Disk Access)"))
+		lines = append(lines, "✗ screen_on       (needs Full Disk Access)")
+		lines = append(lines, "✗ apps            (needs Full Disk Access)")
+		lines = append(lines, "✗ focus_streak    (needs Full Disk Access)")
 	}
 
 	if caps.Accessibility {
-		lines = append(lines, fmt.Sprintf("✓ accessibility   (UI element access)"))
+		lines = append(lines, "✓ accessibility   (UI element access)")
 	} else {
-		lines = append(lines, fmt.Sprintf("✗ accessibility   (not granted)"))
+		lines = append(lines, "✗ accessibility   (not granted)")
 	}
 
 	if caps.NowPlaying {
-		lines = append(lines, fmt.Sprintf("✓ media           (Now Playing)"))
+		lines = append(lines, "✓ media           (Now Playing)")
 	} else {
-		lines = append(lines, fmt.Sprintf("✗ media           (Music app or nowplaying-cli)"))
+		lines = append(lines, "✗ media           (Music app or nowplaying-cli)")
 	}
 
 	return strings.Join(lines, "\n")
