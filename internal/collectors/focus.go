@@ -50,8 +50,8 @@ func CollectFocus(ctx context.Context) FocusResult {
 		return result
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
-			result.Error = fmt.Errorf("failed to close database: %w", err)
+		if closeErr := db.Close(); closeErr != nil && result.Error == nil {
+			result.Error = fmt.Errorf("failed to close database: %w", closeErr)
 		}
 	}()
 
@@ -83,8 +83,8 @@ func CollectFocus(ctx context.Context) FocusResult {
 		return result
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			result.Error = fmt.Errorf("failed to close rows: %w", err)
+		if closeErr := rows.Close(); closeErr != nil && result.Error == nil {
+			result.Error = fmt.Errorf("failed to close rows: %w", closeErr)
 		}
 	}()
 
