@@ -144,8 +144,12 @@ func runDemo(cfg *config.Config) {
 			{Name: "Safari", Minutes: 89, BundleID: "com.apple.Safari"},
 			{Name: "Slack", Minutes: 52, BundleID: "com.tinyspeck.slackmacgap"},
 		},
-		Source:    "ScreenTime",
-		Available: true,
+		Source:             "ScreenTime",
+		Available:          true,
+		TotalSwitches:      127,
+		AvgMinsBetween:     3.5,
+		SwitchesPerHour:    17.1,
+		SwitchingAvailable: true,
 	}
 
 	demoFocus := collectors.FocusResult{
@@ -279,6 +283,12 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 	}
 
+	if apps.SwitchingAvailable {
+		fmt.Printf("app_switches=%d\n", apps.TotalSwitches)
+		fmt.Printf("app_avg_mins_between=%.2f\n", apps.AvgMinsBetween)
+		fmt.Printf("app_switches_per_hour=%.2f\n", apps.SwitchesPerHour)
+	}
+
 	if focus.Available {
 		fmt.Printf("focus_streak_minutes=%d\n", focus.StreakMinutes)
 		fmt.Printf("focus_streak_app=%s\n", focus.AppName)
@@ -373,13 +383,27 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 	}
 
 	// Productivity Section
-	if focus.Available || (apps.Available && len(apps.TopApps) > 0) {
+	if focus.Available || (apps.Available && len(apps.TopApps) > 0) || apps.SwitchingAvailable {
 		fmt.Println()
 		fmt.Println(ui.RenderHeader("PRODUCTIVITY"))
 
 		if focus.Available {
 			text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
 			fmt.Println(ui.RenderHighlight("⏱️ ", text))
+		}
+
+		if apps.SwitchingAvailable {
+			// Format average time between switches
+			avgMins := apps.AvgMinsBetween
+			var avgText string
+			if avgMins < 1.0 {
+				avgText = fmt.Sprintf("%.0f sec", avgMins*60)
+			} else {
+				avgText = fmt.Sprintf("%.1f min", avgMins)
+			}
+			
+			text := fmt.Sprintf("You switched apps %d times (avg every %s)", apps.TotalSwitches, avgText)
+			fmt.Println(ui.RenderDataPoint("🔄", text))
 		}
 
 		if apps.Available && len(apps.TopApps) > 0 {
