@@ -27,12 +27,12 @@ type BrowserResult struct {
 
 // BrowsersResult aggregates all browser data
 type BrowsersResult struct {
-	Chrome    BrowserResult
-	Safari    BrowserResult
-	Edge      BrowserResult
-	TotalTabs int
+	Chrome     BrowserResult
+	Safari     BrowserResult
+	Edge       BrowserResult
+	TotalTabs  int
 	TopDomains map[string]int // aggregated across all browsers
-	Available bool
+	Available  bool
 }
 
 // CollectBrowserTabs retrieves open tabs from Chrome, Safari, and Edge
@@ -65,7 +65,7 @@ func CollectBrowserTabs(ctx context.Context) BrowsersResult {
 
 	// Aggregate data
 	result.TotalTabs = result.Chrome.TabCount + result.Safari.TabCount + result.Edge.TabCount
-	
+
 	for domain, count := range result.Chrome.Domains {
 		result.TopDomains[domain] += count
 	}
@@ -108,7 +108,7 @@ return ""
 	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
 	output, err := cmd.Output()
 	if err != nil {
-		result.Error = fmt.Errorf("Chrome not running or unavailable: %w", err)
+		result.Error = fmt.Errorf("chrome not running or unavailable: %w", err)
 		return result
 	}
 
@@ -119,12 +119,12 @@ return ""
 
 	result.Available = true
 	tabs := strings.Split(outputStr, ":::")
-	
+
 	for _, tab := range tabs {
 		if tab == "" {
 			continue
 		}
-		
+
 		parts := strings.Split(tab, "|||")
 		if len(parts) != 2 {
 			continue
@@ -132,16 +132,16 @@ return ""
 
 		title := strings.TrimSpace(parts[0])
 		urlStr := strings.TrimSpace(parts[1])
-		
+
 		domain := extractDomain(urlStr)
-		
+
 		result.Tabs = append(result.Tabs, BrowserTab{
 			Title:  title,
 			URL:    urlStr,
 			Domain: domain,
 		})
 		result.TabCount++
-		
+
 		if domain != "" {
 			result.Domains[domain]++
 		}
@@ -177,7 +177,7 @@ return ""
 	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
 	output, err := cmd.Output()
 	if err != nil {
-		result.Error = fmt.Errorf("Safari not running or unavailable: %w", err)
+		result.Error = fmt.Errorf("safari not running or unavailable: %w", err)
 		return result
 	}
 
@@ -188,12 +188,12 @@ return ""
 
 	result.Available = true
 	tabs := strings.Split(outputStr, ":::")
-	
+
 	for _, tab := range tabs {
 		if tab == "" {
 			continue
 		}
-		
+
 		parts := strings.Split(tab, "|||")
 		if len(parts) != 2 {
 			continue
@@ -201,16 +201,16 @@ return ""
 
 		title := strings.TrimSpace(parts[0])
 		urlStr := strings.TrimSpace(parts[1])
-		
+
 		domain := extractDomain(urlStr)
-		
+
 		result.Tabs = append(result.Tabs, BrowserTab{
 			Title:  title,
 			URL:    urlStr,
 			Domain: domain,
 		})
 		result.TabCount++
-		
+
 		if domain != "" {
 			result.Domains[domain]++
 		}
@@ -246,7 +246,7 @@ return ""
 	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
 	output, err := cmd.Output()
 	if err != nil {
-		result.Error = fmt.Errorf("Edge not running or unavailable: %w", err)
+		result.Error = fmt.Errorf("edge not running or unavailable: %w", err)
 		return result
 	}
 
@@ -257,12 +257,12 @@ return ""
 
 	result.Available = true
 	tabs := strings.Split(outputStr, ":::")
-	
+
 	for _, tab := range tabs {
 		if tab == "" {
 			continue
 		}
-		
+
 		parts := strings.Split(tab, "|||")
 		if len(parts) != 2 {
 			continue
@@ -270,16 +270,16 @@ return ""
 
 		title := strings.TrimSpace(parts[0])
 		urlStr := strings.TrimSpace(parts[1])
-		
+
 		domain := extractDomain(urlStr)
-		
+
 		result.Tabs = append(result.Tabs, BrowserTab{
 			Title:  title,
 			URL:    urlStr,
 			Domain: domain,
 		})
 		result.TabCount++
-		
+
 		if domain != "" {
 			result.Domains[domain]++
 		}
@@ -305,6 +305,6 @@ func extractDomain(urlStr string) string {
 
 	// Remove www. prefix
 	host = strings.TrimPrefix(host, "www.")
-	
+
 	return host
 }

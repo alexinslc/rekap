@@ -152,18 +152,18 @@ func runDemo() {
 
 	demoBrowsers := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
-			Browser:  "Chrome",
-			TabCount: 18,
+			Browser:   "Chrome",
+			TabCount:  18,
 			Available: true,
 		},
 		Safari: collectors.BrowserResult{
-			Browser:  "Safari",
-			TabCount: 12,
+			Browser:   "Safari",
+			TabCount:  12,
 			Available: true,
 		},
 		Edge: collectors.BrowserResult{
-			Browser:  "Edge",
-			TabCount: 5,
+			Browser:   "Edge",
+			TabCount:  5,
 			Available: true,
 		},
 		TotalTabs: 35,
