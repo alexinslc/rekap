@@ -230,6 +230,8 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 	}
 
 	var events []focusEvent
+	nameCache := make(map[string]string)
+	
 	for rows.Next() {
 		var bundleID string
 		var start, end float64
@@ -243,8 +245,12 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 			continue
 		}
 
-		// Skip excluded apps
-		appName := resolveAppName(bundleID)
+		// Skip excluded apps - use cached app name to avoid redundant system calls
+		appName, ok := nameCache[bundleID]
+		if !ok {
+			appName = resolveAppName(bundleID)
+			nameCache[bundleID] = appName
+		}
 		if isExcluded(appName, excludedApps) {
 			continue
 		}
