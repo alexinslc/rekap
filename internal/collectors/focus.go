@@ -13,6 +13,8 @@ import (
 type FocusResult struct {
 	StreakMinutes int
 	AppName       string
+	StartTime     time.Time
+	EndTime       time.Time
 	Available     bool
 	Error         error
 }
@@ -128,8 +130,11 @@ func CollectFocus(ctx context.Context) FocusResult {
 	// Find longest continuous streak for same app
 	maxStreak := 0
 	maxStreakApp := ""
+	maxStreakStart := 0.0
+	maxStreakEnd := 0.0
 	currentStreak := 0
 	currentApp := ""
+	currentStreakStart := 0.0
 	lastEnd := 0.0
 
 	for _, iv := range intervals {
@@ -143,9 +148,12 @@ func CollectFocus(ctx context.Context) FocusResult {
 			if currentStreak > maxStreak {
 				maxStreak = currentStreak
 				maxStreakApp = currentApp
+				maxStreakStart = currentStreakStart
+				maxStreakEnd = lastEnd
 			}
 			currentApp = iv.bundleID
 			currentStreak = iv.minutes
+			currentStreakStart = iv.start
 		}
 
 		lastEnd = iv.end
@@ -155,11 +163,16 @@ func CollectFocus(ctx context.Context) FocusResult {
 	if currentStreak > maxStreak {
 		maxStreak = currentStreak
 		maxStreakApp = currentApp
+		maxStreakStart = currentStreakStart
+		maxStreakEnd = lastEnd
 	}
 
 	if maxStreak > 0 {
 		result.StreakMinutes = maxStreak
 		result.AppName = resolveAppName(maxStreakApp)
+		// Convert Core Data timestamps back to Go time.Time
+		result.StartTime = coreDataEpoch.Add(time.Duration(maxStreakStart) * time.Second)
+		result.EndTime = coreDataEpoch.Add(time.Duration(maxStreakEnd) * time.Second)
 		result.Available = true
 	} else {
 		result.Error = fmt.Errorf("no focus streaks found")
