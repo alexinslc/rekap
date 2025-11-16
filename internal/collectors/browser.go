@@ -99,11 +99,21 @@ func CollectBrowserTabs(ctx context.Context) BrowsersResult {
 	// Aggregate history data
 	result.TotalURLsVisited = result.Chrome.URLsVisited + result.Safari.URLsVisited + result.Edge.URLsVisited
 	
-	// Combine all issue URLs
-	result.AllIssueURLs = append(result.AllIssueURLs, result.Chrome.IssueURLs...)
-	result.AllIssueURLs = append(result.AllIssueURLs, result.Safari.IssueURLs...)
-	result.AllIssueURLs = append(result.AllIssueURLs, result.Edge.IssueURLs...)
-	
+	// Combine all issue URLs, deduplicated
+	issueURLSet := make(map[string]struct{})
+	for _, url := range result.Chrome.IssueURLs {
+		issueURLSet[url] = struct{}{}
+	}
+	for _, url := range result.Safari.IssueURLs {
+		issueURLSet[url] = struct{}{}
+	}
+	for _, url := range result.Edge.IssueURLs {
+		issueURLSet[url] = struct{}{}
+	}
+	result.AllIssueURLs = make([]string, 0, len(issueURLSet))
+	for url := range issueURLSet {
+		result.AllIssueURLs = append(result.AllIssueURLs, url)
+	}
 	// Find top history domain across all browsers
 	allHistoryDomains := make(map[string]int)
 	for domain, count := range result.Chrome.HistoryDomains {
