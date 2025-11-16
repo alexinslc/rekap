@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -420,13 +421,9 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 				domains = append(domains, domainCount{domain, count})
 			}
 			// Sort by count descending
-			for i := 0; i < len(domains); i++ {
-				for j := i + 1; j < len(domains); j++ {
-					if domains[j].count > domains[i].count {
-						domains[i], domains[j] = domains[j], domains[i]
-					}
-				}
-			}
+			sort.Slice(domains, func(i, j int) bool {
+				return domains[i].count > domains[j].count
+			})
 
 			// Show top 5 domains
 			fmt.Println(ui.RenderDataPoint("📊", "Top domains:"))
