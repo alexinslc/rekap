@@ -133,11 +133,6 @@ func runDemo(cfg *config.Config) {
 		IsPlugged:  false,
 	}
 
-	demoScreen := collectors.ScreenResult{
-		ScreenOnMinutes: 215, // 3h 35m
-		Available:       true,
-	}
-
 	demoApps := collectors.AppsResult{
 		TopApps: []collectors.AppUsage{
 			{Name: "VS Code", Minutes: 142, BundleID: "com.microsoft.VSCode"},
@@ -169,23 +164,30 @@ func runDemo(cfg *config.Config) {
 		Available:     true,
 	}
 
-	demoBrowsers := collectors.BrowsersResult{
+	// Demo burnout warnings - create a scenario with 11h screen time to trigger long day warning
+	demoScreenLongDay := collectors.ScreenResult{
+		ScreenOnMinutes: 660, // 11h
+		Available:       true,
+	}
+
+	// Demo with 120 tabs to trigger tab overload
+	demoBrowsersOverload := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
 			Browser:   "Chrome",
-			TabCount:  18,
+			TabCount:  58,
 			Available: true,
 		},
 		Safari: collectors.BrowserResult{
 			Browser:   "Safari",
-			TabCount:  12,
+			TabCount:  42,
 			Available: true,
 		},
 		Edge: collectors.BrowserResult{
 			Browser:   "Edge",
-			TabCount:  5,
+			TabCount:  25,
 			Available: true,
 		},
-		TotalTabs: 35,
+		TotalTabs: 125,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
@@ -196,8 +198,13 @@ func runDemo(cfg *config.Config) {
 		Available: true,
 	}
 
-	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	// Generate burnout warnings based on demo data
+	ctx := context.Background()
+	burnoutConfig := collectors.DefaultBurnoutConfig()
+	demoBurnout := collectors.CollectBurnout(ctx, demoScreenLongDay, demoBrowsersOverload, burnoutConfig)
+
+	// Show in human-friendly format (use the modified screen and browsers for demo)
+	printHuman(cfg, demoUptime, demoBattery, demoScreenLongDay, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsersOverload, demoBurnout)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -239,12 +246,16 @@ func runSummary(quiet bool, cfg *config.Config) {
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
 
+	// Analyze burnout patterns after collecting primary data
+	burnoutConfig := collectors.DefaultBurnoutConfig()
+	burnoutResult := collectors.CollectBurnout(ctx, screenResult, browsersResult, burnoutConfig)
+
 	if quiet {
 		// Machine-parsable output
 		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, burnoutResult)
 	}
 }
 
@@ -310,7 +321,7 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, burnout collectors.BurnoutResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -457,6 +468,37 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
 				fmt.Println(ui.RenderSubItem(domainText))
 			}
+		}
+	}
+
+	// Burnout Warnings Section (subtle, only if warnings exist)
+	if burnout.Available && len(burnout.Warnings) > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("WELLNESS CHECK"))
+
+		// Sort warnings by severity (high > medium > low)
+		severityOrder := map[string]int{"high": 0, "medium": 1, "low": 2}
+		sortedWarnings := make([]collectors.BurnoutWarning, len(burnout.Warnings))
+		copy(sortedWarnings, burnout.Warnings)
+		sort.Slice(sortedWarnings, func(i, j int) bool {
+			return severityOrder[sortedWarnings[i].Severity] < severityOrder[sortedWarnings[j].Severity]
+		})
+
+		for _, warning := range sortedWarnings {
+			icon := "⚠️"
+			switch warning.Type {
+			case "long_day":
+				icon = "⏰"
+			case "high_switching":
+				icon = "🔄"
+			case "tab_overload":
+				icon = "📑"
+			case "late_night":
+				icon = "🌙"
+			case "no_breaks":
+				icon = "😰"
+			}
+			fmt.Println(ui.RenderWarning(icon, warning.Message))
 		}
 	}
 

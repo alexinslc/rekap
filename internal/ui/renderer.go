@@ -66,6 +66,10 @@ var (
 
 	dividerStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
+
+	warningSubtleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("214")). // Orange
+			Italic(true)
 )
 
 // ApplyColors updates the color scheme based on config
@@ -119,6 +123,10 @@ func ApplyColors(cfg *config.Config) {
 
 	dividerStyle = lipgloss.NewStyle().
 		Foreground(mutedColor)
+
+	warningSubtleStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("214")). // Orange
+		Italic(true)
 }
 
 // IsTTY returns true if stdout is a terminal
@@ -232,4 +240,9 @@ func ClearScreen() {
 	if IsTTY() {
 		fmt.Print("\033[H\033[2J")
 	}
+}
+
+// RenderWarning formats a subtle burnout warning
+func RenderWarning(icon, text string) string {
+	return fmt.Sprintf("  %s  %s", icon, warningSubtleStyle.Render(text))
 }
