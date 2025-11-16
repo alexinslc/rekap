@@ -397,7 +397,12 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 			avgMins := apps.AvgMinsBetween
 			var avgText string
 			if avgMins < 1.0 {
-				avgText = fmt.Sprintf("%.0f sec", avgMins*60)
+				secs := avgMins * 60
+				if secs < 1 {
+					avgText = "< 1 sec"
+				} else {
+					avgText = fmt.Sprintf("%.0f sec", secs)
+				}
 			} else {
 				avgText = fmt.Sprintf("%.1f min", avgMins)
 			}
