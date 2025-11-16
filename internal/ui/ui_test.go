@@ -1,8 +1,11 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/alexinslc/rekap/internal/config"
 )
 
 func TestFormatDuration(t *testing.T) {
@@ -188,4 +191,101 @@ func TestGetAccessibleIcon(t *testing.T) {
 			t.Errorf("getAccessibleIcon(%q) = %q, want %q", tt.emoji, result, tt.expected)
 		}
 	}
+}
+
+func TestRenderTitle(t *testing.T) {
+	t.Parallel()
+	result := RenderTitle("Test Title", false)
+	if result == "" {
+		t.Error("RenderTitle should not return empty string")
+	}
+	if !strings.Contains(result, "Test Title") {
+		t.Error("RenderTitle should contain the title text")
+	}
+}
+
+func TestRenderHeader(t *testing.T) {
+	t.Parallel()
+	result := RenderHeader("Test Header")
+	if result == "" {
+		t.Error("RenderHeader should not return empty string")
+	}
+	if !strings.Contains(result, "Test Header") {
+		t.Error("RenderHeader should contain the header text")
+	}
+}
+
+func TestRenderDivider(t *testing.T) {
+	t.Parallel()
+	result := RenderDivider()
+	if result == "" {
+		t.Error("RenderDivider should not return empty string")
+	}
+}
+
+func TestRenderHighlight(t *testing.T) {
+	t.Parallel()
+	result := RenderHighlight("✨", "Important Text")
+	if result == "" {
+		t.Error("RenderHighlight should not return empty string")
+	}
+	if !strings.Contains(result, "Important Text") {
+		t.Error("RenderHighlight should contain the highlighted text")
+	}
+}
+
+func TestRenderSubItem(t *testing.T) {
+	t.Parallel()
+	result := RenderSubItem("Sub Item")
+	if result == "" {
+		t.Error("RenderSubItem should not return empty string")
+	}
+	if !strings.Contains(result, "Sub Item") {
+		t.Error("RenderSubItem should contain the sub item text")
+	}
+}
+
+func TestRenderSuccess(t *testing.T) {
+	t.Parallel()
+	result := RenderSuccess("Success message")
+	if result == "" {
+		t.Error("RenderSuccess should not return empty string")
+	}
+	if !strings.Contains(result, "Success message") {
+		t.Error("RenderSuccess should contain the success message")
+	}
+}
+
+func TestIsTTY(t *testing.T) {
+	t.Parallel()
+	// Just test that the function doesn't panic
+	_ = IsTTY()
+}
+
+func TestApplyColors(t *testing.T) {
+	t.Parallel()
+	cfg := config.Default()
+	
+	// Test that ApplyColors doesn't panic
+	ApplyColors(cfg)
+	
+	// Test with custom colors
+	customCfg := &config.Config{
+		Colors: config.ColorConfig{
+			Primary:   "#ff0000",
+			Secondary: "#00ff00",
+			Accent:    "#0000ff",
+			Success:   "#ffff00",
+			Warning:   "#ff00ff",
+			Muted:     "#808080",
+			Text:      "#ffffff",
+		},
+	}
+	ApplyColors(customCfg)
+}
+
+func TestClearScreen(t *testing.T) {
+	t.Parallel()
+	// Just test that the function doesn't panic
+	ClearScreen()
 }

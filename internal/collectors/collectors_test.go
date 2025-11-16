@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -595,6 +596,45 @@ func TestCollectNotifications(t *testing.T) {
 	}
 
 	t.Logf("Collected %d total notifications from %d apps", result.TotalNotifications, len(result.TopApps))
+}
+
+func TestResolveAppName(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		bundleID   string
+		wantSuffix string // Check it ends with this
+	}{
+		{
+			name:       "Apple bundle ID",
+			bundleID:   "com.apple.Safari",
+			wantSuffix: "Safari",
+		},
+		{
+			name:       "Microsoft bundle ID",
+			bundleID:   "com.microsoft.VSCode",
+			wantSuffix: "VSCode",
+		},
+		{
+			name:       "Simple bundle ID",
+			bundleID:   "Slack",
+			wantSuffix: "Slack",
+		},
+		{
+			name:       "Empty bundle ID",
+			bundleID:   "",
+			wantSuffix: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := resolveAppName(tt.bundleID)
+			if !strings.HasSuffix(result, tt.wantSuffix) {
+				t.Errorf("resolveAppName(%q) = %q, want suffix %q", tt.bundleID, result, tt.wantSuffix)
+			}
+		})
+	}
 }
 
 func TestCollectAppsWithSwitching(t *testing.T) {
