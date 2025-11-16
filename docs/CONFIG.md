@@ -90,7 +90,7 @@ Default color palette (matches fang's aesthetic):
 - **no_emoji**: Replace emojis with text labels (default: `false`)
   - Converts 🔋 to [BAT], ⏰ to [TIME], etc.
   - Useful for terminals with poor emoji support
-  - Requires `enabled: true` to take effect
+  - Can be set independently of `enabled`
 
 ## Partial Configs
 
