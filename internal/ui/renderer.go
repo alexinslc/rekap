@@ -195,6 +195,11 @@ func RenderError(text string) string {
 	return errorStyle.Render("✗ " + text)
 }
 
+// RenderWarning formats a warning message
+func RenderWarning(text string) string {
+	return errorStyle.Render("⚠️  " + text)
+}
+
 // FormatDuration formats minutes into human-readable duration
 func FormatDuration(minutes int) string {
 	hours := minutes / 60

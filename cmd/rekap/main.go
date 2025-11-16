@@ -143,6 +143,10 @@ func runDemo(cfg *config.Config) {
 			{Name: "VS Code", Minutes: 142, BundleID: "com.microsoft.VSCode"},
 			{Name: "Safari", Minutes: 89, BundleID: "com.apple.Safari"},
 			{Name: "Slack", Minutes: 52, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Terminal", Minutes: 38, BundleID: "com.apple.Terminal"},
+			{Name: "Chrome", Minutes: 27, BundleID: "com.google.Chrome"},
+			{Name: "Notion", Minutes: 18, BundleID: "com.notion.Notion"},
+			{Name: "Discord", Minutes: 12, BundleID: "com.discord.Discord"},
 		},
 		Source:    "ScreenTime",
 		Available: true,
@@ -172,7 +176,7 @@ func runDemo(cfg *config.Config) {
 	demoBrowsers := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
 			Browser:   "Chrome",
-			TabCount:  18,
+			TabCount:  28,
 			Available: true,
 		},
 		Safari: collectors.BrowserResult{
@@ -185,13 +189,19 @@ func runDemo(cfg *config.Config) {
 			TabCount:  5,
 			Available: true,
 		},
-		TotalTabs: 35,
+		TotalTabs: 45,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
 			"mail.google.com":   5,
 			"chatgpt.com":       4,
 			"youtube.com":       3,
+			"reddit.com":        3,
+			"twitter.com":       2,
+			"linkedin.com":      2,
+			"docs.google.com":   2,
+			"slack.com":         2,
+			"notion.so":         2,
 		},
 		Available: true,
 	}
@@ -308,6 +318,15 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
 		}
 	}
+
+	// Check for context overload
+	overload := collectors.CheckContextOverload(apps, browsers)
+	if overload.IsOverloaded {
+		fmt.Printf("context_overload=1\n")
+		fmt.Printf("context_overload_message=%s\n", overload.WarningMessage)
+	} else {
+		fmt.Printf("context_overload=0\n")
+	}
 }
 
 func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
@@ -317,6 +336,13 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		fmt.Println(title)
 	}
 	fmt.Println()
+
+	// Check for context overload
+	overload := collectors.CheckContextOverload(apps, browsers)
+	if overload.IsOverloaded {
+		fmt.Println(ui.RenderWarning("Context overload: " + overload.WarningMessage))
+		fmt.Println()
+	}
 
 	// Build summary line
 	var summaryParts []string
