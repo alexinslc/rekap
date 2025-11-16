@@ -83,7 +83,7 @@ func ApplyColors(cfg *config.Config) {
 	accessibilityNoEmoji = cfg.Accessibility.NoEmoji
 
 	// Update color palette
-	// In high contrast mode or accessibility mode, use black and white
+	// In high contrast mode (when both enabled and high_contrast are true), use black and white
 	if cfg.Accessibility.Enabled && cfg.Accessibility.HighContrast {
 		primaryColor = lipgloss.Color("15")   // White
 		secondaryColor = lipgloss.Color("15") // White
