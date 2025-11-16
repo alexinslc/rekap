@@ -154,6 +154,61 @@ func TestCollectNetwork(t *testing.T) {
 	}
 }
 
+func TestCollectBrowserTabs(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := CollectBrowserTabs(ctx)
+
+	// Browser collection is best-effort and depends on running browsers
+	if !result.Available {
+		t.Log("No browsers running or available")
+		return
+	}
+
+	if result.TotalTabs < 0 {
+		t.Errorf("TotalTabs should be >= 0, got %d", result.TotalTabs)
+	}
+
+	// If any browser is available, it should contribute to total
+	chromeContrib := 0
+	if result.Chrome.Available {
+		chromeContrib = result.Chrome.TabCount
+		if result.Chrome.Browser != "Chrome" {
+			t.Errorf("Chrome browser name should be 'Chrome', got %s", result.Chrome.Browser)
+		}
+	}
+
+	safariContrib := 0
+	if result.Safari.Available {
+		safariContrib = result.Safari.TabCount
+		if result.Safari.Browser != "Safari" {
+			t.Errorf("Safari browser name should be 'Safari', got %s", result.Safari.Browser)
+		}
+	}
+
+	edgeContrib := 0
+	if result.Edge.Available {
+		edgeContrib = result.Edge.TabCount
+		if result.Edge.Browser != "Edge" {
+			t.Errorf("Edge browser name should be 'Edge', got %s", result.Edge.Browser)
+		}
+	}
+
+	expectedTotal := chromeContrib + safariContrib + edgeContrib
+	if result.TotalTabs != expectedTotal {
+		t.Errorf("TotalTabs should equal sum of individual browsers: expected %d, got %d",
+			expectedTotal, result.TotalTabs)
+	}
+
+	t.Logf("Collected %d total tabs (Chrome: %d, Safari: %d, Edge: %d)",
+		result.TotalTabs, chromeContrib, safariContrib, edgeContrib)
+
+	if len(result.TopDomains) > 0 {
+		t.Logf("Top domain: %v", result.TopDomains)
+	}
+}
+
 func TestFormatBytes(t *testing.T) {
 	tests := []struct {
 		bytes    int64
