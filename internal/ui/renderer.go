@@ -6,12 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexinslc/rekap/internal/config"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
 var (
-	// Color palette matching fang's aesthetic
+	// Color palette matching fang's aesthetic (defaults)
 	primaryColor   = lipgloss.Color("13")  // Bright magenta/pink
 	secondaryColor = lipgloss.Color("14")  // Cyan
 	accentColor    = lipgloss.Color("11")  // Bright yellow
@@ -66,6 +67,59 @@ var (
 	dividerStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
 )
+
+// ApplyColors updates the color scheme based on config
+func ApplyColors(cfg *config.Config) {
+	if cfg == nil {
+		return
+	}
+	
+	// Update color palette
+	primaryColor = lipgloss.Color(cfg.Colors.Primary)
+	secondaryColor = lipgloss.Color(cfg.Colors.Secondary)
+	accentColor = lipgloss.Color(cfg.Colors.Accent)
+	successColor = lipgloss.Color(cfg.Colors.Success)
+	warningColor = lipgloss.Color(cfg.Colors.Warning)
+	mutedColor = lipgloss.Color(cfg.Colors.Muted)
+	textColor = lipgloss.Color(cfg.Colors.Text)
+	
+	// Rebuild styles with new colors
+	titleStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(primaryColor).
+		MarginBottom(1)
+
+	headerStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(primaryColor).
+		MarginTop(1).
+		MarginBottom(1)
+
+	dataStyle = lipgloss.NewStyle().
+		Foreground(textColor)
+
+	labelStyle = lipgloss.NewStyle().
+		Foreground(secondaryColor)
+
+	highlightStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(accentColor)
+
+	successStyle = lipgloss.NewStyle().
+		Foreground(successColor).
+		Bold(true)
+
+	errorStyle = lipgloss.NewStyle().
+		Foreground(warningColor).
+		Bold(true)
+
+	hintStyle = lipgloss.NewStyle().
+		Foreground(mutedColor).
+		Italic(true)
+
+	dividerStyle = lipgloss.NewStyle().
+		Foreground(mutedColor)
+}
 
 // IsTTY returns true if stdout is a terminal
 func IsTTY() bool {
@@ -163,6 +217,14 @@ func FormatDurationCompact(minutes int) string {
 		return fmt.Sprintf("%dh", hours)
 	}
 	return fmt.Sprintf("%dm", mins)
+}
+
+// FormatTime formats a time according to the config's preference
+func FormatTime(t time.Time, timeFormat string) string {
+	if timeFormat == "24h" {
+		return t.Format("15:04")
+	}
+	return t.Format("3:04 PM")
 }
 
 // ClearScreen clears the terminal screen (if TTY)
