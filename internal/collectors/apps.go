@@ -33,7 +33,7 @@ type AppsResult struct {
 // excludedApps is an optional list of app names to filter out
 func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 	result := AppsResult{Available: false, Source: "ScreenTime"}
-	
+
 	// Flatten excluded apps list if provided
 	var excluded []string
 	if len(excludedApps) > 0 {
@@ -114,12 +114,12 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 
 		// Resolve bundle ID to app name
 		appName := resolveAppName(bundleID)
-		
+
 		// Skip if app is in exclusion list
 		if isExcluded(appName, excluded) {
 			continue
 		}
-		
+
 		minutes := int(durationSec / 60)
 
 		if minutes > 0 {

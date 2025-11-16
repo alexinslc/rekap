@@ -32,7 +32,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 				cfg = config.Default()
 			}
-			
+
 			runSummary(quietFlag, cfg)
 			return nil
 		},
@@ -70,7 +70,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 				cfg = config.Default()
 			}
-			
+
 			runDemo(cfg)
 			return nil
 		},
@@ -111,7 +111,7 @@ func runDoctor() {
 func runDemo(cfg *config.Config) {
 	// Apply colors from config
 	ui.ApplyColors(cfg)
-	
+
 	// Enhanced styling for demo mode
 	fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
 	fmt.Println(ui.RenderHint("Showing randomized sample data"))
@@ -205,7 +205,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	if !quiet {
 		ui.ApplyColors(cfg)
 	}
-	
+
 	// Create context with timeout for all collectors
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

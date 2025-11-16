@@ -9,8 +9,8 @@ import (
 
 // Config holds all user preferences
 type Config struct {
-	Colors   ColorConfig   `yaml:"colors"`
-	Display  DisplayConfig `yaml:"display"`
+	Colors   ColorConfig    `yaml:"colors"`
+	Display  DisplayConfig  `yaml:"display"`
 	Tracking TrackingConfig `yaml:"tracking"`
 }
 
@@ -41,7 +41,7 @@ type TrackingConfig struct {
 func Default() *Config {
 	showMedia := true
 	showBattery := true
-	
+
 	return &Config{
 		Colors: ColorConfig{
 			Primary:   "13",  // Bright magenta/pink
@@ -67,32 +67,32 @@ func Default() *Config {
 // If file doesn't exist, returns default config
 func Load() (*Config, error) {
 	cfg := Default()
-	
+
 	// Get config file path
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return cfg, nil // Use defaults if we can't determine path
 	}
-	
+
 	// If config file doesn't exist, use defaults
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return cfg, nil
 	}
-	
+
 	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return cfg, err
 	}
-	
+
 	// Parse YAML, merging with defaults
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return cfg, err
 	}
-	
+
 	// Validate and apply defaults for unset values
 	cfg.Validate()
-	
+
 	return cfg, nil
 }
 
@@ -102,7 +102,7 @@ func GetConfigPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return filepath.Join(homeDir, ".config", "rekap", "config.yaml"), nil
 }
 
@@ -112,7 +112,7 @@ func (c *Config) Validate() {
 	if c.Display.TimeFormat != "12h" && c.Display.TimeFormat != "24h" {
 		c.Display.TimeFormat = "12h"
 	}
-	
+
 	// Ensure display booleans have defaults if not set
 	if c.Display.ShowMedia == nil {
 		showMedia := true
@@ -122,7 +122,7 @@ func (c *Config) Validate() {
 		showBattery := true
 		c.Display.ShowBattery = &showBattery
 	}
-	
+
 	// Color validation - ensure they're not empty
 	defaults := Default()
 	if c.Colors.Primary == "" {

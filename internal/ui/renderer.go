@@ -73,7 +73,7 @@ func ApplyColors(cfg *config.Config) {
 	if cfg == nil {
 		return
 	}
-	
+
 	// Update color palette
 	primaryColor = lipgloss.Color(cfg.Colors.Primary)
 	secondaryColor = lipgloss.Color(cfg.Colors.Secondary)
@@ -82,7 +82,7 @@ func ApplyColors(cfg *config.Config) {
 	warningColor = lipgloss.Color(cfg.Colors.Warning)
 	mutedColor = lipgloss.Color(cfg.Colors.Muted)
 	textColor = lipgloss.Color(cfg.Colors.Text)
-	
+
 	// Rebuild styles with new colors
 	titleStyle = lipgloss.NewStyle().
 		Bold(true).
