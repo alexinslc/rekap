@@ -57,7 +57,7 @@ brews:
       system "#{bin}/rekap --version"
 ```
 
-The release workflow (`.github/workflows/release.yml`) needs to be updated to use the `HOMEBREW_TAP_TOKEN` secret instead of the default `GITHUB_TOKEN`.
+The release workflow (`.github/workflows/release.yml`) has been updated to use the `HOMEBREW_TAP_TOKEN` secret instead of the default `GITHUB_TOKEN`.
 
 ## How It Works
 
