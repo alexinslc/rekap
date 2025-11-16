@@ -10,7 +10,11 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Top 3 apps by usage time
 - Screen-on time calculation
 - Focus streak detection
-- Browser tab tracking (Chrome, Safari, Edge)
+- Browser activity tracking (Chrome, Safari, Edge)
+  - Open tabs count per browser
+  - Browser history analysis (today's URLs only)
+  - Issue/ticket URL detection (Jira, GitHub, Linear, GitLab, etc.)
+  - Most-visited domains
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
 - Notification interruptions tracking (total count and top interrupting apps)
@@ -88,6 +92,10 @@ browser_total_tabs=24
 browser_chrome_tabs=18
 browser_safari_tabs=2
 browser_edge_tabs=4
+browser_urls_visited=147
+browser_top_domain=github.com
+browser_top_domain_visits=34
+browser_issues_viewed=3
 network_interface=en0
 network_name=Home-5GHz
 network_bytes_received=2469606195
