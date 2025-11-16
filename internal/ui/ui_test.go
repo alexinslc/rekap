@@ -75,6 +75,17 @@ func TestRenderError(t *testing.T) {
 	}
 }
 
+func TestRenderWarning(t *testing.T) {
+	result := RenderWarning("Context overload: 7 apps + 45 tabs active")
+	if result == "" {
+		t.Error("RenderWarning should not return empty string")
+	}
+	// Should contain the warning emoji
+	if len(result) < 10 {
+		t.Error("RenderWarning output seems too short")
+	}
+}
+
 func TestRenderSummaryLine(t *testing.T) {
 	parts := []string{"3h 35m screen-on", "2 plug-ins", "Top apps: VS Code"}
 	result := RenderSummaryLine(parts)

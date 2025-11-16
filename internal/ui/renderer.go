@@ -203,6 +203,11 @@ func RenderError(text string) string {
 	return errorStyle.Render("✗ " + text)
 }
 
+// RenderWarning formats a warning message
+func RenderWarning(text string) string {
+	return errorStyle.Render("⚠️ " + text)
+}
+
 // FormatDuration formats minutes into human-readable duration
 func FormatDuration(minutes int) string {
 	hours := minutes / 60
@@ -242,7 +247,7 @@ func ClearScreen() {
 	}
 }
 
-// RenderWarning formats a subtle burnout warning
-func RenderWarning(icon, text string) string {
+// RenderBurnoutWarning formats a subtle burnout warning
+func RenderBurnoutWarning(icon, text string) string {
 	return fmt.Sprintf("  %s  %s", icon, warningSubtleStyle.Render(text))
 }

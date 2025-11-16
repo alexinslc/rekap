@@ -138,6 +138,10 @@ func runDemo(cfg *config.Config) {
 			{Name: "VS Code", Minutes: 142, BundleID: "com.microsoft.VSCode"},
 			{Name: "Safari", Minutes: 89, BundleID: "com.apple.Safari"},
 			{Name: "Slack", Minutes: 52, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Terminal", Minutes: 38, BundleID: "com.apple.Terminal"},
+			{Name: "Chrome", Minutes: 27, BundleID: "com.google.Chrome"},
+			{Name: "Notion", Minutes: 18, BundleID: "com.notion.Notion"},
+			{Name: "Discord", Minutes: 12, BundleID: "com.discord.Discord"},
 		},
 		Source:    "ScreenTime",
 		Available: true,
@@ -173,7 +177,7 @@ func runDemo(cfg *config.Config) {
 	demoBrowsers := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
 			Browser:         "Chrome",
-			TabCount:        18,
+			TabCount:        28,
 			Available:       true,
 			URLsVisited:     89,
 			TopDomain:       "github.com",
@@ -197,17 +201,19 @@ func runDemo(cfg *config.Config) {
 			TopDomain:       "mail.google.com",
 			TopDomainVisits: 12,
 		},
-		TotalTabs:         35,
+		TotalTabs:         45,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
 			"mail.google.com":   5,
 			"chatgpt.com":       4,
 			"youtube.com":       3,
-			"reddit.com":        2,
+			"reddit.com":        3,
 			"twitter.com":       2,
-			"docs.python.org":   3,
-			"linear.app":        2,
+			"linkedin.com":      2,
+			"docs.google.com":   2,
+			"slack.com":         2,
+			"notion.so":         2,
 		},
 		WorkVisits:        19, // github(8) + stackoverflow(6) + docs.python.org(3) + linear.app(2)
 		DistractionVisits: 7,  // youtube(3) + reddit(2) + twitter(2)
@@ -476,6 +482,15 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("issue_%d_visits=%d\n", i+1, issue.VisitCount)
 		}
 	}
+
+	// Check for context overload
+	overload := collectors.CheckContextOverload(apps, browsers)
+	if overload.IsOverloaded {
+		fmt.Printf("context_overload=1\n")
+		fmt.Printf("context_overload_message=%s\n", overload.WarningMessage)
+	} else {
+		fmt.Printf("context_overload=0\n")
+	}
 }
 
 func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, issues collectors.IssuesResult, fragmentation collectors.FragmentationResult, burnout collectors.BurnoutResult) {
@@ -485,6 +500,13 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		fmt.Println(title)
 	}
 	fmt.Println()
+
+	// Check for context overload
+	overload := collectors.CheckContextOverload(apps, browsers)
+	if overload.IsOverloaded {
+		fmt.Println(ui.RenderWarning("Context overload: " + overload.WarningMessage))
+		fmt.Println()
+	}
 
 	// Build summary line
 	var summaryParts []string
@@ -753,7 +775,7 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 			case "no_breaks":
 				icon = "😰"
 			}
-			fmt.Println(ui.RenderWarning(icon, warning.Message))
+			fmt.Println(ui.RenderBurnoutWarning(icon, warning.Message))
 		}
 	}
 

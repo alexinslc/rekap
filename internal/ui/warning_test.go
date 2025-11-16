@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestRenderWarning(t *testing.T) {
-	result := RenderWarning("⚠️", "Test warning message")
+func TestRenderBurnoutWarning(t *testing.T) {
+	result := RenderBurnoutWarning("⚠️", "Test warning message")
 	
 	if !strings.Contains(result, "⚠️") {
 		t.Error("Expected warning to contain icon")
