@@ -263,15 +263,16 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 
 	// Count app switches (when bundle ID changes)
 	var switches int
-	var totalGapSeconds float64
+	var switchTimestamps []float64
 	lastBundleID := events[0].bundleID
+	
+	// Track the first switch as reference point
+	switchTimestamps = append(switchTimestamps, events[0].start)
 
 	for i := 1; i < len(events); i++ {
 		if events[i].bundleID != lastBundleID {
 			switches++
-			// Calculate gap between end of last app and start of new app
-			gap := events[i].start - events[i-1].end
-			totalGapSeconds += gap
+			switchTimestamps = append(switchTimestamps, events[i].start)
 		}
 		lastBundleID = events[i].bundleID
 	}
@@ -280,9 +281,15 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 		return stats
 	}
 
-	// Calculate statistics
+	// Calculate average time between switches
+	var totalIntervalSeconds float64
+	for i := 1; i < len(switchTimestamps); i++ {
+		interval := switchTimestamps[i] - switchTimestamps[i-1]
+		totalIntervalSeconds += interval
+	}
+	
 	stats.totalSwitches = switches
-	stats.avgMinsBetween = (totalGapSeconds / float64(switches)) / 60.0
+	stats.avgMinsBetween = (totalIntervalSeconds / float64(switches)) / 60.0
 	
 	// Calculate switches per hour based on total active time
 	totalActiveSeconds := events[len(events)-1].end - events[0].start
