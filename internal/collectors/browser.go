@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -224,6 +225,23 @@ var issuePatterns = []issuePattern{
 	},
 }
 
+// mergeIssues merges issues into the issue map, aggregating visit counts
+func mergeIssues(issueMap map[string]*IssueVisit, issues []IssueVisit) {
+	for _, issue := range issues {
+		key := issue.Tracker + ":" + issue.ID
+		if existing, ok := issueMap[key]; ok {
+			existing.VisitCount += issue.VisitCount
+		} else {
+			issueMap[key] = &IssueVisit{
+				ID:         issue.ID,
+				Tracker:    issue.Tracker,
+				URL:        issue.URL,
+				VisitCount: issue.VisitCount,
+			}
+		}
+	}
+}
+
 // CollectIssues collects issue/ticket URLs from browser history
 func CollectIssues(ctx context.Context) IssuesResult {
 	result := IssuesResult{}
@@ -235,53 +253,10 @@ func CollectIssues(ctx context.Context) IssuesResult {
 	now := time.Now()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	// Chrome history
-	chromeIssues := collectChromeHistory(ctx, todayStart)
-	for _, issue := range chromeIssues {
-		key := issue.Tracker + ":" + issue.ID
-		if existing, ok := issueMap[key]; ok {
-			existing.VisitCount += issue.VisitCount
-		} else {
-			issueMap[key] = &IssueVisit{
-				ID:         issue.ID,
-				Tracker:    issue.Tracker,
-				URL:        issue.URL,
-				VisitCount: issue.VisitCount,
-			}
-		}
-	}
-
-	// Safari history
-	safariIssues := collectSafariHistory(ctx, todayStart)
-	for _, issue := range safariIssues {
-		key := issue.Tracker + ":" + issue.ID
-		if existing, ok := issueMap[key]; ok {
-			existing.VisitCount += issue.VisitCount
-		} else {
-			issueMap[key] = &IssueVisit{
-				ID:         issue.ID,
-				Tracker:    issue.Tracker,
-				URL:        issue.URL,
-				VisitCount: issue.VisitCount,
-			}
-		}
-	}
-
-	// Edge history
-	edgeIssues := collectEdgeHistory(ctx, todayStart)
-	for _, issue := range edgeIssues {
-		key := issue.Tracker + ":" + issue.ID
-		if existing, ok := issueMap[key]; ok {
-			existing.VisitCount += issue.VisitCount
-		} else {
-			issueMap[key] = &IssueVisit{
-				ID:         issue.ID,
-				Tracker:    issue.Tracker,
-				URL:        issue.URL,
-				VisitCount: issue.VisitCount,
-			}
-		}
-	}
+	// Merge issues from all browsers
+	mergeIssues(issueMap, collectChromeHistory(ctx, todayStart))
+	mergeIssues(issueMap, collectSafariHistory(ctx, todayStart))
+	mergeIssues(issueMap, collectEdgeHistory(ctx, todayStart))
 
 	// Convert map to slice
 	for _, issue := range issueMap {
@@ -289,13 +264,9 @@ func CollectIssues(ctx context.Context) IssuesResult {
 	}
 
 	// Sort by visit count (descending)
-	for i := 0; i < len(result.Issues); i++ {
-		for j := i + 1; j < len(result.Issues); j++ {
-			if result.Issues[j].VisitCount > result.Issues[i].VisitCount {
-				result.Issues[i], result.Issues[j] = result.Issues[j], result.Issues[i]
-			}
-		}
-	}
+	sort.Slice(result.Issues, func(i, j int) bool {
+		return result.Issues[i].VisitCount > result.Issues[j].VisitCount
+	})
 
 	result.Available = len(result.Issues) > 0
 
@@ -361,8 +332,9 @@ func parseHistoryDB(ctx context.Context, dbPath string, since time.Time, browser
 	}
 	defer db.Close()
 
-	// Chrome/Edge use microseconds since Unix epoch
-	sinceChrome := since.Unix() * 1000000
+	// Chrome/Edge use microseconds since January 1, 1601 (Windows epoch)
+	windowsEpoch := time.Date(1601, 1, 1, 0, 0, 0, 0, time.UTC)
+	sinceChrome := since.Sub(windowsEpoch).Microseconds()
 
 	query := `
 		SELECT url, visit_count 
@@ -387,15 +359,19 @@ func parseSafariHistoryDB(ctx context.Context, dbPath string, since time.Time) [
 	}
 
 	// Copy database to temp location
-	tempDB := filepath.Join(os.TempDir(), fmt.Sprintf("rekap_safari_history_%d.db", time.Now().Unix()))
-	defer os.Remove(tempDB)
+	tempFile, err := os.CreateTemp(os.TempDir(), "rekap_safari_history_*.db")
+	if err != nil {
+		return nil
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close() // Close before copying to it
 
-	cmd := exec.CommandContext(ctx, "cp", dbPath, tempDB)
+	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
 	if err := cmd.Run(); err != nil {
 		return nil
 	}
 
-	db, err := sql.Open("sqlite", tempDB)
+	db, err := sql.Open("sqlite", tempFile.Name())
 	if err != nil {
 		return nil
 	}
