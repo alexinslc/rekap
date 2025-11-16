@@ -180,7 +180,7 @@ func detectLateNightWork(ctx context.Context) (int, error) {
 
 	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return 0, fmt.Errorf("screen Time database not found")
+		return 0, fmt.Errorf("Screen Time database not found")
 	}
 
 	db, err := sql.Open("sqlite", dbPath)
