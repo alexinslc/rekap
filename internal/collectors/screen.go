@@ -101,9 +101,7 @@ func CollectScreen(ctx context.Context) ScreenResult {
 				isOn = false
 			}
 			// Track sleep event (start of lock)
-			if lastSleepTime.IsZero() {
-				lastSleepTime = eventTime
-			}
+			lastSleepTime = eventTime
 		}
 	}
 
