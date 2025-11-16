@@ -170,7 +170,7 @@ func runDemo(cfg *config.Config) {
 		Available:       true,
 	}
 
-	// Demo with 120 tabs to trigger tab overload
+	// Demo with 125 tabs to trigger tab overload
 	demoBrowsersOverload := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
 			Browser:   "Chrome",
