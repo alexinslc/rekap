@@ -13,6 +13,7 @@ type Config struct {
 	Colors        ColorConfig                   `yaml:"colors"`
 	Display       DisplayConfig                 `yaml:"display"`
 	Tracking      TrackingConfig                `yaml:"tracking"`
+	Accessibility AccessibilityConfig           `yaml:"accessibility"`
 	Domains       DomainsConfig                 `yaml:"domains"`
 	Fragmentation FragmentationThresholdsConfig `yaml:"fragmentation"`
 }
@@ -38,6 +39,13 @@ type DisplayConfig struct {
 // TrackingConfig holds tracking preferences
 type TrackingConfig struct {
 	ExcludeApps []string `yaml:"exclude_apps"`
+}
+
+// AccessibilityConfig holds accessibility preferences
+type AccessibilityConfig struct {
+	Enabled      bool `yaml:"enabled"`
+	HighContrast bool `yaml:"high_contrast"`
+	NoEmoji      bool `yaml:"no_emoji"`
 }
 
 // DomainsConfig holds domain categorization configuration
@@ -76,6 +84,11 @@ func Default() *Config {
 		},
 		Tracking: TrackingConfig{
 			ExcludeApps: []string{},
+		},
+		Accessibility: AccessibilityConfig{
+			Enabled:      false,
+			HighContrast: false,
+			NoEmoji:      false,
 		},
 		Domains: DomainsConfig{
 			Work: []string{

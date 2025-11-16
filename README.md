@@ -61,6 +61,7 @@ rekap init                # Permission setup wizard
 rekap doctor              # Check capabilities and permissions
 rekap demo                # See sample output with fake data
 rekap --quiet             # Machine-parsable key=value output
+rekap --accessible        # Accessibility mode (color-blind friendly)
 rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
 ```
 
@@ -71,6 +72,7 @@ rekap supports a configuration file at `~/.config/rekap/config.yaml` for customi
 - Display preferences (show/hide sections)
 - Time format (12h/24h)
 - Apps to exclude from tracking
+- Accessibility features (color-blind friendly mode)
 
 See [docs/CONFIG.md](docs/CONFIG.md) for detailed configuration options and examples.
 

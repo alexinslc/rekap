@@ -21,6 +21,10 @@ var (
 	mutedColor     = lipgloss.Color("240") // Darker gray
 	textColor      = lipgloss.Color("255") // White
 
+	// Accessibility settings
+	accessibilityEnabled  = false
+	accessibilityNoEmoji  = false
+
 	// Styles
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -78,14 +82,29 @@ func ApplyColors(cfg *config.Config) {
 		return
 	}
 
+	// Apply accessibility settings
+	accessibilityEnabled = cfg.Accessibility.Enabled
+	accessibilityNoEmoji = cfg.Accessibility.NoEmoji
+
 	// Update color palette
-	primaryColor = lipgloss.Color(cfg.Colors.Primary)
-	secondaryColor = lipgloss.Color(cfg.Colors.Secondary)
-	accentColor = lipgloss.Color(cfg.Colors.Accent)
-	successColor = lipgloss.Color(cfg.Colors.Success)
-	warningColor = lipgloss.Color(cfg.Colors.Warning)
-	mutedColor = lipgloss.Color(cfg.Colors.Muted)
-	textColor = lipgloss.Color(cfg.Colors.Text)
+	// In high contrast mode (when both enabled and high_contrast are true), use black and white
+	if cfg.Accessibility.Enabled && cfg.Accessibility.HighContrast {
+		primaryColor = lipgloss.Color("15")   // White
+		secondaryColor = lipgloss.Color("15") // White
+		accentColor = lipgloss.Color("15")    // White
+		successColor = lipgloss.Color("15")   // White
+		warningColor = lipgloss.Color("15")   // White
+		mutedColor = lipgloss.Color("250")    // Light gray
+		textColor = lipgloss.Color("15")      // White
+	} else {
+		primaryColor = lipgloss.Color(cfg.Colors.Primary)
+		secondaryColor = lipgloss.Color(cfg.Colors.Secondary)
+		accentColor = lipgloss.Color(cfg.Colors.Accent)
+		successColor = lipgloss.Color(cfg.Colors.Success)
+		warningColor = lipgloss.Color(cfg.Colors.Warning)
+		mutedColor = lipgloss.Color(cfg.Colors.Muted)
+		textColor = lipgloss.Color(cfg.Colors.Text)
+	}
 
 	// Rebuild styles with new colors
 	titleStyle = lipgloss.NewStyle().
@@ -136,6 +155,16 @@ func IsTTY() bool {
 
 // RenderTitle renders the main title with optional animation
 func RenderTitle(text string, animate bool) string {
+	// Remove emoji if accessibility mode is enabled and no-emoji is set
+	if accessibilityEnabled && accessibilityNoEmoji {
+		text = removeEmoji(text)
+	}
+	
+	// Add visual markers in accessibility mode
+	if accessibilityEnabled {
+		text = "=== " + text + " ==="
+	}
+	
 	if animate && IsTTY() {
 		// Simple typing effect
 		for i, r := range text {
@@ -153,6 +182,10 @@ func RenderTitle(text string, animate bool) string {
 
 // RenderHeader renders a section header
 func RenderHeader(text string) string {
+	if accessibilityEnabled {
+		// Add visual separators for sections
+		return headerStyle.Render(">> " + text + " <<")
+	}
 	return headerStyle.Render(text)
 }
 
@@ -174,12 +207,26 @@ func RenderSummaryLine(parts []string) string {
 
 // RenderDataPoint formats a single data point with icon and enhanced styling
 func RenderDataPoint(icon, text string) string {
+	if accessibilityEnabled && accessibilityNoEmoji {
+		icon = getAccessibleIcon(icon)
+	}
+	if accessibilityEnabled {
+		// Add bullet point for better distinction
+		return fmt.Sprintf("  • %s  %s", icon, dataStyle.Render(text))
+	}
 	return fmt.Sprintf("  %s  %s", icon, dataStyle.Render(text))
 }
 
 // RenderHighlight formats highlighted text with extra emphasis
 func RenderHighlight(icon, text string) string {
+	if accessibilityEnabled && accessibilityNoEmoji {
+		icon = getAccessibleIcon(icon)
+	}
 	styledText := highlightStyle.Render(text)
+	if accessibilityEnabled {
+		// Add visual emphasis with markers
+		return fmt.Sprintf("  ** %s  %s **", icon, styledText)
+	}
 	return fmt.Sprintf("  %s  %s", icon, styledText)
 }
 
@@ -190,16 +237,25 @@ func RenderSubItem(text string) string {
 
 // RenderSuccess formats a success message
 func RenderSuccess(text string) string {
+	if accessibilityEnabled {
+		return successStyle.Render("[OK] " + text)
+	}
 	return successStyle.Render("✓ " + text)
 }
 
 // RenderHint formats a hint message
 func RenderHint(text string) string {
+	if accessibilityEnabled {
+		return hintStyle.Render("[INFO] " + text)
+	}
 	return hintStyle.Render("💡 " + text)
 }
 
 // RenderError formats an error message
 func RenderError(text string) string {
+	if accessibilityEnabled {
+		return errorStyle.Render("[ERROR] " + text)
+	}
 	return errorStyle.Render("✗ " + text)
 }
 
@@ -245,6 +301,56 @@ func ClearScreen() {
 	if IsTTY() {
 		fmt.Print("\033[H\033[2J")
 	}
+}
+
+// removeEmoji strips emoji characters from text
+func removeEmoji(text string) string {
+	// Simple approach: keep only ASCII printable characters and spaces
+	var result strings.Builder
+	lastWasSpace := false
+	for _, r := range text {
+		if (r >= 32 && r <= 126) || r == '\n' || r == '\t' {
+			if r == ' ' || r == '\t' {
+				// Only add space if last char wasn't a space
+				if !lastWasSpace && result.Len() > 0 {
+					result.WriteRune(' ')
+					lastWasSpace = true
+				}
+			} else {
+				result.WriteRune(r)
+				lastWasSpace = false
+			}
+		} else {
+			// Replace emoji with space but avoid double spaces
+			if !lastWasSpace && result.Len() > 0 {
+				result.WriteRune(' ')
+				lastWasSpace = true
+			}
+		}
+	}
+	return strings.TrimSpace(result.String())
+}
+
+// getAccessibleIcon returns a text-based alternative to emoji icons
+var accessibleIconMap = map[string]string{
+	"⏰": "[TIME]",
+	"🔋": "[BAT]",
+	"🔌": "[PWR]",
+	"📱": "[APP]",
+	"⏱️": "[FOCUS]",
+	"🎵": "[MUSIC]",
+	"🌐": "[NET]",
+	"📊": "[DATA]",
+	"💡": "[INFO]",
+	"✓":  "[OK]",
+	"✗":  "[ERR]",
+}
+
+func getAccessibleIcon(emoji string) string {
+	if alt, ok := accessibleIconMap[emoji]; ok {
+		return alt
+	}
+	return "[*]"
 }
 
 // RenderBurnoutWarning formats a subtle burnout warning

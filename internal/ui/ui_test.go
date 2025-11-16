@@ -131,3 +131,50 @@ func TestFormatTime(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveEmoji(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"Hello 🎭 World", "Hello World"},
+		{"📊 Data", "Data"},
+		{"No emoji here", "No emoji here"},
+		{"Multiple 🔋⏰ emojis", "Multiple emojis"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		result := removeEmoji(tt.input)
+		if result != tt.expected {
+			t.Errorf("removeEmoji(%q) = %q, want %q", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestGetAccessibleIcon(t *testing.T) {
+	tests := []struct {
+		emoji    string
+		expected string
+	}{
+		{"⏰", "[TIME]"},
+		{"🔋", "[BAT]"},
+		{"🔌", "[PWR]"},
+		{"📱", "[APP]"},
+		{"⏱️", "[FOCUS]"},
+		{"🎵", "[MUSIC]"},
+		{"🌐", "[NET]"},
+		{"📊", "[DATA]"},
+		{"💡", "[INFO]"},
+		{"✓", "[OK]"},
+		{"✗", "[ERR]"},
+		{"🚀", "[*]"}, // Unknown emoji
+	}
+
+	for _, tt := range tests {
+		result := getAccessibleIcon(tt.emoji)
+		if result != tt.expected {
+			t.Errorf("getAccessibleIcon(%q) = %q, want %q", tt.emoji, result, tt.expected)
+		}
+	}
+}
