@@ -313,3 +313,31 @@ func TestExtractDomain(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectAppsWithSwitching(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectApps(ctx)
+
+	// Apps require Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("App tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	// Validate switching metrics if available
+	if result.SwitchingAvailable {
+		if result.TotalSwitches < 0 {
+			t.Errorf("TotalSwitches should be >= 0, got %d", result.TotalSwitches)
+		}
+		if result.AvgMinsBetween < 0 {
+			t.Errorf("AvgMinsBetween should be >= 0, got %.2f", result.AvgMinsBetween)
+		}
+		if result.SwitchesPerHour < 0 {
+			t.Errorf("SwitchesPerHour should be >= 0, got %.2f", result.SwitchesPerHour)
+		}
+		t.Logf("App switching: %d switches, avg %.2f mins between, %.2f per hour",
+			result.TotalSwitches, result.AvgMinsBetween, result.SwitchesPerHour)
+	}
+}
