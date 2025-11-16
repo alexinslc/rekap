@@ -317,6 +317,45 @@ func TestIsIssueURL(t *testing.T) {
 	}
 }
 
+func TestExtractIssueIdentifier(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected string
+	}{
+		// Jira
+		{"https://company.atlassian.net/browse/PROJ-123", "PROJ-123"},
+		{"https://jira.example.com/browse/ABC-456", "ABC-456"},
+		
+		// GitHub issues
+		{"https://github.com/owner/repo/issues/123", "owner/repo#123"},
+		
+		// GitHub pull requests
+		{"https://github.com/owner/repo/pull/456", "owner/repo#456"},
+		
+		// Linear
+		{"https://linear.app/team/issue/ABC-123", "ABC-123"},
+		
+		// GitLab issues
+		{"https://gitlab.com/owner/repo/issues/123", "owner/repo#123"},
+		
+		// GitLab merge requests
+		{"https://gitlab.com/owner/repo/merge_requests/456", "owner/repo!456"},
+		
+		// Bitbucket
+		{"https://bitbucket.org/owner/repo/issues/123", "owner/repo#123"},
+		
+		// Azure DevOps
+		{"https://dev.azure.com/org/project/_workitems/123", "WI-123"},
+	}
+
+	for _, tt := range tests {
+		result := extractIssueIdentifier(tt.url)
+		if result != tt.expected {
+			t.Errorf("extractIssueIdentifier(%q) = %q, want %q", tt.url, result, tt.expected)
+		}
+	}
+}
+
 func TestFormatIssueURLs(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -346,7 +346,7 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 
 	// Get today's timestamp range
 	now := time.Now()
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
 	var rows *sql.Rows
 	if browserType == "safari" {
@@ -368,14 +368,18 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 	} else {
 		// Chrome/Edge use microseconds since Unix epoch
 		startTimestamp := midnight.UnixMicro()
+		endTimestamp := now.UnixMicro()
 		
+		// Query visits table joined with urls for accurate today-only tracking
 		query := `
-			SELECT url, visit_count
-			FROM urls
-			WHERE last_visit_time >= ?
-			ORDER BY visit_count DESC
+			SELECT u.url, COUNT(*) as today_visit_count
+			FROM urls u
+			JOIN visits v ON u.id = v.url
+			WHERE v.visit_time >= ? AND v.visit_time < ?
+			GROUP BY u.url
+			ORDER BY today_visit_count DESC
 		`
-		rows, err = db.QueryContext(ctx, query, startTimestamp)
+		rows, err = db.QueryContext(ctx, query, startTimestamp, endTimestamp)
 	}
 
 	if err != nil {
@@ -402,7 +406,8 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 
 		// Check if it's an issue URL
 		if isIssueURL(urlStr) {
-			result.IssueURLs = append(result.IssueURLs, urlStr)
+			issueID := extractIssueIdentifier(urlStr)
+			result.IssueURLs = append(result.IssueURLs, issueID)
 		}
 	}
 
@@ -444,8 +449,8 @@ func copyToTemp(srcPath string) (string, error) {
 
 // Precompiled regexes for common issue trackers
 var issueURLRegexes = []*regexp.Regexp{
-	// Jira: project-123, PROJ-456
-	regexp.MustCompile(`[A-Z]+-\d+`),
+	// Jira: https://jira.example.com/browse/PROJ-123
+	regexp.MustCompile(`(atlassian\.net|jira\.[^/]+)/browse/[A-Z]+-\d+`),
 	// GitHub: /issues/, /pull/
 	regexp.MustCompile(`github\.com/.+/(issues|pull)/\d+`),
 	// Linear: /issue/
@@ -466,6 +471,52 @@ func isIssueURL(urlStr string) bool {
 		}
 	}
 	return false
+}
+
+// extractIssueIdentifier extracts a clean issue identifier from a URL
+func extractIssueIdentifier(urlStr string) string {
+	// Jira: extract PROJ-123 from URL
+	jiraRe := regexp.MustCompile(`/browse/([A-Z]+-\d+)`)
+	if matches := jiraRe.FindStringSubmatch(urlStr); len(matches) > 1 {
+		return matches[1]
+	}
+	
+	// GitHub: extract owner/repo#123 from issues or pulls
+	githubIssueRe := regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+	if matches := githubIssueRe.FindStringSubmatch(urlStr); len(matches) > 3 {
+		return matches[1] + "#" + matches[3]
+	}
+	
+	// Linear: extract issue ID from URL
+	linearRe := regexp.MustCompile(`linear\.app/[^/]+/issue/([^/\?]+)`)
+	if matches := linearRe.FindStringSubmatch(urlStr); len(matches) > 1 {
+		return matches[1]
+	}
+	
+	// GitLab: extract owner/repo#123
+	gitlabRe := regexp.MustCompile(`gitlab\.com/([^/]+/[^/]+)/(issues|merge_requests)/(\d+)`)
+	if matches := gitlabRe.FindStringSubmatch(urlStr); len(matches) > 3 {
+		issueType := "!"
+		if matches[2] == "issues" {
+			issueType = "#"
+		}
+		return matches[1] + issueType + matches[3]
+	}
+	
+	// Bitbucket: extract owner/repo#123
+	bitbucketRe := regexp.MustCompile(`bitbucket\.org/([^/]+/[^/]+)/issues/(\d+)`)
+	if matches := bitbucketRe.FindStringSubmatch(urlStr); len(matches) > 2 {
+		return matches[1] + "#" + matches[2]
+	}
+	
+	// Azure DevOps: extract workitem ID
+	azureRe := regexp.MustCompile(`dev\.azure\.com/[^/]+/[^/]+/_?workitems/(\d+)`)
+	if matches := azureRe.FindStringSubmatch(urlStr); len(matches) > 1 {
+		return "WI-" + matches[1]
+	}
+	
+	// Fallback: return the URL as-is
+	return urlStr
 }
 
 // FormatIssueURLs formats a list of issue URLs for display

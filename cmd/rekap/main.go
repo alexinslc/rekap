@@ -177,7 +177,7 @@ func runDemo(cfg *config.Config) {
 			URLsVisited:     89,
 			TopDomain:       "github.com",
 			TopDomainVisits: 34,
-			IssueURLs:       []string{"github.com/org/repo/issues/89", "PROJ-123"},
+			IssueURLs:       []string{"org/repo#89", "PROJ-123"},
 		},
 		Safari: collectors.BrowserResult{
 			Browser:         "Safari",
@@ -207,7 +207,7 @@ func runDemo(cfg *config.Config) {
 		},
 		TopHistoryDomain: "github.com",
 		TopDomainVisits:  34,
-		AllIssueURLs:     []string{"PROJ-123", "PROJ-456", "github.com/org/repo/issues/89"},
+		AllIssueURLs:     []string{"PROJ-123", "PROJ-456", "org/repo#89"},
 		Available:        true,
 	}
 
