@@ -109,6 +109,44 @@ func TestCollectMedia(t *testing.T) {
 	}
 }
 
+func TestCollectFocus(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectFocus(ctx)
+
+	// Focus tracking requires Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("Focus tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	if result.StreakMinutes < 0 {
+		t.Errorf("StreakMinutes should be >= 0, got %d", result.StreakMinutes)
+	}
+
+	if result.AppName == "" {
+		t.Error("AppName should not be empty when Available=true")
+	}
+
+	// Check that time window is set
+	if result.StartTime.IsZero() {
+		t.Error("StartTime should not be zero when Available=true")
+	}
+
+	if result.EndTime.IsZero() {
+		t.Error("EndTime should not be zero when Available=true")
+	}
+
+	// Validate that EndTime is after StartTime
+	if !result.EndTime.After(result.StartTime) {
+		t.Errorf("EndTime (%v) should be after StartTime (%v)", result.EndTime, result.StartTime)
+	}
+
+	t.Logf("Best flow: %dm in %s (%v - %v)",
+		result.StreakMinutes, result.AppName, result.StartTime, result.EndTime)
+}
+
 func TestCollectorTimeout(t *testing.T) {
 	// Test that collectors respect context timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
@@ -305,4 +343,32 @@ func TestCollectNotifications(t *testing.T) {
 	}
 
 	t.Logf("Collected %d total notifications from %d apps", result.TotalNotifications, len(result.TopApps))
+}
+
+func TestCollectAppsWithSwitching(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectApps(ctx)
+
+	// Apps require Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("App tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	// Validate switching metrics if available
+	if result.SwitchingAvailable {
+		if result.TotalSwitches < 0 {
+			t.Errorf("TotalSwitches should be >= 0, got %d", result.TotalSwitches)
+		}
+		if result.AvgMinsBetween < 0 {
+			t.Errorf("AvgMinsBetween should be >= 0, got %.2f", result.AvgMinsBetween)
+		}
+		if result.SwitchesPerHour < 0 {
+			t.Errorf("SwitchesPerHour should be >= 0, got %.2f", result.SwitchesPerHour)
+		}
+		t.Logf("App switching: %d switches, avg %.2f mins between, %.2f per hour",
+			result.TotalSwitches, result.AvgMinsBetween, result.SwitchesPerHour)
+	}
 }

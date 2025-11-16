@@ -127,7 +127,6 @@ func CollectNotifications(ctx context.Context) NotificationsResult {
 	// Get notifications during focus periods (optional enhancement)
 	// This would require correlating notification timestamps with focus streaks
 	// For now, we skip this calculation to keep the implementation simple
-	result.NotificationsDuringFocus = 0
 
 	return result
 }
