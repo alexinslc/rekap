@@ -22,11 +22,15 @@ type AppUsage struct {
 
 // AppsResult contains app usage information
 type AppsResult struct {
-	TopApps      []AppUsage
-	Source       string // "ScreenTime" or "Sampling"
-	Available    bool
-	Error        error
-	ExcludedApps []string // Apps that were filtered out
+	TopApps           []AppUsage
+	Source            string // "ScreenTime" or "Sampling"
+	Available         bool
+	Error             error
+	ExcludedApps      []string // Apps that were filtered out
+	TotalSwitches     int      // Total number of app switches today
+	AvgMinsBetween    float64  // Average minutes between switches
+	SwitchesPerHour   float64  // Switches per hour rate
+	SwitchingAvailable bool    // Whether switching data is available
 }
 
 // CollectApps retrieves top app usage from Screen Time database
@@ -133,6 +137,14 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 
 	result.TopApps = apps
 	result.Available = len(apps) > 0
+
+	// Calculate app switching statistics
+	switchStats := calculateAppSwitching(ctx, db, startTimestamp, endTimestamp, excluded)
+	result.TotalSwitches = switchStats.totalSwitches
+	result.AvgMinsBetween = switchStats.avgMinsBetween
+	result.SwitchesPerHour = switchStats.switchesPerHour
+	result.SwitchingAvailable = switchStats.available
+
 	return result
 }
 
@@ -167,4 +179,131 @@ func resolveAppName(bundleID string) string {
 	}
 
 	return bundleID
+}
+
+type appSwitchingStats struct {
+	totalSwitches   int
+	avgMinsBetween  float64
+	switchesPerHour float64
+	available       bool
+}
+
+// calculateAppSwitching calculates app switching frequency and patterns
+func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endTimestamp float64, excludedApps []string) appSwitchingStats {
+	stats := appSwitchingStats{available: false}
+
+	// System apps to exclude from switching calculation
+	systemApps := map[string]bool{
+		"com.apple.finder":               true,
+		"com.apple.systempreferences":    true,
+		"com.apple.preferences":          true,
+		"com.apple.dock":                 true,
+		"com.apple.notificationcenterui": true,
+		"com.apple.Spotlight":            true,
+	}
+
+	// Query all app usage intervals ordered by time
+	query := `
+		SELECT 
+			ZVALUESTRING as bundle_id,
+			ZSTARTDATE,
+			ZENDDATE
+		FROM ZOBJECT
+		WHERE ZSTREAMNAME = '/app/usage'
+			AND ZSTARTDATE >= ?
+			AND ZENDDATE <= ?
+			AND ZVALUESTRING IS NOT NULL
+			AND ZVALUESTRING != ''
+		ORDER BY ZSTARTDATE ASC
+	`
+
+	rows, err := db.QueryContext(ctx, query, startTimestamp, endTimestamp)
+	if err != nil {
+		return stats
+	}
+	defer rows.Close()
+
+	type focusEvent struct {
+		bundleID string
+		start    float64
+		end      float64
+	}
+
+	var events []focusEvent
+	nameCache := make(map[string]string)
+	
+	for rows.Next() {
+		var bundleID string
+		var start, end float64
+
+		if err := rows.Scan(&bundleID, &start, &end); err != nil {
+			continue
+		}
+
+		// Skip system apps
+		if systemApps[bundleID] {
+			continue
+		}
+
+		// Skip excluded apps - use cached app name to avoid redundant system calls
+		appName, ok := nameCache[bundleID]
+		if !ok {
+			appName = resolveAppName(bundleID)
+			nameCache[bundleID] = appName
+		}
+		if isExcluded(appName, excludedApps) {
+			continue
+		}
+
+		events = append(events, focusEvent{
+			bundleID: bundleID,
+			start:    start,
+			end:      end,
+		})
+	}
+
+	if len(events) < 2 {
+		// Need at least 2 events to calculate switches
+		return stats
+	}
+
+	// Count app switches (when bundle ID changes)
+	var switches int
+	var switchTimestamps []float64
+	lastBundleID := events[0].bundleID
+	
+	// Initialize with the first event's timestamp as the starting point
+	switchTimestamps = append(switchTimestamps, events[0].start)
+
+	for i := 1; i < len(events); i++ {
+		if events[i].bundleID != lastBundleID {
+			switches++
+			switchTimestamps = append(switchTimestamps, events[i].start)
+		}
+		lastBundleID = events[i].bundleID
+	}
+
+	if switches == 0 {
+		return stats
+	}
+
+	// Calculate average time between switches
+	var totalIntervalSeconds float64
+	for i := 1; i < len(switchTimestamps); i++ {
+		interval := switchTimestamps[i] - switchTimestamps[i-1]
+		totalIntervalSeconds += interval
+	}
+	
+	stats.totalSwitches = switches
+	stats.avgMinsBetween = (totalIntervalSeconds / float64(switches)) / 60.0
+	
+	// Calculate switches per hour based on total active time
+	totalActiveSeconds := events[len(events)-1].end - events[0].start
+	if totalActiveSeconds > 0 {
+		totalActiveHours := totalActiveSeconds / 3600.0
+		stats.switchesPerHour = float64(switches) / totalActiveHours
+	}
+
+	stats.available = true
+	return stats
 }
