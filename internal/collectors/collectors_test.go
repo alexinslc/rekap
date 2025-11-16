@@ -314,6 +314,37 @@ func TestExtractDomain(t *testing.T) {
 	}
 }
 
+func TestCollectNotifications(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectNotifications(ctx)
+
+	// Notifications require Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("Notification tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	if result.TotalNotifications < 0 {
+		t.Errorf("TotalNotifications should be >= 0, got %d", result.TotalNotifications)
+	}
+
+	for _, app := range result.TopApps {
+		if app.Count < 0 {
+			t.Errorf("Notification count should be >= 0, got %d for %s", app.Count, app.Name)
+		}
+		if app.Name == "" {
+			t.Error("App name should not be empty")
+		}
+		if app.Count > result.TotalNotifications {
+			t.Errorf("App notification count (%d) should not exceed total (%d)", app.Count, result.TotalNotifications)
+		}
+	}
+
+	t.Logf("Collected %d total notifications from %d apps", result.TotalNotifications, len(result.TopApps))
+}
+
 func TestCollectAppsWithSwitching(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

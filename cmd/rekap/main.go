@@ -144,19 +144,13 @@ func runDemo(cfg *config.Config) {
 			{Name: "Safari", Minutes: 89, BundleID: "com.apple.Safari"},
 			{Name: "Slack", Minutes: 52, BundleID: "com.tinyspeck.slackmacgap"},
 		},
-		Source:             "ScreenTime",
-		Available:          true,
-		TotalSwitches:      127,
-		AvgMinsBetween:     3.5,
-		SwitchesPerHour:    17.1,
-		SwitchingAvailable: true,
+		Source:    "ScreenTime",
+		Available: true,
 	}
 
 	demoFocus := collectors.FocusResult{
 		StreakMinutes: 87, // 1h 27m
 		AppName:       "VS Code",
-		StartTime:     time.Now().Add(-2 * time.Hour).Add(-30 * time.Minute),
-		EndTime:       time.Now().Add(-1 * time.Hour).Add(-3 * time.Minute),
 		Available:     true,
 	}
 
@@ -202,6 +196,16 @@ func runDemo(cfg *config.Config) {
 		Available: true,
 	}
 
+	demoNotifications := collectors.NotificationsResult{
+		TotalNotifications: 47,
+		TopApps: []collectors.NotificationApp{
+			{Name: "Slack", Count: 18, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Mail", Count: 12, BundleID: "com.apple.mail"},
+			{Name: "Messages", Count: 9, BundleID: "com.apple.MobileSMS"},
+		},
+		Available: true,
+	}
+
 	// Calculate fragmentation for demo
 	fragmentationThresholds := collectors.FragmentationThresholds{
 		FocusedMax:    cfg.Fragmentation.FocusedMax,
@@ -217,7 +221,7 @@ func runDemo(cfg *config.Config) {
 	)
 
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoFragmentation)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications, demoFragmentation)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -239,6 +243,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	notificationsCh := make(chan collectors.NotificationsResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -248,6 +253,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -258,6 +264,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	notificationsResult := <-notificationsCh
 
 	// Calculate fragmentation score after collecting data
 	fragmentationThresholds := collectors.FragmentationThresholds{
@@ -269,14 +276,14 @@ func runSummary(quiet bool, cfg *config.Config) {
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, fragmentationResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, fragmentationResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, fragmentation collectors.FragmentationResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -307,17 +314,9 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 	}
 
-	if apps.SwitchingAvailable {
-		fmt.Printf("app_switches=%d\n", apps.TotalSwitches)
-		fmt.Printf("app_avg_mins_between=%.2f\n", apps.AvgMinsBetween)
-		fmt.Printf("app_switches_per_hour=%.2f\n", apps.SwitchesPerHour)
-	}
-
 	if focus.Available {
 		fmt.Printf("focus_streak_minutes=%d\n", focus.StreakMinutes)
 		fmt.Printf("focus_streak_app=%s\n", focus.AppName)
-		fmt.Printf("focus_streak_start=%d\n", focus.StartTime.Unix())
-		fmt.Printf("focus_streak_end=%d\n", focus.EndTime.Unix())
 	}
 
 	if media.Available {
@@ -345,13 +344,24 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 	}
 
+	if notifications.Available {
+		fmt.Printf("notifications_total=%d\n", notifications.TotalNotifications)
+		for i, app := range notifications.TopApps {
+			if i >= 3 {
+				break
+			}
+			fmt.Printf("notification_app_%d=%s\n", i+1, app.Name)
+			fmt.Printf("notification_app_%d_count=%d\n", i+1, app.Count)
+		}
+	}
+
 	if fragmentation.Available {
 		fmt.Printf("fragmentation_score=%d\n", fragmentation.Score)
 		fmt.Printf("fragmentation_level=%s\n", fragmentation.Level)
 	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, fragmentation collectors.FragmentationResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -414,39 +424,13 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 	}
 
 	// Productivity Section
-	if focus.Available || (apps.Available && len(apps.TopApps) > 0) || apps.SwitchingAvailable {
+	if focus.Available || (apps.Available && len(apps.TopApps) > 0) {
 		fmt.Println()
 		fmt.Println(ui.RenderHeader("PRODUCTIVITY"))
 
 		if focus.Available {
-			// Format time window
-			timeWindow := fmt.Sprintf("%s - %s",
-				ui.FormatTime(focus.StartTime, cfg.Display.TimeFormat),
-				ui.FormatTime(focus.EndTime, cfg.Display.TimeFormat))
-			text := fmt.Sprintf("Best flow: %s in %s without switching (%s)",
-				ui.FormatDuration(focus.StreakMinutes),
-				focus.AppName,
-				timeWindow)
+			text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
 			fmt.Println(ui.RenderHighlight("⏱️ ", text))
-		}
-
-		if apps.SwitchingAvailable {
-			// Format average time between switches
-			avgMins := apps.AvgMinsBetween
-			var avgText string
-			if avgMins < 1.0 {
-				secs := avgMins * 60
-				if secs < 1 {
-					avgText = "< 1 sec"
-				} else {
-					avgText = fmt.Sprintf("%.0f sec", secs)
-				}
-			} else {
-				avgText = fmt.Sprintf("%.1f min", avgMins)
-			}
-			
-			text := fmt.Sprintf("You switched apps %d times (avg every %s)", apps.TotalSwitches, avgText)
-			fmt.Println(ui.RenderDataPoint("🔄", text))
 		}
 
 		if apps.Available && len(apps.TopApps) > 0 {
@@ -523,6 +507,28 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				}
 				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
 				fmt.Println(ui.RenderSubItem(domainText))
+			}
+		}
+	}
+
+	// Notifications Section
+	if notifications.Available && notifications.TotalNotifications > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("NOTIFICATIONS"))
+
+		// Total notifications
+		text := fmt.Sprintf("%d notification%s today", notifications.TotalNotifications, pluralize(notifications.TotalNotifications))
+		fmt.Println(ui.RenderDataPoint("🔔", text))
+
+		// Top apps by notification count
+		if len(notifications.TopApps) > 0 {
+			fmt.Println(ui.RenderDataPoint("📱", "Top interrupting apps:"))
+			for i, app := range notifications.TopApps {
+				if i >= 3 {
+					break
+				}
+				appText := fmt.Sprintf("   %s (%d notification%s)", app.Name, app.Count, pluralize(app.Count))
+				fmt.Println(ui.RenderSubItem(appText))
 			}
 		}
 	}

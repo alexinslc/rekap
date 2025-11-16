@@ -13,6 +13,7 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Browser tab tracking (Chrome, Safari, Edge)
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
+- Notification interruptions tracking (total count and top interrupting apps)
 
 ## Installation
 
@@ -91,6 +92,13 @@ network_interface=en0
 network_name=Home-5GHz
 network_bytes_received=2469606195
 network_bytes_sent=471859200
+notifications_total=47
+notification_app_1=Slack
+notification_app_1_count=18
+notification_app_2=Mail
+notification_app_2_count=12
+notification_app_3=Messages
+notification_app_3_count=9
 ```
 
 ### Shell Completion
@@ -137,7 +145,7 @@ rekap works without any permissions but provides more data when granted:
 
 | Permission | Enables |
 |------------|---------|
-| **Full Disk Access** | App usage, screen time, focus streaks |
+| **Full Disk Access** | App usage, screen time, focus streaks, notification tracking |
 | **Accessibility** | Frontmost app detection (fallback) |
 | **Media/Now Playing** | Track currently playing media |
 | None required | Browser tabs, uptime, battery, network |
