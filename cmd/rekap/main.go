@@ -196,8 +196,17 @@ func runDemo(cfg *config.Config) {
 		Available: true,
 	}
 
+	demoIssues := collectors.IssuesResult{
+		Issues: []collectors.IssueVisit{
+			{ID: "PROJ-123", Tracker: "Jira", URL: "https://company.atlassian.net/browse/PROJ-123", VisitCount: 8},
+			{ID: "github.com/alexinslc/rekap/issues/42", Tracker: "GitHub", URL: "https://github.com/alexinslc/rekap/issues/42", VisitCount: 5},
+			{ID: "ENG-789", Tracker: "Linear", URL: "https://linear.app/issue/ENG-789", VisitCount: 3},
+		},
+		Available: true,
+	}
+
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoIssues)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -219,6 +228,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	issuesCh := make(chan collectors.IssuesResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -228,6 +238,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { issuesCh <- collectors.CollectIssues(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -238,17 +249,18 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	issuesResult := <-issuesCh
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, issuesResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, issuesResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, issues collectors.IssuesResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -308,9 +320,21 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
 		}
 	}
+
+	if issues.Available {
+		fmt.Printf("issues_count=%d\n", len(issues.Issues))
+		for i, issue := range issues.Issues {
+			if i >= 10 {
+				break
+			}
+			fmt.Printf("issue_%d_id=%s\n", i+1, issue.ID)
+			fmt.Printf("issue_%d_tracker=%s\n", i+1, issue.Tracker)
+			fmt.Printf("issue_%d_visits=%d\n", i+1, issue.VisitCount)
+		}
+	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, issues collectors.IssuesResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -457,6 +481,21 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
 				fmt.Println(ui.RenderSubItem(domainText))
 			}
+		}
+	}
+
+	// Issues/Tickets Section
+	if issues.Available && len(issues.Issues) > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("ISSUES/TICKETS"))
+
+		fmt.Println(ui.RenderDataPoint("🎫", "Issues/Tickets viewed today:"))
+		for i, issue := range issues.Issues {
+			if i >= 10 {
+				break
+			}
+			issueText := fmt.Sprintf("   %s (%s, %d visit%s)", issue.ID, issue.Tracker, issue.VisitCount, pluralize(issue.VisitCount))
+			fmt.Println(ui.RenderSubItem(issueText))
 		}
 	}
 
