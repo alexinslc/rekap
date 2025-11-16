@@ -125,7 +125,7 @@ func ApplyColors(cfg *config.Config) {
 		Foreground(mutedColor)
 
 	warningSubtleStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color(cfg.Colors.WarningSubtle)).
+		Foreground(lipgloss.Color(cfg.Colors.Warning)).
 		Italic(true)
 }
 
