@@ -51,11 +51,12 @@ sudo make install
 ## Usage
 
 ```bash
-rekap              # Today's activity summary
-rekap init         # Permission setup wizard
-rekap doctor       # Check capabilities and permissions
-rekap demo         # See sample output with fake data
-rekap --quiet      # Machine-parsable key=value output
+rekap                     # Today's activity summary
+rekap init                # Permission setup wizard
+rekap doctor              # Check capabilities and permissions
+rekap demo                # See sample output with fake data
+rekap --quiet             # Machine-parsable key=value output
+rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
 ```
 
 ### Quiet Mode Output
@@ -81,6 +82,44 @@ network_name=Home-5GHz
 network_bytes_received=2469606195
 network_bytes_sent=471859200
 ```
+
+### Shell Completion
+
+rekap supports shell completion for bash, zsh, and fish. To enable completion:
+
+#### Zsh
+
+```bash
+# Generate completion script
+rekap completion zsh > ~/.zsh/completion/_rekap
+
+# Or use Homebrew's completion directory (recommended on macOS)
+rekap completion zsh > $(brew --prefix)/share/zsh/site-functions/_rekap
+```
+
+Then restart your shell or run `source ~/.zshrc`.
+
+#### Bash
+
+```bash
+# macOS (with Homebrew's bash-completion)
+rekap completion bash > $(brew --prefix)/etc/bash_completion.d/rekap
+
+# Linux
+rekap completion bash > /etc/bash_completion.d/rekap
+```
+
+Then restart your shell or run `source ~/.bashrc`.
+
+#### Fish
+
+```bash
+rekap completion fish > ~/.config/fish/completions/rekap.fish
+```
+
+Then restart your shell or run `source ~/.config/fish/config.fish`.
+
+For more details on each shell's completion, see `rekap completion <shell> --help`.
 
 ## Permissions
 
