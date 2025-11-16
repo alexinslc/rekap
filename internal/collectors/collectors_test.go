@@ -335,6 +335,70 @@ func TestExtractDomain(t *testing.T) {
 	}
 }
 
+func TestIssuePatterns(t *testing.T) {
+	tests := []struct {
+		url           string
+		expectMatch   bool
+		expectedID    string
+		expectedType  string
+	}{
+		// GitHub
+		{"https://github.com/alexinslc/rekap/issues/42", true, "github.com/alexinslc/rekap/issues/42", "GitHub"},
+		{"https://github.com/org/repo/issues/123", true, "github.com/org/repo/issues/123", "GitHub"},
+		
+		// Jira
+		{"https://company.atlassian.net/browse/PROJ-123", true, "PROJ-123", "Jira"},
+		{"https://myorg.atlassian.net/browse/ABC-456", true, "ABC-456", "Jira"},
+		
+		// Linear
+		{"https://linear.app/issue/ENG-789", true, "ENG-789", "Linear"},
+		{"https://linear.app/workspace/issue/TEAM-123", true, "TEAM-123", "Linear"},
+		
+		// GitLab
+		{"https://gitlab.com/group/project/-/issues/99", true, "gitlab.com/group/project/-/issues/99", "GitLab"},
+		
+		// Azure DevOps
+		{"https://dev.azure.com/org/project/_workitems/edit/555", true, "555", "Azure DevOps"},
+		
+		// Non-matching URLs
+		{"https://github.com/user/repo", false, "", ""},
+		{"https://example.com", false, "", ""},
+	}
+
+	for _, tt := range tests {
+		var matched bool
+		var matchedID string
+		var matchedType string
+
+		for _, pattern := range issuePatterns {
+			matches := pattern.pattern.FindStringSubmatch(tt.url)
+			if matches != nil {
+				matched = true
+				matchedType = pattern.tracker
+				if pattern.idGroup == 0 {
+					matchedID = matches[0]
+				} else {
+					matchedID = matches[pattern.idGroup]
+				}
+				break
+			}
+		}
+
+		if matched != tt.expectMatch {
+			t.Errorf("URL %q: expected match=%v, got match=%v", tt.url, tt.expectMatch, matched)
+		}
+
+		if tt.expectMatch {
+			if matchedID != tt.expectedID {
+				t.Errorf("URL %q: expected ID=%q, got ID=%q", tt.url, tt.expectedID, matchedID)
+			}
+			if matchedType != tt.expectedType {
+				t.Errorf("URL %q: expected type=%q, got type=%q", tt.url, tt.expectedType, matchedType)
+			}
+		}
+	}
+}
+
 func TestIsIssueURL(t *testing.T) {
 	tests := []struct {
 		url      string
@@ -372,6 +436,37 @@ func TestIsIssueURL(t *testing.T) {
 		result := isIssueURL(tt.url)
 		if result != tt.expected {
 			t.Errorf("isIssueURL(%q) = %v, want %v", tt.url, result, tt.expected)
+		}
+	}
+}
+
+func TestCollectIssues(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := CollectIssues(ctx)
+
+	// This is best-effort and may not find any issues
+	// Just verify the structure is correct
+	// Available should be true if and only if there are issues
+	if result.Available && len(result.Issues) == 0 {
+		t.Error("Available is true but no issues found")
+	} else if !result.Available && len(result.Issues) > 0 {
+		t.Error("Available is false but issues were found")
+	}
+
+	for _, issue := range result.Issues {
+		if issue.ID == "" {
+			t.Error("Issue ID should not be empty")
+		}
+		if issue.Tracker == "" {
+			t.Error("Issue Tracker should not be empty")
+		}
+		if issue.URL == "" {
+			t.Error("Issue URL should not be empty")
+		}
+		if issue.VisitCount <= 0 {
+			t.Errorf("Issue visit count should be > 0, got %d", issue.VisitCount)
 		}
 	}
 }

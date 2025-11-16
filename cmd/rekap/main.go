@@ -230,6 +230,15 @@ func runDemo(cfg *config.Config) {
 		Available: true,
 	}
 
+	demoIssues := collectors.IssuesResult{
+		Issues: []collectors.IssueVisit{
+			{ID: "PROJ-123", Tracker: "Jira", URL: "https://company.atlassian.net/browse/PROJ-123", VisitCount: 8},
+			{ID: "github.com/alexinslc/rekap/issues/42", Tracker: "GitHub", URL: "https://github.com/alexinslc/rekap/issues/42", VisitCount: 5},
+			{ID: "ENG-789", Tracker: "Linear", URL: "https://linear.app/issue/ENG-789", VisitCount: 3},
+		},
+		Available: true,
+	}
+
 	// Calculate fragmentation for demo
 	fragmentationThresholds := collectors.FragmentationThresholds{
 		FocusedMax:    cfg.Fragmentation.FocusedMax,
@@ -245,7 +254,7 @@ func runDemo(cfg *config.Config) {
 	)
 
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications, demoFragmentation)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications, demoIssues, demoFragmentation)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -267,6 +276,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	issuesCh := make(chan collectors.IssuesResult, 1)
 	notificationsCh := make(chan collectors.NotificationsResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
@@ -277,6 +287,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx, cfg) }()
+	go func() { issuesCh <- collectors.CollectIssues(ctx) }()
 	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
@@ -288,6 +299,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	issuesResult := <-issuesCh
 	notificationsResult := <-notificationsCh
 
 	// Calculate fragmentation score after collecting data
@@ -300,14 +312,14 @@ func runSummary(quiet bool, cfg *config.Config) {
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, issuesResult, notificationsResult, fragmentationResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, issuesResult, fragmentationResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, issues collectors.IssuesResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -405,9 +417,21 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Printf("fragmentation_score=%d\n", fragmentation.Score)
 		fmt.Printf("fragmentation_level=%s\n", fragmentation.Level)
 	}
+
+	if issues.Available {
+		fmt.Printf("issues_count=%d\n", len(issues.Issues))
+		for i, issue := range issues.Issues {
+			if i >= 10 {
+				break
+			}
+			fmt.Printf("issue_%d_id=%s\n", i+1, issue.ID)
+			fmt.Printf("issue_%d_tracker=%s\n", i+1, issue.Tracker)
+			fmt.Printf("issue_%d_visits=%d\n", i+1, issue.VisitCount)
+		}
+	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, issues collectors.IssuesResult, fragmentation collectors.FragmentationResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -638,6 +662,21 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 
 		text := fmt.Sprintf("%d/100 (%s)", fragmentation.Score, fragmentation.Level)
 		fmt.Println(ui.RenderDataPoint(fragmentation.Emoji, text))
+	}
+
+	// Issues/Tickets Section
+	if issues.Available && len(issues.Issues) > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("ISSUES/TICKETS"))
+
+		fmt.Println(ui.RenderDataPoint("🎫", "Issues/Tickets viewed today:"))
+		for i, issue := range issues.Issues {
+			if i >= 10 {
+				break
+			}
+			issueText := fmt.Sprintf("   %s (%s, %d visit%s)", issue.ID, issue.Tracker, issue.VisitCount, pluralize(issue.VisitCount))
+			fmt.Println(ui.RenderSubItem(issueText))
+		}
 	}
 
 	fmt.Println()

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -56,6 +57,21 @@ type BrowsersResult struct {
 	AllIssueURLs     []string
 	TopHistoryDomain string
 	TopDomainVisits  int
+}
+
+// IssueVisit represents a single issue/ticket visit
+type IssueVisit struct {
+	ID        string // e.g., "PROJ-123", "github.com/org/repo/issues/456"
+	Tracker   string // e.g., "Jira", "GitHub", "Linear"
+	URL       string // Full URL
+	VisitCount int
+}
+
+// IssuesResult contains issue/ticket tracking information
+type IssuesResult struct {
+	Issues    []IssueVisit
+	Available bool
+	Error     error
 }
 
 // CollectBrowserTabs retrieves open tabs from Chrome, Safari, and Edge
@@ -276,6 +292,268 @@ func collectEdgeTabs(ctx context.Context) BrowserResult {
 	result.HistoryDomains = historyData.HistoryDomains
 	
 	return result
+}
+
+// issuePattern represents a pattern for matching issue tracker URLs
+type issuePattern struct {
+	tracker string
+	pattern *regexp.Regexp
+	idGroup int // which capture group contains the ID
+}
+
+// Issue tracker URL patterns
+var issuePatterns = []issuePattern{
+	{
+		tracker: "GitHub",
+		pattern: regexp.MustCompile(`github\.com/([^/]+)/([^/]+)/issues/(\d+)`),
+		idGroup: 0, // Use full match as ID
+	},
+	{
+		tracker: "Jira",
+		pattern: regexp.MustCompile(`([^/]+\.)?atlassian\.net/browse/([A-Z]+-\d+)`),
+		idGroup: 2, // Project key + number
+	},
+	{
+		tracker: "Linear",
+		pattern: regexp.MustCompile(`linear\.app/([^/]+/)?issue/([A-Z]+-[A-Z0-9]+)`),
+		idGroup: 2, // Issue ID
+	},
+	{
+		tracker: "GitLab",
+		pattern: regexp.MustCompile(`gitlab\.com/([^/]+)/([^/]+)/-/issues/(\d+)`),
+		idGroup: 0, // Use full match as ID
+	},
+	{
+		tracker: "Azure DevOps",
+		pattern: regexp.MustCompile(`dev\.azure\.com/([^/]+)/([^/]+)/_workitems/edit/(\d+)`),
+		idGroup: 3, // Work item ID
+	},
+}
+
+// mergeIssues merges issues into the issue map, aggregating visit counts
+func mergeIssues(issueMap map[string]*IssueVisit, issues []IssueVisit) {
+	for _, issue := range issues {
+		key := issue.Tracker + ":" + issue.ID
+		if existing, ok := issueMap[key]; ok {
+			existing.VisitCount += issue.VisitCount
+		} else {
+			issueMap[key] = &IssueVisit{
+				ID:         issue.ID,
+				Tracker:    issue.Tracker,
+				URL:        issue.URL,
+				VisitCount: issue.VisitCount,
+			}
+		}
+	}
+}
+
+// CollectIssues collects issue/ticket URLs from browser history
+func CollectIssues(ctx context.Context) IssuesResult {
+	result := IssuesResult{}
+
+	// Collect from Chrome, Safari, and Edge history
+	issueMap := make(map[string]*IssueVisit)
+
+	// Get today's start time (midnight)
+	now := time.Now()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	// Merge issues from all browsers
+	mergeIssues(issueMap, collectChromeHistory(ctx, todayStart))
+	mergeIssues(issueMap, collectSafariHistory(ctx, todayStart))
+	mergeIssues(issueMap, collectEdgeHistory(ctx, todayStart))
+
+	// Convert map to slice
+	for _, issue := range issueMap {
+		result.Issues = append(result.Issues, *issue)
+	}
+
+	// Sort by visit count (descending)
+	sort.Slice(result.Issues, func(i, j int) bool {
+		return result.Issues[i].VisitCount > result.Issues[j].VisitCount
+	})
+
+	result.Available = len(result.Issues) > 0
+
+	return result
+}
+
+// collectChromeHistory reads Chrome history database
+func collectChromeHistory(ctx context.Context, since time.Time) []IssueVisit {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	historyPath := filepath.Join(homeDir, "Library", "Application Support", "Google", "Chrome", "Default", "History")
+	return parseHistoryDB(ctx, historyPath, since, "chrome")
+}
+
+// collectSafariHistory reads Safari history database
+func collectSafariHistory(ctx context.Context, since time.Time) []IssueVisit {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	historyPath := filepath.Join(homeDir, "Library", "Safari", "History.db")
+	return parseSafariHistoryDB(ctx, historyPath, since)
+}
+
+// collectEdgeHistory reads Edge history database
+func collectEdgeHistory(ctx context.Context, since time.Time) []IssueVisit {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	historyPath := filepath.Join(homeDir, "Library", "Application Support", "Microsoft Edge", "Default", "History")
+	return parseHistoryDB(ctx, historyPath, since, "edge")
+}
+
+// parseHistoryDB parses Chrome/Edge-style history databases
+func parseHistoryDB(ctx context.Context, dbPath string, since time.Time, browserType string) []IssueVisit {
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Copy database to temp location to avoid locking issues
+	tempFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("rekap_%s_history_*.db", browserType))
+	if err != nil {
+		return nil
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close() // Close before copying to it
+
+	// Use cp command to copy the file
+	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
+	if err := cmd.Run(); err != nil {
+		return nil
+	}
+
+	db, err := sql.Open("sqlite", tempFile.Name())
+	if err != nil {
+		return nil
+	}
+	defer db.Close()
+
+	// Chrome/Edge use microseconds since January 1, 1601 (Windows epoch)
+	windowsEpoch := time.Date(1601, 1, 1, 0, 0, 0, 0, time.UTC)
+	sinceChrome := since.Sub(windowsEpoch).Microseconds()
+
+	query := `
+		SELECT url, visit_count 
+		FROM urls 
+		WHERE last_visit_time >= ?
+		ORDER BY visit_count DESC
+	`
+
+	rows, err := db.QueryContext(ctx, query, sinceChrome)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	return extractIssuesFromRows(rows)
+}
+
+// parseSafariHistoryDB parses Safari history database
+func parseSafariHistoryDB(ctx context.Context, dbPath string, since time.Time) []IssueVisit {
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Copy database to temp location
+	tempFile, err := os.CreateTemp(os.TempDir(), "rekap_safari_history_*.db")
+	if err != nil {
+		return nil
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close() // Close before copying to it
+
+	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
+	if err := cmd.Run(); err != nil {
+		return nil
+	}
+
+	db, err := sql.Open("sqlite", tempFile.Name())
+	if err != nil {
+		return nil
+	}
+	defer db.Close()
+
+	// Safari uses Core Data timestamp (seconds since 2001-01-01)
+	referenceDate := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
+	sinceSafari := since.Sub(referenceDate).Seconds()
+
+	query := `
+		SELECT 
+			history_items.url,
+			COUNT(history_visits.id) as visit_count
+		FROM history_items
+		LEFT JOIN history_visits ON history_items.id = history_visits.history_item
+		WHERE history_visits.visit_time >= ?
+		GROUP BY history_items.url
+		ORDER BY visit_count DESC
+	`
+
+	rows, err := db.QueryContext(ctx, query, sinceSafari)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	return extractIssuesFromRows(rows)
+}
+
+// extractIssuesFromRows extracts issue URLs from database rows
+func extractIssuesFromRows(rows *sql.Rows) []IssueVisit {
+	var issues []IssueVisit
+	issueMap := make(map[string]*IssueVisit)
+
+	for rows.Next() {
+		var urlStr string
+		var visitCount int
+
+		if err := rows.Scan(&urlStr, &visitCount); err != nil {
+			continue
+		}
+
+		// Try to match against issue patterns
+		for _, pattern := range issuePatterns {
+			matches := pattern.pattern.FindStringSubmatch(urlStr)
+			if matches != nil {
+				var issueID string
+				if pattern.idGroup == 0 {
+					// Use the matched portion as ID
+					issueID = matches[0]
+				} else {
+					// Use specific capture group
+					issueID = matches[pattern.idGroup]
+				}
+
+				key := pattern.tracker + ":" + issueID
+				if existing, ok := issueMap[key]; ok {
+					existing.VisitCount += visitCount
+				} else {
+					issueMap[key] = &IssueVisit{
+						ID:         issueID,
+						Tracker:    pattern.tracker,
+						URL:        urlStr,
+						VisitCount: visitCount,
+					}
+				}
+				break // Only match first pattern
+			}
+		}
+	}
+
+	// Convert map to slice
+	for _, issue := range issueMap {
+		issues = append(issues, *issue)
+	}
+
+	return issues
 }
 
 func extractDomain(urlStr string) string {

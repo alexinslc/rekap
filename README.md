@@ -13,7 +13,7 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Browser activity tracking (Chrome, Safari, Edge)
   - Open tabs count per browser
   - Browser history analysis (today's URLs only)
-  - Issue/ticket URL detection (Jira, GitHub, Linear, GitLab, etc.)
+  - Issue/ticket URL detection (Jira, GitHub, Linear, GitLab, Azure DevOps, etc.)
   - Most-visited domains
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
