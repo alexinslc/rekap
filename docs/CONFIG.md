@@ -1,6 +1,97 @@
 # Configuration Guide
 
-rekap supports a configuration file for customizing colors, display preferences, and tracking behavior.
+rekap supports a configuration file for customizing colors, display preferences, and tracking behavior. Additionally, you can use **themes** to quickly apply pre-made color schemes.
+
+## Themes
+
+rekap supports custom color themes that can be applied via command-line flags or theme files.
+
+### Using Built-in Themes
+
+rekap includes several built-in themes:
+
+- **default** - Current magenta/cyan theme (fang aesthetic)
+- **minimal** - Grayscale with minimal color
+- **hacker** - Matrix-style green terminal
+- **pastel** - Soft, muted pastel colors
+- **nord** - Nord color scheme
+- **dracula** - Dracula theme
+- **solarized** - Solarized dark theme
+
+Apply a theme using the `--theme` flag:
+
+```bash
+rekap --theme minimal
+rekap demo --theme hacker
+rekap --theme nord
+```
+
+### Creating Custom Themes
+
+You can create your own theme files in YAML format:
+
+```yaml
+# ~/.config/rekap/themes/ocean.yaml
+name: "Ocean"
+author: "username"
+colors:
+  primary: "#0077be"
+  secondary: "#00a8e8"
+  accent: "#00c9ff"
+  success: "#00ffa3"
+  error: "#ff6b6b"
+  muted: "#6c757d"
+  text: "#ffffff"
+```
+
+### Loading Custom Themes
+
+There are three ways to load custom themes:
+
+1. **By name** from `~/.config/rekap/themes/`:
+   ```bash
+   rekap --theme ocean
+   ```
+
+2. **By relative path**:
+   ```bash
+   rekap --theme ./my-theme.yaml
+   ```
+
+3. **By absolute path**:
+   ```bash
+   rekap --theme /path/to/custom-theme.yaml
+   ```
+
+### Theme File Format
+
+Theme files must include all required color fields:
+
+```yaml
+name: "My Theme"        # Required: theme name
+author: "Your Name"     # Optional: theme author
+colors:
+  primary: "#ff00ff"    # Required: main title/header color
+  secondary: "#00ffff"  # Required: secondary text/labels
+  accent: "#ffff00"     # Required: highlights and focus items
+  success: "#00ff00"    # Required: success messages
+  error: "#ff0000"      # Required: errors and warnings (can also use 'warning')
+  muted: "#808080"      # Required: subdued text
+  text: "#ffffff"       # Required: main text color
+```
+
+Colors can be specified as:
+- **Hex colors**: `"#ff00ff"`, `"#00ffff"`
+- **ANSI color codes**: `"13"`, `"14"`, `"240"`
+
+### Previewing Themes
+
+Use demo mode to preview any theme:
+
+```bash
+rekap demo --theme dracula
+rekap demo --theme ~/.config/rekap/themes/ocean.yaml
+```
 
 ## Config File Location
 
@@ -233,6 +324,22 @@ Use the demo command to preview your color choices:
 ```bash
 rekap demo
 ```
+
+Or test with a specific theme:
+
+```bash
+rekap demo --theme hacker
+```
+
+## Theme vs Config
+
+Themes and config colors work together:
+
+- **Config file colors** - Set your default colors in `~/.config/rekap/config.yaml`
+- **Theme flag** - Override colors temporarily with `--theme` flag
+- **Theme flag takes precedence** - When using `--theme`, those colors override config file colors
+
+You can use the config file for your daily theme and experiment with other themes using the `--theme` flag without modifying your config.
 
 ## Troubleshooting
 

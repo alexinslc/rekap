@@ -1,0 +1,14 @@
+# Example Theme: Forest
+# Save this to ~/.config/rekap/themes/forest.yaml
+# Use with: rekap --theme forest
+
+name: "Forest"
+author: "rekap"
+colors:
+  primary: "#2d5016"    # Dark forest green
+  secondary: "#4a7c59"  # Medium green
+  accent: "#87a96b"     # Light green
+  success: "#76b947"    # Bright green
+  error: "#8b4513"      # Brown
+  muted: "#556b2f"      # Olive
+  text: "#f5f5dc"       # Beige

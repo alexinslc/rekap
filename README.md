@@ -67,8 +67,54 @@ rekap init                # Permission setup wizard
 rekap doctor              # Check capabilities and permissions
 rekap demo                # See sample output with fake data
 rekap --quiet             # Machine-parsable key=value output
+rekap --theme <name>      # Use a color theme
 rekap --accessible        # Accessibility mode (color-blind friendly)
 rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
+```
+
+### Themes
+
+rekap supports custom color themes to personalize your output. Choose from built-in themes or create your own:
+
+```bash
+rekap --theme hacker      # Matrix-style green theme
+rekap --theme minimal     # Grayscale theme
+rekap --theme dracula     # Dracula color scheme
+rekap demo --theme nord   # Preview Nord theme
+```
+
+**Built-in themes:**
+- `default` - Magenta/cyan (current default)
+- `minimal` - Grayscale
+- `hacker` - Matrix green
+- `pastel` - Soft pastels
+- `nord` - Nord color scheme
+- `dracula` - Dracula theme
+- `solarized` - Solarized dark
+
+**Custom themes:**
+
+Create your own theme file at `~/.config/rekap/themes/mytheme.yaml`:
+
+```yaml
+name: "My Theme"
+author: "Your Name"
+colors:
+  primary: "#0077be"
+  secondary: "#00a8e8"
+  accent: "#00c9ff"
+  success: "#00ffa3"
+  error: "#ff6b6b"
+  muted: "#6c757d"
+  text: "#ffffff"
+```
+
+Then use it:
+
+```bash
+rekap --theme mytheme
+# or with full path
+rekap --theme ~/.config/rekap/themes/mytheme.yaml
 ```
 
 ### Configuration
