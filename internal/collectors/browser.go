@@ -342,16 +342,20 @@ func parseHistoryDB(ctx context.Context, dbPath string, since time.Time, browser
 	}
 
 	// Copy database to temp location to avoid locking issues
-	tempDB := filepath.Join(os.TempDir(), fmt.Sprintf("rekap_%s_history_%d.db", browserType, time.Now().Unix()))
-	defer os.Remove(tempDB)
+	tempFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("rekap_%s_history_*.db", browserType))
+	if err != nil {
+		return nil
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close() // Close before copying to it
 
 	// Use cp command to copy the file
-	cmd := exec.CommandContext(ctx, "cp", dbPath, tempDB)
+	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
 	if err := cmd.Run(); err != nil {
 		return nil
 	}
 
-	db, err := sql.Open("sqlite", tempDB)
+	db, err := sql.Open("sqlite", tempFile.Name())
 	if err != nil {
 		return nil
 	}
