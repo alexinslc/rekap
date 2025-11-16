@@ -132,6 +132,20 @@ tracking:
     - "Activity Monitor"
     - "System Preferences"
     - "Calendar"
+
+accessibility:
+  enabled: false          # Enable accessibility mode
+  high_contrast: false    # Use high contrast colors
+  no_emoji: false         # Replace emojis with text labels
+
+domains:
+  work:
+    - "mycompany.atlassian.net"
+    - "internal.company.com"
+  distraction:
+    - "news.ycombinator.com"
+  neutral:
+    - "gmail.com"
 ```
 
 ### Color Options
@@ -163,6 +177,61 @@ Default color palette (matches fang's aesthetic):
   - Apps in this list won't appear in your top apps or focus streaks
   - Useful for filtering out system utilities or apps you don't want tracked
   - App names must match exactly as they appear in the output
+
+### Accessibility Options
+
+- **enabled**: Enable accessibility mode (default: `false`)
+  - Adds visual markers and patterns to distinguish sections
+  - Works great for color-blind users
+  - Can be enabled via `--accessible` flag or config file
+- **high_contrast**: Use high contrast colors (default: `false`)
+  - Switches to black and white color scheme
+  - Requires `enabled: true` to take effect
+- **no_emoji**: Replace emojis with text labels (default: `false`)
+  - Converts 🔋 to [BAT], ⏰ to [TIME], etc.
+  - Useful for terminals with poor emoji support
+  - Requires `enabled: true` to take effect
+
+### Domain Categorization
+
+rekap automatically categorizes browser tab domains into three categories:
+
+- **work**: Development tools, documentation, project management, cloud platforms
+- **distraction**: Social media, entertainment, news sites
+- **neutral**: Email, uncategorized sites
+
+Default work domains include:
+- `github.com`, `gitlab.com`, `bitbucket.org`
+- `stackoverflow.com`, `stackexchange.com`
+- `docs.*`, `developer.*`, `api.*` (matches docs.python.org, developer.mozilla.org, etc.)
+- `atlassian.net` (Jira, Confluence)
+- `linear.app`, `asana.com`, `notion.so`
+- `aws.amazon.com`, `console.cloud.google.com`, `portal.azure.com`
+
+Default distraction domains include:
+- `twitter.com`, `x.com`, `reddit.com`
+- `facebook.com`, `instagram.com`
+- `youtube.com`, `tiktok.com`, `twitch.tv`
+
+You can override these defaults in your config:
+
+```yaml
+domains:
+  work:
+    - "mycompany.atlassian.net"
+    - "internal.company.com"
+    - "work-app.*"
+  distraction:
+    - "news.ycombinator.com"  # Personal preference
+  neutral:
+    - "gmail.com"
+```
+
+**Pattern matching:**
+- Exact matches: `github.com` matches only `github.com`
+- Prefix wildcards: `docs.*` matches `docs.python.org`, `docs.microsoft.com`, etc.
+- Suffix wildcards: `*.google.com` matches `mail.google.com`, `drive.google.com`, etc.
+- Suffix matching: `atlassian.net` matches `mycompany.atlassian.net`, `yourcompany.atlassian.net`, etc.
 
 ## Partial Configs
 
@@ -222,6 +291,31 @@ tracking:
     - "Zoom"
     - "Mail"
 ```
+
+### Accessibility Mode
+
+For color-blind users or high contrast needs:
+
+```yaml
+accessibility:
+  enabled: true
+  high_contrast: true
+  no_emoji: false
+```
+
+Or use the `--accessible` flag:
+
+```bash
+rekap --accessible
+rekap demo --accessible
+```
+
+Features in accessibility mode:
+- Visual markers (===, >>, **, •) to distinguish sections
+- High contrast black and white colors (when `high_contrast: true`)
+- Text labels instead of emojis (when `no_emoji: true`)
+- [OK], [ERROR], [INFO] prefixes instead of symbols
+- No reliance on color alone to convey information
 
 ## Testing Your Config
 

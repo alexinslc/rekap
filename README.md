@@ -10,17 +10,28 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Top 3 apps by usage time
 - Screen-on time calculation
 - Focus streak detection
-- Browser tab tracking (Chrome, Safari, Edge)
+- Browser activity tracking (Chrome, Safari, Edge)
+  - Open tabs count per browser
+  - Browser history analysis (today's URLs only)
+  - Issue/ticket URL detection (Jira, GitHub, Linear, GitLab, Azure DevOps, etc.)
+  - Most-visited domains
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
+- Notification interruptions tracking (total count and top interrupting apps)
 
 ## Installation
 
-Coming soon via Homebrew:
+### Homebrew (Recommended)
 
 ```bash
 brew tap alexinslc/rekap
 brew install rekap
+```
+
+Or install directly without tapping:
+
+```bash
+brew install alexinslc/rekap/rekap
 ```
 
 ### Manual Installation
@@ -57,6 +68,7 @@ rekap doctor              # Check capabilities and permissions
 rekap demo                # See sample output with fake data
 rekap --quiet             # Machine-parsable key=value output
 rekap --theme <name>      # Use a color theme
+rekap --accessible        # Accessibility mode (color-blind friendly)
 rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
 ```
 
@@ -112,6 +124,7 @@ rekap supports a configuration file at `~/.config/rekap/config.yaml` for customi
 - Display preferences (show/hide sections)
 - Time format (12h/24h)
 - Apps to exclude from tracking
+- Accessibility features (color-blind friendly mode)
 
 See [docs/CONFIG.md](docs/CONFIG.md) for detailed configuration options and examples.
 
@@ -133,10 +146,21 @@ browser_total_tabs=24
 browser_chrome_tabs=18
 browser_safari_tabs=2
 browser_edge_tabs=4
+browser_urls_visited=147
+browser_top_domain=github.com
+browser_top_domain_visits=34
+browser_issues_viewed=3
 network_interface=en0
 network_name=Home-5GHz
 network_bytes_received=2469606195
 network_bytes_sent=471859200
+notifications_total=47
+notification_app_1=Slack
+notification_app_1_count=18
+notification_app_2=Mail
+notification_app_2_count=12
+notification_app_3=Messages
+notification_app_3_count=9
 ```
 
 ### Shell Completion
@@ -183,7 +207,7 @@ rekap works without any permissions but provides more data when granted:
 
 | Permission | Enables |
 |------------|---------|
-| **Full Disk Access** | App usage, screen time, focus streaks |
+| **Full Disk Access** | App usage, screen time, focus streaks, notification tracking |
 | **Accessibility** | Frontmost app detection (fallback) |
 | **Media/Now Playing** | Track currently playing media |
 | None required | Browser tabs, uptime, battery, network |
@@ -224,6 +248,11 @@ go build -o rekap ./cmd/rekap
 **Binary won't run:**
 - On first run, right-click the binary and select "Open" to bypass Gatekeeper
 - Or run: `xattr -d com.apple.quarantine /usr/local/bin/rekap`
+
+**Homebrew installation issues:**
+- Ensure you have the latest Homebrew: `brew update`
+- If the tap isn't found, verify the repository exists at https://github.com/alexinslc/homebrew-rekap
+- Try untapping and tapping again: `brew untap alexinslc/rekap && brew tap alexinslc/rekap`
 
 **Check permissions status:**
 ```bash

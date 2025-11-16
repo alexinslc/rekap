@@ -168,3 +168,169 @@ func TestIsAppExcluded(t *testing.T) {
 		}
 	}
 }
+
+func TestAccessibilityDefaults(t *testing.T) {
+	cfg := Default()
+
+	if cfg.Accessibility.Enabled {
+		t.Error("Expected accessibility to be disabled by default")
+	}
+
+	if cfg.Accessibility.HighContrast {
+		t.Error("Expected high contrast to be disabled by default")
+	}
+
+	if cfg.Accessibility.NoEmoji {
+		t.Error("Expected no_emoji to be disabled by default")
+	}
+}
+
+func TestLoadAccessibilityConfig(t *testing.T) {
+	// Create a temporary directory
+	tmpDir := t.TempDir()
+	configDir := filepath.Join(tmpDir, ".config", "rekap")
+	err := os.MkdirAll(configDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+
+	// Override home directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Write a test config with accessibility settings
+	configPath := filepath.Join(configDir, "config.yaml")
+	configContent := `accessibility:
+  enabled: true
+  high_contrast: true
+  no_emoji: true
+`
+	err = os.WriteFile(configPath, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	// Verify loaded values
+	if !cfg.Accessibility.Enabled {
+		t.Error("Expected accessibility to be enabled")
+	}
+
+	if !cfg.Accessibility.HighContrast {
+		t.Error("Expected high contrast to be enabled")
+	}
+
+	if !cfg.Accessibility.NoEmoji {
+		t.Error("Expected no_emoji to be enabled")
+	}
+}
+
+func TestCategorizeDomain(t *testing.T) {
+	cfg := Default()
+
+	tests := []struct {
+		domain   string
+		expected string
+	}{
+		// Work domains
+		{"github.com", "work"},
+		{"gitlab.com", "work"},
+		{"stackoverflow.com", "work"},
+		{"docs.python.org", "work"},
+		{"docs.microsoft.com", "work"},
+		{"developer.mozilla.org", "work"},
+		{"api.github.com", "work"},
+		{"mycompany.atlassian.net", "work"},
+		{"linear.app", "work"},
+		{"notion.so", "work"},
+		
+		// Distraction domains
+		{"twitter.com", "distraction"},
+		{"x.com", "distraction"},
+		{"reddit.com", "distraction"},
+		{"facebook.com", "distraction"},
+		{"youtube.com", "distraction"},
+		{"tiktok.com", "distraction"},
+		
+		// Neutral/uncategorized domains
+		{"gmail.com", "neutral"},
+		{"example.com", "neutral"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		result := cfg.CategorizeDomain(tt.domain)
+		if result != tt.expected {
+			t.Errorf("CategorizeDomain(%q) = %q, want %q", tt.domain, result, tt.expected)
+		}
+	}
+}
+
+func TestCategorizeDomainCustomConfig(t *testing.T) {
+	cfg := &Config{
+		Domains: DomainsConfig{
+			Work:        []string{"mycompany.com", "internal.*"},
+			Distraction: []string{"news.ycombinator.com"},
+			Neutral:     []string{"gmail.com"},
+		},
+	}
+
+	tests := []struct {
+		domain   string
+		expected string
+	}{
+		{"mycompany.com", "work"},
+		{"internal.example.com", "work"},
+		{"news.ycombinator.com", "distraction"},
+		{"gmail.com", "neutral"},
+		{"other.com", "neutral"},
+	}
+
+	for _, tt := range tests {
+		result := cfg.CategorizeDomain(tt.domain)
+		if result != tt.expected {
+			t.Errorf("CategorizeDomain(%q) = %q, want %q", tt.domain, result, tt.expected)
+		}
+	}
+}
+
+func TestMatchDomainPattern(t *testing.T) {
+	tests := []struct {
+		domain   string
+		pattern  string
+		expected bool
+	}{
+		// Exact matches
+		{"github.com", "github.com", true},
+		{"gitlab.com", "github.com", false},
+		
+		// Wildcard prefix patterns (docs.*)
+		{"docs.python.org", "docs.*", true},
+		{"docs.microsoft.com", "docs.*", true},
+		{"api.github.com", "docs.*", false},
+		
+		// Wildcard suffix patterns (*.google.com)
+		{"mail.google.com", "*.google.com", true},
+		{"drive.google.com", "*.google.com", true},
+		{"google.com", "*.google.com", false},
+		{"gmail.com", "*.google.com", false},
+		
+		// Suffix matching (for patterns like "atlassian.net")
+		{"example.com", "example.com", true},
+		{"mycompany.atlassian.net", "atlassian.net", true},
+		{"subdomain.example.com", "example.com", true},
+		{"notexample.com", "example.com", false},
+	}
+
+	for _, tt := range tests {
+		result := matchDomainPattern(tt.domain, tt.pattern)
+		if result != tt.expected {
+			t.Errorf("matchDomainPattern(%q, %q) = %v, want %v", tt.domain, tt.pattern, result, tt.expected)
+		}
+	}
+}

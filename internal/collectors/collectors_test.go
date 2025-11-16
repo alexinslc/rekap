@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/alexinslc/rekap/internal/config"
 )
 
 func TestCollectUptime(t *testing.T) {
@@ -64,6 +66,24 @@ func TestCollectScreen(t *testing.T) {
 	if result.ScreenOnMinutes < 0 {
 		t.Errorf("ScreenOnMinutes should be >= 0, got %d", result.ScreenOnMinutes)
 	}
+
+	// Lock count should be non-negative
+	if result.LockCount < 0 {
+		t.Errorf("LockCount should be >= 0, got %d", result.LockCount)
+	}
+
+	// If there are locks, avg should be non-negative
+	if result.LockCount > 0 && result.AvgMinsBetweenLock < 0 {
+		t.Errorf("AvgMinsBetweenLock should be >= 0 when locks exist, got %d", result.AvgMinsBetweenLock)
+	}
+
+	// If there are no locks, avg should be 0
+	if result.LockCount == 0 && result.AvgMinsBetweenLock != 0 {
+		t.Errorf("AvgMinsBetweenLock should be 0 when no locks, got %d", result.AvgMinsBetweenLock)
+	}
+
+	t.Logf("Screen on: %d minutes, Locks: %d, Avg between: %d minutes",
+		result.ScreenOnMinutes, result.LockCount, result.AvgMinsBetweenLock)
 }
 
 func TestCollectApps(t *testing.T) {
@@ -107,6 +127,44 @@ func TestCollectMedia(t *testing.T) {
 	if result.App == "" {
 		t.Error("App should not be empty when Available=true")
 	}
+}
+
+func TestCollectFocus(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectFocus(ctx)
+
+	// Focus tracking requires Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("Focus tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	if result.StreakMinutes < 0 {
+		t.Errorf("StreakMinutes should be >= 0, got %d", result.StreakMinutes)
+	}
+
+	if result.AppName == "" {
+		t.Error("AppName should not be empty when Available=true")
+	}
+
+	// Check that time window is set
+	if result.StartTime.IsZero() {
+		t.Error("StartTime should not be zero when Available=true")
+	}
+
+	if result.EndTime.IsZero() {
+		t.Error("EndTime should not be zero when Available=true")
+	}
+
+	// Validate that EndTime is after StartTime
+	if !result.EndTime.After(result.StartTime) {
+		t.Errorf("EndTime (%v) should be after StartTime (%v)", result.EndTime, result.StartTime)
+	}
+
+	t.Logf("Best flow: %dm in %s (%v - %v)",
+		result.StreakMinutes, result.AppName, result.StartTime, result.EndTime)
 }
 
 func TestCollectorTimeout(t *testing.T) {
@@ -158,7 +216,8 @@ func TestCollectBrowserTabs(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result := CollectBrowserTabs(ctx)
+	cfg := config.Default()
+	result := CollectBrowserTabs(ctx, cfg)
 
 	// Browser collection is best-effort and depends on running browsers
 	if !result.Available {
@@ -273,5 +332,277 @@ func TestExtractDomain(t *testing.T) {
 		if result != tt.expected {
 			t.Errorf("extractDomain(%q) = %q, want %q", tt.url, result, tt.expected)
 		}
+	}
+}
+
+func TestIssuePatterns(t *testing.T) {
+	tests := []struct {
+		url           string
+		expectMatch   bool
+		expectedID    string
+		expectedType  string
+	}{
+		// GitHub
+		{"https://github.com/alexinslc/rekap/issues/42", true, "github.com/alexinslc/rekap/issues/42", "GitHub"},
+		{"https://github.com/org/repo/issues/123", true, "github.com/org/repo/issues/123", "GitHub"},
+		
+		// Jira
+		{"https://company.atlassian.net/browse/PROJ-123", true, "PROJ-123", "Jira"},
+		{"https://myorg.atlassian.net/browse/ABC-456", true, "ABC-456", "Jira"},
+		
+		// Linear
+		{"https://linear.app/issue/ENG-789", true, "ENG-789", "Linear"},
+		{"https://linear.app/workspace/issue/TEAM-123", true, "TEAM-123", "Linear"},
+		
+		// GitLab
+		{"https://gitlab.com/group/project/-/issues/99", true, "gitlab.com/group/project/-/issues/99", "GitLab"},
+		
+		// Azure DevOps
+		{"https://dev.azure.com/org/project/_workitems/edit/555", true, "555", "Azure DevOps"},
+		
+		// Non-matching URLs
+		{"https://github.com/user/repo", false, "", ""},
+		{"https://example.com", false, "", ""},
+	}
+
+	for _, tt := range tests {
+		var matched bool
+		var matchedID string
+		var matchedType string
+
+		for _, pattern := range issuePatterns {
+			matches := pattern.pattern.FindStringSubmatch(tt.url)
+			if matches != nil {
+				matched = true
+				matchedType = pattern.tracker
+				if pattern.idGroup == 0 {
+					matchedID = matches[0]
+				} else {
+					matchedID = matches[pattern.idGroup]
+				}
+				break
+			}
+		}
+
+		if matched != tt.expectMatch {
+			t.Errorf("URL %q: expected match=%v, got match=%v", tt.url, tt.expectMatch, matched)
+		}
+
+		if tt.expectMatch {
+			if matchedID != tt.expectedID {
+				t.Errorf("URL %q: expected ID=%q, got ID=%q", tt.url, tt.expectedID, matchedID)
+			}
+			if matchedType != tt.expectedType {
+				t.Errorf("URL %q: expected type=%q, got type=%q", tt.url, tt.expectedType, matchedType)
+			}
+		}
+	}
+}
+
+func TestIsIssueURL(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected bool
+	}{
+		// Jira patterns
+		{"https://company.atlassian.net/browse/PROJ-123", true},
+		{"https://jira.example.com/browse/ABC-456", true},
+		
+		// GitHub patterns
+		{"https://github.com/owner/repo/issues/123", true},
+		{"https://github.com/owner/repo/pull/456", true},
+		
+		// Linear patterns
+		{"https://linear.app/team/issue/ABC-123", true},
+		
+		// GitLab patterns
+		{"https://gitlab.com/owner/repo/issues/123", true},
+		{"https://gitlab.com/owner/repo/merge_requests/456", true},
+		
+		// Bitbucket patterns
+		{"https://bitbucket.org/owner/repo/issues/123", true},
+		
+		// Azure DevOps patterns
+		{"https://dev.azure.com/org/project/_workitems/123", true},
+		
+		// Non-issue URLs
+		{"https://github.com", false},
+		{"https://stackoverflow.com/questions/12345", false},
+		{"https://google.com", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		result := isIssueURL(tt.url)
+		if result != tt.expected {
+			t.Errorf("isIssueURL(%q) = %v, want %v", tt.url, result, tt.expected)
+		}
+	}
+}
+
+func TestCollectIssues(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result := CollectIssues(ctx)
+
+	// This is best-effort and may not find any issues
+	// Just verify the structure is correct
+	// Available should be true if and only if there are issues
+	if result.Available && len(result.Issues) == 0 {
+		t.Error("Available is true but no issues found")
+	} else if !result.Available && len(result.Issues) > 0 {
+		t.Error("Available is false but issues were found")
+	}
+
+	for _, issue := range result.Issues {
+		if issue.ID == "" {
+			t.Error("Issue ID should not be empty")
+		}
+		if issue.Tracker == "" {
+			t.Error("Issue Tracker should not be empty")
+		}
+		if issue.URL == "" {
+			t.Error("Issue URL should not be empty")
+		}
+		if issue.VisitCount <= 0 {
+			t.Errorf("Issue visit count should be > 0, got %d", issue.VisitCount)
+		}
+	}
+}
+
+func TestExtractIssueIdentifier(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected string
+	}{
+		// Jira
+		{"https://company.atlassian.net/browse/PROJ-123", "PROJ-123"},
+		{"https://jira.example.com/browse/ABC-456", "ABC-456"},
+		
+		// GitHub issues
+		{"https://github.com/owner/repo/issues/123", "owner/repo#123"},
+		
+		// GitHub pull requests
+		{"https://github.com/owner/repo/pull/456", "owner/repo#456"},
+		
+		// Linear
+		{"https://linear.app/team/issue/ABC-123", "ABC-123"},
+		
+		// GitLab issues
+		{"https://gitlab.com/owner/repo/issues/123", "owner/repo#123"},
+		
+		// GitLab merge requests
+		{"https://gitlab.com/owner/repo/merge_requests/456", "owner/repo!456"},
+		
+		// Bitbucket
+		{"https://bitbucket.org/owner/repo/issues/123", "owner/repo#123"},
+		
+		// Azure DevOps
+		{"https://dev.azure.com/org/project/_workitems/123", "WI-123"},
+	}
+
+	for _, tt := range tests {
+		result := extractIssueIdentifier(tt.url)
+		if result != tt.expected {
+			t.Errorf("extractIssueIdentifier(%q) = %q, want %q", tt.url, result, tt.expected)
+		}
+	}
+}
+
+func TestFormatIssueURLs(t *testing.T) {
+	tests := []struct {
+		name     string
+		urls     []string
+		expected string
+	}{
+		{
+			name:     "empty list",
+			urls:     []string{},
+			expected: "",
+		},
+		{
+			name:     "single issue",
+			urls:     []string{"PROJ-123"},
+			expected: "PROJ-123",
+		},
+		{
+			name:     "three issues",
+			urls:     []string{"PROJ-123", "PROJ-456", "ABC-789"},
+			expected: "PROJ-123, PROJ-456, ABC-789",
+		},
+		{
+			name:     "more than three issues",
+			urls:     []string{"PROJ-123", "PROJ-456", "ABC-789", "XYZ-999", "DEF-111"},
+			expected: "PROJ-123, PROJ-456, ABC-789 (+2 more)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FormatIssueURLs(tt.urls)
+			if result != tt.expected {
+				t.Errorf("FormatIssueURLs() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCollectNotifications(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectNotifications(ctx)
+
+	// Notifications require Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("Notification tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	if result.TotalNotifications < 0 {
+		t.Errorf("TotalNotifications should be >= 0, got %d", result.TotalNotifications)
+	}
+
+	for _, app := range result.TopApps {
+		if app.Count < 0 {
+			t.Errorf("Notification count should be >= 0, got %d for %s", app.Count, app.Name)
+		}
+		if app.Name == "" {
+			t.Error("App name should not be empty")
+		}
+		if app.Count > result.TotalNotifications {
+			t.Errorf("App notification count (%d) should not exceed total (%d)", app.Count, result.TotalNotifications)
+		}
+	}
+
+	t.Logf("Collected %d total notifications from %d apps", result.TotalNotifications, len(result.TopApps))
+}
+
+func TestCollectAppsWithSwitching(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	result := CollectApps(ctx)
+
+	// Apps require Full Disk Access, may not be available
+	if !result.Available {
+		t.Log("App tracking not available (needs Full Disk Access)")
+		return
+	}
+
+	// Validate switching metrics if available
+	if result.SwitchingAvailable {
+		if result.TotalSwitches < 0 {
+			t.Errorf("TotalSwitches should be >= 0, got %d", result.TotalSwitches)
+		}
+		if result.AvgMinsBetween < 0 {
+			t.Errorf("AvgMinsBetween should be >= 0, got %.2f", result.AvgMinsBetween)
+		}
+		if result.SwitchesPerHour < 0 {
+			t.Errorf("SwitchesPerHour should be >= 0, got %.2f", result.SwitchesPerHour)
+		}
+		t.Logf("App switching: %d switches, avg %.2f mins between, %.2f per hour",
+			result.TotalSwitches, result.AvgMinsBetween, result.SwitchesPerHour)
 	}
 }

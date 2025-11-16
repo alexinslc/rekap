@@ -75,6 +75,17 @@ func TestRenderError(t *testing.T) {
 	}
 }
 
+func TestRenderWarning(t *testing.T) {
+	result := RenderWarning("Context overload: 7 apps + 45 tabs active")
+	if result == "" {
+		t.Error("RenderWarning should not return empty string")
+	}
+	// Should contain the warning emoji
+	if len(result) < 10 {
+		t.Error("RenderWarning output seems too short")
+	}
+}
+
 func TestRenderSummaryLine(t *testing.T) {
 	parts := []string{"3h 35m screen-on", "2 plug-ins", "Top apps: VS Code"}
 	result := RenderSummaryLine(parts)
@@ -118,5 +129,52 @@ func TestFormatTime(t *testing.T) {
 				t.Errorf("FormatTime(%v, %s) = %s, want %s", testTime, tt.timeFormat, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestRemoveEmoji(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"Hello 🎭 World", "Hello World"},
+		{"📊 Data", "Data"},
+		{"No emoji here", "No emoji here"},
+		{"Multiple 🔋⏰ emojis", "Multiple emojis"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		result := removeEmoji(tt.input)
+		if result != tt.expected {
+			t.Errorf("removeEmoji(%q) = %q, want %q", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestGetAccessibleIcon(t *testing.T) {
+	tests := []struct {
+		emoji    string
+		expected string
+	}{
+		{"⏰", "[TIME]"},
+		{"🔋", "[BAT]"},
+		{"🔌", "[PWR]"},
+		{"📱", "[APP]"},
+		{"⏱️", "[FOCUS]"},
+		{"🎵", "[MUSIC]"},
+		{"🌐", "[NET]"},
+		{"📊", "[DATA]"},
+		{"💡", "[INFO]"},
+		{"✓", "[OK]"},
+		{"✗", "[ERR]"},
+		{"🚀", "[*]"}, // Unknown emoji
+	}
+
+	for _, tt := range tests {
+		result := getAccessibleIcon(tt.emoji)
+		if result != tt.expected {
+			t.Errorf("getAccessibleIcon(%q) = %q, want %q", tt.emoji, result, tt.expected)
+		}
 	}
 }
