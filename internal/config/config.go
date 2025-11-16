@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/alexinslc/rekap/internal/theme"
 	"gopkg.in/yaml.v3"
 )
 
@@ -172,4 +173,15 @@ func (c *Config) IsAppExcluded(appName string) bool {
 		}
 	}
 	return false
+}
+
+// ApplyTheme applies a theme's colors to the config, overriding existing colors
+func (c *Config) ApplyTheme(t theme.Theme) {
+	c.Colors.Primary = t.Colors.Primary
+	c.Colors.Secondary = t.Colors.Secondary
+	c.Colors.Accent = t.Colors.Accent
+	c.Colors.Success = t.Colors.Success
+	c.Colors.Warning = t.Colors.Warning
+	c.Colors.Muted = t.Colors.Muted
+	c.Colors.Text = t.Colors.Text
 }

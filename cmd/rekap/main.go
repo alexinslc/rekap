@@ -11,6 +11,7 @@ import (
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/config"
 	"github.com/alexinslc/rekap/internal/permissions"
+	"github.com/alexinslc/rekap/internal/theme"
 	"github.com/alexinslc/rekap/internal/ui"
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ const version = "0.1.0"
 
 func main() {
 	var quietFlag bool
+	var themeFlag string
 
 	rootCmd := &cobra.Command{
 		Use:   "rekap",
@@ -33,12 +35,22 @@ func main() {
 				cfg = config.Default()
 			}
 
+			// Apply theme if specified
+			if themeFlag != "" {
+				t, err := theme.Load(themeFlag)
+				if err != nil {
+					return fmt.Errorf("failed to load theme: %w", err)
+				}
+				cfg.ApplyTheme(t)
+			}
+
 			runSummary(quietFlag, cfg)
 			return nil
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output machine-parsable key=value format")
+	rootCmd.Flags().StringVar(&themeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
 
 	initCmd := &cobra.Command{
 		Use:   "init",
@@ -59,6 +71,7 @@ func main() {
 		},
 	}
 
+	var demoThemeFlag string
 	demoCmd := &cobra.Command{
 		Use:   "demo",
 		Short: "See sample output with fake data",
@@ -71,10 +84,20 @@ func main() {
 				cfg = config.Default()
 			}
 
+			// Apply theme if specified
+			if demoThemeFlag != "" {
+				t, err := theme.Load(demoThemeFlag)
+				if err != nil {
+					return fmt.Errorf("failed to load theme: %w", err)
+				}
+				cfg.ApplyTheme(t)
+			}
+
 			runDemo(cfg)
 			return nil
 		},
 	}
+	demoCmd.Flags().StringVar(&demoThemeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
 
 	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
 
