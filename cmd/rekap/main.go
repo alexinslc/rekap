@@ -196,8 +196,18 @@ func runDemo(cfg *config.Config) {
 		Available: true,
 	}
 
+	demoNotifications := collectors.NotificationsResult{
+		TotalNotifications: 47,
+		TopApps: []collectors.NotificationApp{
+			{Name: "Slack", Count: 18, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Mail", Count: 12, BundleID: "com.apple.mail"},
+			{Name: "Messages", Count: 9, BundleID: "com.apple.MobileSMS"},
+		},
+		Available: true,
+	}
+
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -219,6 +229,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	notificationsCh := make(chan collectors.NotificationsResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -228,6 +239,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -238,17 +250,18 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	notificationsResult := <-notificationsCh
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -308,9 +321,20 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
 		}
 	}
+
+	if notifications.Available {
+		fmt.Printf("notifications_total=%d\n", notifications.TotalNotifications)
+		for i, app := range notifications.TopApps {
+			if i >= 3 {
+				break
+			}
+			fmt.Printf("notification_app_%d=%s\n", i+1, app.Name)
+			fmt.Printf("notification_app_%d_count=%d\n", i+1, app.Count)
+		}
+	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -456,6 +480,28 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				}
 				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
 				fmt.Println(ui.RenderSubItem(domainText))
+			}
+		}
+	}
+
+	// Notifications Section
+	if notifications.Available && notifications.TotalNotifications > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("NOTIFICATIONS"))
+
+		// Total notifications
+		text := fmt.Sprintf("%d notification%s today", notifications.TotalNotifications, pluralize(notifications.TotalNotifications))
+		fmt.Println(ui.RenderDataPoint("🔔", text))
+
+		// Top apps by notification count
+		if len(notifications.TopApps) > 0 {
+			fmt.Println(ui.RenderDataPoint("📱", "Top interrupting apps:"))
+			for i, app := range notifications.TopApps {
+				if i >= 3 {
+					break
+				}
+				appText := fmt.Sprintf("   %s (%d notification%s)", app.Name, app.Count, pluralize(app.Count))
+				fmt.Println(ui.RenderSubItem(appText))
 			}
 		}
 	}
