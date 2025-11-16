@@ -171,21 +171,33 @@ func runDemo(cfg *config.Config) {
 
 	demoBrowsers := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
-			Browser:   "Chrome",
-			TabCount:  18,
-			Available: true,
+			Browser:         "Chrome",
+			TabCount:        18,
+			Available:       true,
+			URLsVisited:     89,
+			TopDomain:       "github.com",
+			TopDomainVisits: 34,
+			IssueURLs:       []string{"github.com/org/repo/issues/89", "PROJ-123"},
 		},
 		Safari: collectors.BrowserResult{
-			Browser:   "Safari",
-			TabCount:  12,
-			Available: true,
+			Browser:         "Safari",
+			TabCount:        12,
+			Available:       true,
+			URLsVisited:     42,
+			TopDomain:       "stackoverflow.com",
+			TopDomainVisits: 18,
+			IssueURLs:       []string{"PROJ-456"},
 		},
 		Edge: collectors.BrowserResult{
-			Browser:   "Edge",
-			TabCount:  5,
-			Available: true,
+			Browser:         "Edge",
+			TabCount:        5,
+			Available:       true,
+			URLsVisited:     16,
+			TopDomain:       "mail.google.com",
+			TopDomainVisits: 12,
 		},
-		TotalTabs: 35,
+		TotalTabs:        35,
+		TotalURLsVisited: 147,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
@@ -193,7 +205,10 @@ func runDemo(cfg *config.Config) {
 			"chatgpt.com":       4,
 			"youtube.com":       3,
 		},
-		Available: true,
+		TopHistoryDomain: "github.com",
+		TopDomainVisits:  34,
+		AllIssueURLs:     []string{"PROJ-123", "PROJ-456", "github.com/org/repo/issues/89"},
+		Available:        true,
 	}
 
 	// Show in human-friendly format
@@ -307,6 +322,17 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		if browsers.Edge.Available {
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
 		}
+		// History data
+		if browsers.TotalURLsVisited > 0 {
+			fmt.Printf("browser_urls_visited=%d\n", browsers.TotalURLsVisited)
+		}
+		if browsers.TopHistoryDomain != "" {
+			fmt.Printf("browser_top_domain=%s\n", browsers.TopHistoryDomain)
+			fmt.Printf("browser_top_domain_visits=%d\n", browsers.TopDomainVisits)
+		}
+		if len(browsers.AllIssueURLs) > 0 {
+			fmt.Printf("browser_issues_viewed=%d\n", len(browsers.AllIssueURLs))
+		}
 	}
 }
 
@@ -415,47 +441,67 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		fmt.Println(ui.RenderDataPoint("🌐", text))
 	}
 
-	// Browser Tabs Section
-	if browsers.Available && browsers.TotalTabs > 0 {
+	// Browser Activity Section (tabs + history)
+	if browsers.Available && (browsers.TotalTabs > 0 || browsers.TotalURLsVisited > 0) {
 		fmt.Println()
-		fmt.Println(ui.RenderHeader("BROWSER TABS"))
+		fmt.Println(ui.RenderHeader("BROWSER ACTIVITY"))
 
-		// Total count
-		text := fmt.Sprintf("%d tabs open", browsers.TotalTabs)
-		if browsers.Chrome.Available {
-			text += fmt.Sprintf(" • Chrome: %d", browsers.Chrome.TabCount)
-		}
-		if browsers.Safari.Available {
-			text += fmt.Sprintf(" • Safari: %d", browsers.Safari.TabCount)
-		}
-		if browsers.Edge.Available {
-			text += fmt.Sprintf(" • Edge: %d", browsers.Edge.TabCount)
-		}
-		fmt.Println(ui.RenderDataPoint("🌐", text))
-
-		// Top domains
-		if len(browsers.TopDomains) > 0 {
-			type domainCount struct {
-				domain string
-				count  int
+		// History summary
+		if browsers.TotalURLsVisited > 0 {
+			historyText := fmt.Sprintf("%d URLs visited today", browsers.TotalURLsVisited)
+			if browsers.TopHistoryDomain != "" {
+				historyText += fmt.Sprintf(" • Top: %s (%d visit%s)", 
+					browsers.TopHistoryDomain, 
+					browsers.TopDomainVisits, 
+					pluralize(browsers.TopDomainVisits))
 			}
-			var domains []domainCount
-			for domain, count := range browsers.TopDomains {
-				domains = append(domains, domainCount{domain, count})
-			}
-			// Sort by count descending
-			sort.Slice(domains, func(i, j int) bool {
-				return domains[i].count > domains[j].count
-			})
+			fmt.Println(ui.RenderDataPoint("📊", historyText))
 
-			// Show top 5 domains
-			fmt.Println(ui.RenderDataPoint("📊", "Top domains:"))
-			for i, dc := range domains {
-				if i >= 5 {
-					break
+			// Show issue URLs if any
+			if len(browsers.AllIssueURLs) > 0 {
+				issueText := fmt.Sprintf("Issues viewed: %s", collectors.FormatIssueURLs(browsers.AllIssueURLs))
+				fmt.Println(ui.RenderDataPoint("🎫", issueText))
+			}
+		}
+
+		// Open tabs count
+		if browsers.TotalTabs > 0 {
+			text := fmt.Sprintf("%d tabs open", browsers.TotalTabs)
+			if browsers.Chrome.Available {
+				text += fmt.Sprintf(" • Chrome: %d", browsers.Chrome.TabCount)
+			}
+			if browsers.Safari.Available {
+				text += fmt.Sprintf(" • Safari: %d", browsers.Safari.TabCount)
+			}
+			if browsers.Edge.Available {
+				text += fmt.Sprintf(" • Edge: %d", browsers.Edge.TabCount)
+			}
+			fmt.Println(ui.RenderDataPoint("🌐", text))
+
+			// Top domains from tabs
+			if len(browsers.TopDomains) > 0 {
+				type domainCount struct {
+					domain string
+					count  int
 				}
-				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
-				fmt.Println(ui.RenderSubItem(domainText))
+				var domains []domainCount
+				for domain, count := range browsers.TopDomains {
+					domains = append(domains, domainCount{domain, count})
+				}
+				// Sort by count descending
+				sort.Slice(domains, func(i, j int) bool {
+					return domains[i].count > domains[j].count
+				})
+
+				// Show top 5 domains
+				fmt.Println(ui.RenderDataPoint("📑", "Top tab domains:"))
+				for i, dc := range domains {
+					if i >= 5 {
+						break
+					}
+					domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
+					fmt.Println(ui.RenderSubItem(domainText))
+				}
 			}
 		}
 	}

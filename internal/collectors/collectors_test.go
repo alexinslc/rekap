@@ -275,3 +275,82 @@ func TestExtractDomain(t *testing.T) {
 		}
 	}
 }
+
+func TestIsIssueURL(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected bool
+	}{
+		// Jira patterns
+		{"https://company.atlassian.net/browse/PROJ-123", true},
+		{"https://jira.example.com/browse/ABC-456", true},
+		
+		// GitHub patterns
+		{"https://github.com/owner/repo/issues/123", true},
+		{"https://github.com/owner/repo/pull/456", true},
+		
+		// Linear patterns
+		{"https://linear.app/team/issue/ABC-123", true},
+		
+		// GitLab patterns
+		{"https://gitlab.com/owner/repo/issues/123", true},
+		{"https://gitlab.com/owner/repo/merge_requests/456", true},
+		
+		// Bitbucket patterns
+		{"https://bitbucket.org/owner/repo/issues/123", true},
+		
+		// Azure DevOps patterns
+		{"https://dev.azure.com/org/project/_workitems/123", true},
+		
+		// Non-issue URLs
+		{"https://github.com", false},
+		{"https://stackoverflow.com/questions/12345", false},
+		{"https://google.com", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		result := isIssueURL(tt.url)
+		if result != tt.expected {
+			t.Errorf("isIssueURL(%q) = %v, want %v", tt.url, result, tt.expected)
+		}
+	}
+}
+
+func TestFormatIssueURLs(t *testing.T) {
+	tests := []struct {
+		name     string
+		urls     []string
+		expected string
+	}{
+		{
+			name:     "empty list",
+			urls:     []string{},
+			expected: "",
+		},
+		{
+			name:     "single issue",
+			urls:     []string{"PROJ-123"},
+			expected: "PROJ-123",
+		},
+		{
+			name:     "three issues",
+			urls:     []string{"PROJ-123", "PROJ-456", "ABC-789"},
+			expected: "PROJ-123, PROJ-456, ABC-789",
+		},
+		{
+			name:     "more than three issues",
+			urls:     []string{"PROJ-123", "PROJ-456", "ABC-789", "XYZ-999", "DEF-111"},
+			expected: "PROJ-123, PROJ-456, ABC-789 (+2 more)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FormatIssueURLs(tt.urls)
+			if result != tt.expected {
+				t.Errorf("FormatIssueURLs() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
