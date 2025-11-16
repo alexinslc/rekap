@@ -230,3 +230,24 @@ func TestFormatBytes(t *testing.T) {
 		}
 	}
 }
+
+func TestExtractDomain(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected string
+	}{
+		{"https://www.github.com/user/repo", "github.com"},
+		{"http://mail.google.com", "mail.google.com"},
+		{"https://example.com:8080/path", "example.com:8080"},
+		{"", ""},
+		{"invalid-url", ""},
+		{"file:///local/path", ""},
+	}
+
+	for _, tt := range tests {
+		result := extractDomain(tt.url)
+		if result != tt.expected {
+			t.Errorf("extractDomain(%q) = %q, want %q", tt.url, result, tt.expected)
+		}
+	}
+}
