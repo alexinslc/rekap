@@ -186,6 +186,53 @@ Test in different scenarios:
 - Once approved, a maintainer will merge your PR
 - Your contribution will be credited in the release notes
 
+## Releasing
+
+Releases are automated using GitHub Actions and GoReleaser.
+
+### Creating a Release
+
+1. **Tag the release:**
+   ```bash
+   git tag -a v1.0.0 -m "Release v1.0.0"
+   git push origin v1.0.0
+   ```
+
+2. **GitHub Actions will automatically:**
+   - Build binaries for Intel Mac (amd64) and Apple Silicon (arm64)
+   - Create a universal binary
+   - Generate checksums
+   - Create release archives (.tar.gz)
+   - Generate release notes from commits
+   - Publish to GitHub Releases
+   - Update Homebrew formula (if configured)
+
+### Release Artifacts
+
+Each release includes:
+- `rekap-darwin-amd64` - Standalone binary for Intel Mac
+- `rekap-darwin-arm64` - Standalone binary for Apple Silicon
+- `rekap-darwin-all` - Universal binary (works on both architectures)
+- `rekap-v1.0.0-darwin-amd64.tar.gz` - Archive with binary and documentation
+- `rekap-v1.0.0-darwin-arm64.tar.gz` - Archive with binary and documentation
+- `checksums.txt` - SHA256 checksums for verification
+- Auto-generated release notes
+
+### Testing Release Process
+
+To test the release process without publishing:
+
+```bash
+# Install goreleaser
+go install github.com/goreleaser/goreleaser/v2@latest
+
+# Test with snapshot (doesn't publish)
+goreleaser release --snapshot --clean --skip=publish
+
+# Check generated artifacts
+ls -lh dist/
+```
+
 ## Issue Guidelines
 
 ### Good Issue Titles
