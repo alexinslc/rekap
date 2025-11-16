@@ -41,7 +41,7 @@ func CollectNotifications(ctx context.Context) NotificationsResult {
 
 	// Check if database exists
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		result.Error = fmt.Errorf("screen Time database not found (requires Full Disk Access)")
+		result.Error = fmt.Errorf("Screen Time database not found (requires Full Disk Access)")
 		return result
 	}
 
