@@ -19,11 +19,10 @@ type NotificationApp struct {
 
 // NotificationsResult contains notification interruption information
 type NotificationsResult struct {
-	TotalNotifications       int
-	NotificationsDuringFocus int // Notifications during longest focus period
-	TopApps                  []NotificationApp
-	Available                bool
-	Error                    error
+	TotalNotifications int
+	TopApps            []NotificationApp
+	Available          bool
+	Error              error
 }
 
 // CollectNotifications retrieves notification counts from Screen Time database
