@@ -115,6 +115,11 @@ func CollectNotifications(ctx context.Context) NotificationsResult {
 		})
 	}
 
+	// Check for errors encountered during iteration
+	if err := rows.Err(); err != nil {
+		result.Error = fmt.Errorf("error iterating notification data: %w", err)
+		return result
+	}
 	result.TotalNotifications = totalCount
 	result.TopApps = apps
 	result.Available = true
