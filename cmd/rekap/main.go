@@ -134,8 +134,10 @@ func runDemo(cfg *config.Config) {
 	}
 
 	demoScreen := collectors.ScreenResult{
-		ScreenOnMinutes: 215, // 3h 35m
-		Available:       true,
+		ScreenOnMinutes:    215, // 3h 35m
+		LockCount:          12,
+		AvgMinsBetweenLock: 45,
+		Available:          true,
 	}
 
 	demoApps := collectors.AppsResult{
@@ -211,8 +213,32 @@ func runDemo(cfg *config.Config) {
 		Available:        true,
 	}
 
+	demoNotifications := collectors.NotificationsResult{
+		TotalNotifications: 47,
+		TopApps: []collectors.NotificationApp{
+			{Name: "Slack", Count: 18, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Mail", Count: 12, BundleID: "com.apple.mail"},
+			{Name: "Messages", Count: 9, BundleID: "com.apple.MobileSMS"},
+		},
+		Available: true,
+	}
+
+	// Calculate fragmentation for demo
+	fragmentationThresholds := collectors.FragmentationThresholds{
+		FocusedMax:    cfg.Fragmentation.FocusedMax,
+		ModerateMax:   cfg.Fragmentation.ModerateMax,
+		FragmentedMin: cfg.Fragmentation.FragmentedMin,
+	}
+	demoFragmentation := collectors.CalculateFragmentation(
+		context.Background(),
+		demoApps,
+		demoBrowsers,
+		demoUptime,
+		fragmentationThresholds,
+	)
+
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications, demoFragmentation)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -234,6 +260,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	notificationsCh := make(chan collectors.NotificationsResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -243,6 +270,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -253,17 +281,26 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	notificationsResult := <-notificationsCh
+
+	// Calculate fragmentation score after collecting data
+	fragmentationThresholds := collectors.FragmentationThresholds{
+		FocusedMax:    cfg.Fragmentation.FocusedMax,
+		ModerateMax:   cfg.Fragmentation.ModerateMax,
+		FragmentedMin: cfg.Fragmentation.FragmentedMin,
+	}
+	fragmentationResult := collectors.CalculateFragmentation(ctx, appsResult, browsersResult, uptimeResult, fragmentationThresholds)
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -282,6 +319,10 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 
 	if screen.Available {
 		fmt.Printf("screen_on_minutes=%d\n", screen.ScreenOnMinutes)
+		if screen.LockCount > 0 {
+			fmt.Printf("screen_lock_count=%d\n", screen.LockCount)
+			fmt.Printf("avg_mins_between_locks=%d\n", screen.AvgMinsBetweenLock)
+		}
 	}
 
 	if apps.Available {
@@ -334,9 +375,25 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("browser_issues_viewed=%d\n", len(browsers.AllIssueURLs))
 		}
 	}
+
+	if notifications.Available {
+		fmt.Printf("notifications_total=%d\n", notifications.TotalNotifications)
+		for i, app := range notifications.TopApps {
+			if i >= 3 {
+				break
+			}
+			fmt.Printf("notification_app_%d=%s\n", i+1, app.Name)
+			fmt.Printf("notification_app_%d_count=%d\n", i+1, app.Count)
+		}
+	}
+
+	if fragmentation.Available {
+		fmt.Printf("fragmentation_score=%d\n", fragmentation.Score)
+		fmt.Printf("fragmentation_level=%s\n", fragmentation.Level)
+	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -396,6 +453,22 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 			plugText := fmt.Sprintf("%d plug event(s) today", battery.PlugCount)
 			fmt.Println(ui.RenderDataPoint("🔌", plugText))
 		}
+	}
+
+	// Screen lock events
+	if screen.Available && screen.LockCount > 0 {
+		var lockText string
+		if screen.AvgMinsBetweenLock > 0 {
+			lockText = fmt.Sprintf("Screen locked %d time%s (avg %s between breaks)", 
+				screen.LockCount, 
+				pluralize(screen.LockCount),
+				ui.FormatDuration(screen.AvgMinsBetweenLock))
+		} else {
+			lockText = fmt.Sprintf("Screen locked %d time%s today", 
+				screen.LockCount, 
+				pluralize(screen.LockCount))
+		}
+		fmt.Println(ui.RenderDataPoint("🔒", lockText))
 	}
 
 	// Productivity Section
@@ -504,6 +577,37 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				}
 			}
 		}
+	}
+
+	// Notifications Section
+	if notifications.Available && notifications.TotalNotifications > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("NOTIFICATIONS"))
+
+		// Total notifications
+		text := fmt.Sprintf("%d notification%s today", notifications.TotalNotifications, pluralize(notifications.TotalNotifications))
+		fmt.Println(ui.RenderDataPoint("🔔", text))
+
+		// Top apps by notification count
+		if len(notifications.TopApps) > 0 {
+			fmt.Println(ui.RenderDataPoint("📱", "Top interrupting apps:"))
+			for i, app := range notifications.TopApps {
+				if i >= 3 {
+					break
+				}
+				appText := fmt.Sprintf("   %s (%d notification%s)", app.Name, app.Count, pluralize(app.Count))
+				fmt.Println(ui.RenderSubItem(appText))
+			}
+		}
+	}
+
+	// Context Fragmentation Section
+	if fragmentation.Available {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("CONTEXT FRAGMENTATION"))
+
+		text := fmt.Sprintf("%d/100 (%s)", fragmentation.Score, fragmentation.Level)
+		fmt.Println(ui.RenderDataPoint(fragmentation.Emoji, text))
 	}
 
 	fmt.Println()
