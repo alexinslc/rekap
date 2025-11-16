@@ -22,15 +22,24 @@ type AppUsage struct {
 
 // AppsResult contains app usage information
 type AppsResult struct {
-	TopApps   []AppUsage
-	Source    string // "ScreenTime" or "Sampling"
-	Available bool
-	Error     error
+	TopApps      []AppUsage
+	Source       string // "ScreenTime" or "Sampling"
+	Available    bool
+	Error        error
+	ExcludedApps []string // Apps that were filtered out
 }
 
 // CollectApps retrieves top app usage from Screen Time database
-func CollectApps(ctx context.Context) AppsResult {
+// excludedApps is an optional list of app names to filter out
+func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 	result := AppsResult{Available: false, Source: "ScreenTime"}
+
+	// Flatten excluded apps list if provided
+	var excluded []string
+	if len(excludedApps) > 0 {
+		excluded = excludedApps[0]
+		result.ExcludedApps = excluded
+	}
 
 	// Try KnowledgeC database first
 	homeDir, err := os.UserHomeDir()
@@ -105,6 +114,12 @@ func CollectApps(ctx context.Context) AppsResult {
 
 		// Resolve bundle ID to app name
 		appName := resolveAppName(bundleID)
+
+		// Skip if app is in exclusion list
+		if isExcluded(appName, excluded) {
+			continue
+		}
+
 		minutes := int(durationSec / 60)
 
 		if minutes > 0 {
@@ -119,6 +134,16 @@ func CollectApps(ctx context.Context) AppsResult {
 	result.TopApps = apps
 	result.Available = len(apps) > 0
 	return result
+}
+
+// isExcluded checks if an app name is in the exclusion list
+func isExcluded(appName string, excludedApps []string) bool {
+	for _, excluded := range excludedApps {
+		if excluded == appName {
+			return true
+		}
+	}
+	return false
 }
 
 // resolveAppName converts a bundle ID to a human-readable app name

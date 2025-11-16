@@ -2,6 +2,7 @@ package ui
 
 import (
 	"testing"
+	"time"
 )
 
 func TestFormatDuration(t *testing.T) {
@@ -88,5 +89,34 @@ func TestRenderSummaryLineEmpty(t *testing.T) {
 
 	if result != "" {
 		t.Error("RenderSummaryLine should return empty string for empty input")
+	}
+}
+
+func TestFormatTime(t *testing.T) {
+	tests := []struct {
+		name       string
+		timeFormat string
+		hour       int
+		minute     int
+		expected   string
+	}{
+		{"12h format morning", "12h", 9, 30, "9:30 AM"},
+		{"12h format afternoon", "12h", 15, 45, "3:45 PM"},
+		{"12h format midnight", "12h", 0, 0, "12:00 AM"},
+		{"12h format noon", "12h", 12, 0, "12:00 PM"},
+		{"24h format morning", "24h", 9, 30, "09:30"},
+		{"24h format afternoon", "24h", 15, 45, "15:45"},
+		{"24h format midnight", "24h", 0, 0, "00:00"},
+		{"24h format noon", "24h", 12, 0, "12:00"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testTime := time.Date(2024, 1, 1, tt.hour, tt.minute, 0, 0, time.UTC)
+			result := FormatTime(testTime, tt.timeFormat)
+			if result != tt.expected {
+				t.Errorf("FormatTime(%v, %s) = %s, want %s", testTime, tt.timeFormat, result, tt.expected)
+			}
+		})
 	}
 }

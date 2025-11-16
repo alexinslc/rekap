@@ -209,6 +209,30 @@ func TestCollectBrowserTabs(t *testing.T) {
 	}
 }
 
+func TestIsExcluded(t *testing.T) {
+	excludedApps := []string{"Activity Monitor", "System Preferences", "Slack"}
+
+	tests := []struct {
+		appName  string
+		expected bool
+	}{
+		{"Activity Monitor", true},
+		{"System Preferences", true},
+		{"Slack", true},
+		{"VS Code", false},
+		{"Safari", false},
+		{"", false},
+		{"activity monitor", false}, // Case-sensitive
+	}
+
+	for _, tt := range tests {
+		result := isExcluded(tt.appName, excludedApps)
+		if result != tt.expected {
+			t.Errorf("isExcluded(%q) = %v, want %v", tt.appName, result, tt.expected)
+		}
+	}
+}
+
 func TestFormatBytes(t *testing.T) {
 	tests := []struct {
 		bytes    int64

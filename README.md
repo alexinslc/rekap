@@ -59,6 +59,16 @@ rekap --quiet             # Machine-parsable key=value output
 rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
 ```
 
+### Configuration
+
+rekap supports a configuration file at `~/.config/rekap/config.yaml` for customizing:
+- Color scheme
+- Display preferences (show/hide sections)
+- Time format (12h/24h)
+- Apps to exclude from tracking
+
+See [docs/CONFIG.md](docs/CONFIG.md) for detailed configuration options and examples.
+
 ### Quiet Mode Output
 
 The `--quiet` flag outputs stable key=value pairs for scripting:

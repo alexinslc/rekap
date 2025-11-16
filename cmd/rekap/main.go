@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/alexinslc/rekap/internal/collectors"
+	"github.com/alexinslc/rekap/internal/config"
 	"github.com/alexinslc/rekap/internal/permissions"
 	"github.com/alexinslc/rekap/internal/ui"
 	"github.com/charmbracelet/fang"
@@ -25,7 +26,14 @@ func main() {
 		Short: "Daily Mac Activity Summary",
 		Long:  `A single-binary macOS CLI that summarizes today's computer activity in a friendly, animated terminal UI.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			runSummary(quietFlag)
+			// Load config
+			cfg, err := config.Load()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
+				cfg = config.Default()
+			}
+
+			runSummary(quietFlag, cfg)
 			return nil
 		},
 	}
@@ -56,7 +64,14 @@ func main() {
 		Short: "See sample output with fake data",
 		Long:  `Display a demo with randomized sample data to preview the output format.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			runDemo()
+			// Load config for demo too
+			cfg, err := config.Load()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
+				cfg = config.Default()
+			}
+
+			runDemo(cfg)
 			return nil
 		},
 	}
@@ -93,7 +108,10 @@ func runDoctor() {
 	}
 }
 
-func runDemo() {
+func runDemo(cfg *config.Config) {
+	// Apply colors from config
+	ui.ApplyColors(cfg)
+
 	// Enhanced styling for demo mode
 	fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
 	fmt.Println(ui.RenderHint("Showing randomized sample data"))
@@ -179,10 +197,15 @@ func runDemo() {
 	}
 
 	// Show in human-friendly format
-	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
 }
 
-func runSummary(quiet bool) {
+func runSummary(quiet bool, cfg *config.Config) {
+	// Apply colors from config (for non-quiet mode)
+	if !quiet {
+		ui.ApplyColors(cfg)
+	}
+
 	// Create context with timeout for all collectors
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -200,7 +223,7 @@ func runSummary(quiet bool) {
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
 	go func() { screenCh <- collectors.CollectScreen(ctx) }()
-	go func() { appsCh <- collectors.CollectApps(ctx) }()
+	go func() { appsCh <- collectors.CollectApps(ctx, cfg.Tracking.ExcludeApps) }()
 	go func() { focusCh <- collectors.CollectFocus(ctx) }()
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
@@ -221,7 +244,7 @@ func runSummary(quiet bool) {
 		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
 	} else {
 		// Human-friendly output
-		printHuman(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
 	}
 }
 
@@ -287,7 +310,7 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	}
 }
 
-func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -325,12 +348,12 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 
 	if uptime.Available {
 		text := fmt.Sprintf("Active since %s • %s",
-			uptime.BootTime.Format("3:04 PM"),
+			ui.FormatTime(uptime.BootTime, cfg.Display.TimeFormat),
 			uptime.FormattedTime)
 		fmt.Println(ui.RenderDataPoint("⏰", text))
 	}
 
-	if battery.Available {
+	if battery.Available && cfg.ShouldShowBattery() {
 		status := "discharging"
 		if battery.IsPlugged {
 			status = "plugged in"
@@ -371,7 +394,7 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	}
 
 	// Media Section
-	if media.Available {
+	if media.Available && cfg.ShouldShowMedia() {
 		fmt.Println()
 		fmt.Println(ui.RenderHeader("NOW PLAYING"))
 		text := fmt.Sprintf("\"%s\" in %s", media.Track, media.App)
