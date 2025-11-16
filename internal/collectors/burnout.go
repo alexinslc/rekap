@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	_ "modernc.org/sqlite"
 )
 
 // BurnoutWarning represents a specific burnout indicator
