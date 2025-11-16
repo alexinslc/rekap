@@ -22,15 +22,15 @@ type AppUsage struct {
 
 // AppsResult contains app usage information
 type AppsResult struct {
-	TopApps           []AppUsage
-	Source            string // "ScreenTime" or "Sampling"
-	Available         bool
-	Error             error
-	ExcludedApps      []string // Apps that were filtered out
-	TotalSwitches     int      // Total number of app switches today
-	AvgMinsBetween    float64  // Average minutes between switches
-	SwitchesPerHour   float64  // Switches per hour rate
-	SwitchingAvailable bool    // Whether switching data is available
+	TopApps            []AppUsage
+	Source             string // "ScreenTime" or "Sampling"
+	Available          bool
+	Error              error
+	ExcludedApps       []string // Apps that were filtered out
+	TotalSwitches      int      // Total number of app switches today
+	AvgMinsBetween     float64  // Average minutes between switches
+	SwitchesPerHour    float64  // Switches per hour rate
+	SwitchingAvailable bool     // Whether switching data is available
 }
 
 // CollectApps retrieves top app usage from Screen Time database
@@ -231,7 +231,7 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 
 	var events []focusEvent
 	nameCache := make(map[string]string)
-	
+
 	for rows.Next() {
 		var bundleID string
 		var start, end float64
@@ -271,7 +271,7 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 	var switches int
 	var switchTimestamps []float64
 	lastBundleID := events[0].bundleID
-	
+
 	// Initialize with the first event's timestamp as the starting point
 	switchTimestamps = append(switchTimestamps, events[0].start)
 
@@ -293,10 +293,10 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 		interval := switchTimestamps[i] - switchTimestamps[i-1]
 		totalIntervalSeconds += interval
 	}
-	
+
 	stats.totalSwitches = switches
 	stats.avgMinsBetween = (totalIntervalSeconds / float64(switches)) / 60.0
-	
+
 	// Calculate switches per hour based on total active time
 	totalActiveSeconds := events[len(events)-1].end - events[0].start
 	if totalActiveSeconds > 0 {

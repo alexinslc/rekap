@@ -27,17 +27,17 @@ type BrowserTab struct {
 
 // BrowserResult contains browser tab information and history
 type BrowserResult struct {
-	Tabs            []BrowserTab
-	TabCount        int
-	Domains         map[string]int // domain -> tab count
-	Browser         string
-	Available       bool
-	Error           error
+	Tabs      []BrowserTab
+	TabCount  int
+	Domains   map[string]int // domain -> tab count
+	Browser   string
+	Available bool
+	Error     error
 	// History data
 	URLsVisited     int
 	TopDomain       string
 	TopDomainVisits int
-	IssueURLs       []string // Jira, GitHub, Linear issue URLs
+	IssueURLs       []string       // Jira, GitHub, Linear issue URLs
 	HistoryDomains  map[string]int // domain -> visit count from history
 }
 
@@ -61,9 +61,9 @@ type BrowsersResult struct {
 
 // IssueVisit represents a single issue/ticket visit
 type IssueVisit struct {
-	ID        string // e.g., "PROJ-123", "github.com/org/repo/issues/456"
-	Tracker   string // e.g., "Jira", "GitHub", "Linear"
-	URL       string // Full URL
+	ID         string // e.g., "PROJ-123", "github.com/org/repo/issues/456"
+	Tracker    string // e.g., "Jira", "GitHub", "Linear"
+	URL        string // Full URL
 	VisitCount int
 }
 
@@ -135,7 +135,7 @@ func CollectBrowserTabs(ctx context.Context, cfg *config.Config) BrowsersResult 
 
 	// Aggregate history data
 	result.TotalURLsVisited = result.Chrome.URLsVisited + result.Safari.URLsVisited + result.Edge.URLsVisited
-	
+
 	// Combine all issue URLs, deduplicated
 	issueURLSet := make(map[string]struct{})
 	for _, url := range result.Chrome.IssueURLs {
@@ -151,7 +151,7 @@ func CollectBrowserTabs(ctx context.Context, cfg *config.Config) BrowsersResult 
 	for url := range issueURLSet {
 		result.AllIssueURLs = append(result.AllIssueURLs, url)
 	}
-	
+
 	// Find top history domain across all browsers
 	allHistoryDomains := make(map[string]int)
 	for domain, count := range result.Chrome.HistoryDomains {
@@ -163,7 +163,7 @@ func CollectBrowserTabs(ctx context.Context, cfg *config.Config) BrowsersResult 
 	for domain, count := range result.Edge.HistoryDomains {
 		allHistoryDomains[domain] += count
 	}
-	
+
 	// Find top domain
 	maxVisits := 0
 	for domain, count := range allHistoryDomains {
@@ -254,7 +254,7 @@ return ""
 
 func collectChromeTabs(ctx context.Context) BrowserResult {
 	result := collectBrowserTabsForApp(ctx, "Chrome", "Google Chrome", "title of t")
-	
+
 	// Also collect history
 	historyData := collectChromeHistory(ctx)
 	result.URLsVisited = historyData.URLsVisited
@@ -262,13 +262,13 @@ func collectChromeTabs(ctx context.Context) BrowserResult {
 	result.TopDomainVisits = historyData.TopDomainVisits
 	result.IssueURLs = historyData.IssueURLs
 	result.HistoryDomains = historyData.HistoryDomains
-	
+
 	return result
 }
 
 func collectSafariTabs(ctx context.Context) BrowserResult {
 	result := collectBrowserTabsForApp(ctx, "Safari", "Safari", "name of t")
-	
+
 	// Also collect history
 	historyData := collectSafariHistory(ctx)
 	result.URLsVisited = historyData.URLsVisited
@@ -276,13 +276,13 @@ func collectSafariTabs(ctx context.Context) BrowserResult {
 	result.TopDomainVisits = historyData.TopDomainVisits
 	result.IssueURLs = historyData.IssueURLs
 	result.HistoryDomains = historyData.HistoryDomains
-	
+
 	return result
 }
 
 func collectEdgeTabs(ctx context.Context) BrowserResult {
 	result := collectBrowserTabsForApp(ctx, "Edge", "Microsoft Edge", "title of t")
-	
+
 	// Also collect history
 	historyData := collectEdgeHistory(ctx)
 	result.URLsVisited = historyData.URLsVisited
@@ -290,7 +290,7 @@ func collectEdgeTabs(ctx context.Context) BrowserResult {
 	result.TopDomainVisits = historyData.TopDomainVisits
 	result.IssueURLs = historyData.IssueURLs
 	result.HistoryDomains = historyData.HistoryDomains
-	
+
 	return result
 }
 
@@ -654,7 +654,7 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 		coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
 		startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
 		endTimestamp := now.Sub(coreDataEpoch).Seconds()
-		
+
 		// Join history_items and history_visits to get all visits for today
 		query := `
 			SELECT hi.url, COUNT(*) as today_visit_count
@@ -669,7 +669,7 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 		// Chrome/Edge use microseconds since Unix epoch
 		startTimestamp := midnight.UnixMicro()
 		endTimestamp := now.UnixMicro()
-		
+
 		// Query visits table joined with urls for accurate today-only tracking
 		query := `
 			SELECT u.url, COUNT(*) as today_visit_count
@@ -689,7 +689,7 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 
 	// Process results - use map to deduplicate issue IDs
 	issueIDSet := make(map[string]struct{})
-	
+
 	for rows.Next() {
 		var urlStr string
 		var visitCount int
@@ -788,19 +788,19 @@ func extractIssueIdentifier(urlStr string) string {
 	if matches := jiraRe.FindStringSubmatch(urlStr); len(matches) > 1 {
 		return matches[1]
 	}
-	
+
 	// GitHub: extract owner/repo#123 from issues or pulls
 	githubIssueRe := regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
 	if matches := githubIssueRe.FindStringSubmatch(urlStr); len(matches) > 3 {
 		return matches[1] + "#" + matches[3]
 	}
-	
+
 	// Linear: extract issue ID from URL
 	linearRe := regexp.MustCompile(`linear\.app/[^/]+/issue/([^/\?]+)`)
 	if matches := linearRe.FindStringSubmatch(urlStr); len(matches) > 1 {
 		return matches[1]
 	}
-	
+
 	// GitLab: extract owner/repo#123
 	gitlabRe := regexp.MustCompile(`gitlab\.com/([^/]+/[^/]+)/(issues|merge_requests)/(\d+)`)
 	if matches := gitlabRe.FindStringSubmatch(urlStr); len(matches) > 3 {
@@ -810,19 +810,19 @@ func extractIssueIdentifier(urlStr string) string {
 		}
 		return matches[1] + issueType + matches[3]
 	}
-	
+
 	// Bitbucket: extract owner/repo#123
 	bitbucketRe := regexp.MustCompile(`bitbucket\.org/([^/]+/[^/]+)/issues/(\d+)`)
 	if matches := bitbucketRe.FindStringSubmatch(urlStr); len(matches) > 2 {
 		return matches[1] + "#" + matches[2]
 	}
-	
+
 	// Azure DevOps: extract workitem ID
 	azureRe := regexp.MustCompile(`dev\.azure\.com/[^/]+/[^/]+/_?workitems/(\d+)`)
 	if matches := azureRe.FindStringSubmatch(urlStr); len(matches) > 1 {
 		return "WI-" + matches[1]
 	}
-	
+
 	// Fallback: return the URL as-is
 	return urlStr
 }
@@ -832,12 +832,12 @@ func FormatIssueURLs(issueURLs []string) string {
 	if len(issueURLs) == 0 {
 		return ""
 	}
-	
+
 	// Show up to 3 issues
 	limit := 3
 	if len(issueURLs) > limit {
 		return strings.Join(issueURLs[:limit], ", ") + fmt.Sprintf(" (+%d more)", len(issueURLs)-limit)
 	}
-	
+
 	return strings.Join(issueURLs, ", ")
 }

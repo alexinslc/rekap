@@ -22,8 +22,8 @@ var (
 	textColor      = lipgloss.Color("255") // White
 
 	// Accessibility settings
-	accessibilityEnabled  = false
-	accessibilityNoEmoji  = false
+	accessibilityEnabled = false
+	accessibilityNoEmoji = false
 
 	// Styles
 	titleStyle = lipgloss.NewStyle().
@@ -72,8 +72,8 @@ var (
 			Foreground(mutedColor)
 
 	warningSubtleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("214")). // Orange
-			Italic(true)
+				Foreground(lipgloss.Color("214")). // Orange
+				Italic(true)
 )
 
 // ApplyColors updates the color scheme based on config
@@ -159,12 +159,12 @@ func RenderTitle(text string, animate bool) string {
 	if accessibilityEnabled && accessibilityNoEmoji {
 		text = removeEmoji(text)
 	}
-	
+
 	// Add visual markers in accessibility mode
 	if accessibilityEnabled {
 		text = "=== " + text + " ==="
 	}
-	
+
 	if animate && IsTTY() {
 		// Simple typing effect
 		for i, r := range text {
@@ -333,15 +333,15 @@ func removeEmoji(text string) string {
 
 // getAccessibleIcon returns a text-based alternative to emoji icons
 var accessibleIconMap = map[string]string{
-	"⏰": "[TIME]",
-	"🔋": "[BAT]",
-	"🔌": "[PWR]",
-	"📱": "[APP]",
+	"⏰":  "[TIME]",
+	"🔋":  "[BAT]",
+	"🔌":  "[PWR]",
+	"📱":  "[APP]",
 	"⏱️": "[FOCUS]",
-	"🎵": "[MUSIC]",
-	"🌐": "[NET]",
-	"📊": "[DATA]",
-	"💡": "[INFO]",
+	"🎵":  "[MUSIC]",
+	"🌐":  "[NET]",
+	"📊":  "[DATA]",
+	"💡":  "[INFO]",
 	"✓":  "[OK]",
 	"✗":  "[ERR]",
 }

@@ -248,7 +248,7 @@ func TestCategorizeDomain(t *testing.T) {
 		{"mycompany.atlassian.net", "work"},
 		{"linear.app", "work"},
 		{"notion.so", "work"},
-		
+
 		// Distraction domains
 		{"twitter.com", "distraction"},
 		{"x.com", "distraction"},
@@ -256,7 +256,7 @@ func TestCategorizeDomain(t *testing.T) {
 		{"facebook.com", "distraction"},
 		{"youtube.com", "distraction"},
 		{"tiktok.com", "distraction"},
-		
+
 		// Neutral/uncategorized domains
 		{"gmail.com", "neutral"},
 		{"example.com", "neutral"},
@@ -308,18 +308,18 @@ func TestMatchDomainPattern(t *testing.T) {
 		// Exact matches
 		{"github.com", "github.com", true},
 		{"gitlab.com", "github.com", false},
-		
+
 		// Wildcard prefix patterns (docs.*)
 		{"docs.python.org", "docs.*", true},
 		{"docs.microsoft.com", "docs.*", true},
 		{"api.github.com", "docs.*", false},
-		
+
 		// Wildcard suffix patterns (*.google.com)
 		{"mail.google.com", "*.google.com", true},
 		{"drive.google.com", "*.google.com", true},
 		{"google.com", "*.google.com", false},
 		{"gmail.com", "*.google.com", false},
-		
+
 		// Suffix matching (for patterns like "atlassian.net")
 		{"example.com", "example.com", true},
 		{"mycompany.atlassian.net", "atlassian.net", true},

@@ -21,10 +21,10 @@ func CheckContextOverload(apps AppsResult, browsers BrowsersResult) ContextOverl
 
 	// Count actively used apps (apps with recorded usage)
 	activeApps := len(apps.TopApps)
-	
+
 	// Count total browser tabs
 	totalTabs := browsers.TotalTabs
-	
+
 	// Count unique domains
 	uniqueDomains := len(browsers.TopDomains)
 

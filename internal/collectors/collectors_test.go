@@ -337,29 +337,29 @@ func TestExtractDomain(t *testing.T) {
 
 func TestIssuePatterns(t *testing.T) {
 	tests := []struct {
-		url           string
-		expectMatch   bool
-		expectedID    string
-		expectedType  string
+		url          string
+		expectMatch  bool
+		expectedID   string
+		expectedType string
 	}{
 		// GitHub
 		{"https://github.com/alexinslc/rekap/issues/42", true, "github.com/alexinslc/rekap/issues/42", "GitHub"},
 		{"https://github.com/org/repo/issues/123", true, "github.com/org/repo/issues/123", "GitHub"},
-		
+
 		// Jira
 		{"https://company.atlassian.net/browse/PROJ-123", true, "PROJ-123", "Jira"},
 		{"https://myorg.atlassian.net/browse/ABC-456", true, "ABC-456", "Jira"},
-		
+
 		// Linear
 		{"https://linear.app/issue/ENG-789", true, "ENG-789", "Linear"},
 		{"https://linear.app/workspace/issue/TEAM-123", true, "TEAM-123", "Linear"},
-		
+
 		// GitLab
 		{"https://gitlab.com/group/project/-/issues/99", true, "gitlab.com/group/project/-/issues/99", "GitLab"},
-		
+
 		// Azure DevOps
 		{"https://dev.azure.com/org/project/_workitems/edit/555", true, "555", "Azure DevOps"},
-		
+
 		// Non-matching URLs
 		{"https://github.com/user/repo", false, "", ""},
 		{"https://example.com", false, "", ""},
@@ -407,24 +407,24 @@ func TestIsIssueURL(t *testing.T) {
 		// Jira patterns
 		{"https://company.atlassian.net/browse/PROJ-123", true},
 		{"https://jira.example.com/browse/ABC-456", true},
-		
+
 		// GitHub patterns
 		{"https://github.com/owner/repo/issues/123", true},
 		{"https://github.com/owner/repo/pull/456", true},
-		
+
 		// Linear patterns
 		{"https://linear.app/team/issue/ABC-123", true},
-		
+
 		// GitLab patterns
 		{"https://gitlab.com/owner/repo/issues/123", true},
 		{"https://gitlab.com/owner/repo/merge_requests/456", true},
-		
+
 		// Bitbucket patterns
 		{"https://bitbucket.org/owner/repo/issues/123", true},
-		
+
 		// Azure DevOps patterns
 		{"https://dev.azure.com/org/project/_workitems/123", true},
-		
+
 		// Non-issue URLs
 		{"https://github.com", false},
 		{"https://stackoverflow.com/questions/12345", false},
@@ -479,25 +479,25 @@ func TestExtractIssueIdentifier(t *testing.T) {
 		// Jira
 		{"https://company.atlassian.net/browse/PROJ-123", "PROJ-123"},
 		{"https://jira.example.com/browse/ABC-456", "ABC-456"},
-		
+
 		// GitHub issues
 		{"https://github.com/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// GitHub pull requests
 		{"https://github.com/owner/repo/pull/456", "owner/repo#456"},
-		
+
 		// Linear
 		{"https://linear.app/team/issue/ABC-123", "ABC-123"},
-		
+
 		// GitLab issues
 		{"https://gitlab.com/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// GitLab merge requests
 		{"https://gitlab.com/owner/repo/merge_requests/456", "owner/repo!456"},
-		
+
 		// Bitbucket
 		{"https://bitbucket.org/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// Azure DevOps
 		{"https://dev.azure.com/org/project/_workitems/123", "WI-123"},
 	}

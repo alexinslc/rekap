@@ -78,7 +78,7 @@ func CollectScreen(ctx context.Context) ScreenResult {
 			if !isOn {
 				lastOnTime = eventTime
 				isOn = true
-				
+
 				// Track wake event (end of lock)
 				if !lastSleepTime.IsZero() {
 					// Only count locks that started on or after midnight (today)
@@ -126,7 +126,7 @@ func CollectScreen(ctx context.Context) ScreenResult {
 			timeBetween := lockEvents[i+1].sleepTime.Sub(lockEvents[i].wakeTime)
 			totalTimeBetweenLocks += timeBetween
 		}
-		
+
 		// If we have multiple locks, calculate average
 		if result.LockCount > 1 {
 			result.AvgMinsBetweenLock = int(totalTimeBetweenLocks.Minutes() / float64(result.LockCount-1))

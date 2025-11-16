@@ -313,7 +313,7 @@ func matchDomainPattern(domain, pattern string) bool {
 		// Convert pattern to regex-like matching
 		// docs.* matches docs.python.org, docs.microsoft.com, etc.
 		// *.google.com matches mail.google.com, drive.google.com, etc.
-		
+
 		if strings.HasPrefix(pattern, "*.") {
 			// *.example.com pattern
 			suffix := pattern[1:] // Remove the *

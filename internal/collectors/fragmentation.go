@@ -7,12 +7,12 @@ import (
 
 // FragmentationResult contains context fragmentation analysis
 type FragmentationResult struct {
-	Score       int    // 0-100 score
-	Level       string // "focused", "moderate", or "fragmented"
-	Emoji       string // Visual indicator
-	Available   bool
-	Error       error
-	Breakdown   FragmentationBreakdown // Details on how score was calculated
+	Score     int    // 0-100 score
+	Level     string // "focused", "moderate", or "fragmented"
+	Emoji     string // Visual indicator
+	Available bool
+	Error     error
+	Breakdown FragmentationBreakdown // Details on how score was calculated
 }
 
 // FragmentationBreakdown provides detailed metrics used in calculation
