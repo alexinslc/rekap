@@ -115,7 +115,7 @@ func TestRenderSummaryLineEmpty(t *testing.T) {
 }
 
 func TestFormatTime(t *testing.T) {
-	t.Parallel()
+	// Note: Not parallelized due to global state in renderer
 	tests := []struct {
 		name       string
 		timeFormat string
@@ -235,7 +235,7 @@ func TestRenderHighlight(t *testing.T) {
 }
 
 func TestRenderSubItem(t *testing.T) {
-	t.Parallel()
+	// Note: Not parallelized due to global state in renderer
 	result := RenderSubItem("Sub Item")
 	if result == "" {
 		t.Error("RenderSubItem should not return empty string")
@@ -263,12 +263,12 @@ func TestIsTTY(t *testing.T) {
 }
 
 func TestApplyColors(t *testing.T) {
-	t.Parallel()
+	// Note: Not parallelized due to modifying global state
 	cfg := config.Default()
-	
+
 	// Test that ApplyColors doesn't panic
 	ApplyColors(cfg)
-	
+
 	// Test with custom colors
 	customCfg := &config.Config{
 		Colors: config.ColorConfig{
