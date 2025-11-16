@@ -11,6 +11,7 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Screen-on time calculation
 - Focus streak detection
 - Browser tab tracking (Chrome, Safari, Edge)
+- **Issue/ticket tracking from browser history** - Shows GitHub, Jira, Linear, GitLab, and Azure DevOps issues you viewed today
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
 
@@ -87,6 +88,13 @@ browser_total_tabs=24
 browser_chrome_tabs=18
 browser_safari_tabs=2
 browser_edge_tabs=4
+issues_count=3
+issue_1_id=PROJ-123
+issue_1_tracker=Jira
+issue_1_visits=8
+issue_2_id=github.com/org/repo/issues/42
+issue_2_tracker=GitHub
+issue_2_visits=5
 network_interface=en0
 network_name=Home-5GHz
 network_bytes_received=2469606195
