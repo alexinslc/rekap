@@ -121,6 +121,11 @@ func RenderHighlight(icon, text string) string {
 	return fmt.Sprintf("  %s  %s", icon, styledText)
 }
 
+// RenderSubItem formats a sub-item with indentation
+func RenderSubItem(text string) string {
+	return fmt.Sprintf("      %s", hintStyle.Render(text))
+}
+
 // RenderSuccess formats a success message
 func RenderSuccess(text string) string {
 	return successStyle.Render("✓ " + text)

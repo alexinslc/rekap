@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -150,8 +151,35 @@ func runDemo() {
 		Available:     true,
 	}
 
+	demoBrowsers := collectors.BrowsersResult{
+		Chrome: collectors.BrowserResult{
+			Browser:   "Chrome",
+			TabCount:  18,
+			Available: true,
+		},
+		Safari: collectors.BrowserResult{
+			Browser:   "Safari",
+			TabCount:  12,
+			Available: true,
+		},
+		Edge: collectors.BrowserResult{
+			Browser:   "Edge",
+			TabCount:  5,
+			Available: true,
+		},
+		TotalTabs: 35,
+		TopDomains: map[string]int{
+			"github.com":        8,
+			"stackoverflow.com": 6,
+			"mail.google.com":   5,
+			"chatgpt.com":       4,
+			"youtube.com":       3,
+		},
+		Available: true,
+	}
+
 	// Show in human-friendly format
-	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork)
+	printHuman(demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
 }
 
 func runSummary(quiet bool) {
@@ -167,6 +195,7 @@ func runSummary(quiet bool) {
 	focusCh := make(chan collectors.FocusResult, 1)
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
+	browsersCh := make(chan collectors.BrowsersResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -175,6 +204,7 @@ func runSummary(quiet bool) {
 	go func() { focusCh <- collectors.CollectFocus(ctx) }()
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
+	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -184,17 +214,18 @@ func runSummary(quiet bool) {
 	focusResult := <-focusCh
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
+	browsersResult := <-browsersCh
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
 	} else {
 		// Human-friendly output
-		printHuman(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult)
+		printHuman(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -241,9 +272,22 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Printf("network_bytes_received=%d\n", network.BytesReceived)
 		fmt.Printf("network_bytes_sent=%d\n", network.BytesSent)
 	}
+
+	if browsers.Available {
+		fmt.Printf("browser_total_tabs=%d\n", browsers.TotalTabs)
+		if browsers.Chrome.Available {
+			fmt.Printf("browser_chrome_tabs=%d\n", browsers.Chrome.TabCount)
+		}
+		if browsers.Safari.Available {
+			fmt.Printf("browser_safari_tabs=%d\n", browsers.Safari.TabCount)
+		}
+		if browsers.Edge.Available {
+			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
+		}
+	}
 }
 
-func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult) {
+func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -348,10 +392,62 @@ func printHuman(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		fmt.Println(ui.RenderDataPoint("🌐", text))
 	}
 
+	// Browser Tabs Section
+	if browsers.Available && browsers.TotalTabs > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("BROWSER TABS"))
+
+		// Total count
+		text := fmt.Sprintf("%d tabs open", browsers.TotalTabs)
+		if browsers.Chrome.Available {
+			text += fmt.Sprintf(" • Chrome: %d", browsers.Chrome.TabCount)
+		}
+		if browsers.Safari.Available {
+			text += fmt.Sprintf(" • Safari: %d", browsers.Safari.TabCount)
+		}
+		if browsers.Edge.Available {
+			text += fmt.Sprintf(" • Edge: %d", browsers.Edge.TabCount)
+		}
+		fmt.Println(ui.RenderDataPoint("🌐", text))
+
+		// Top domains
+		if len(browsers.TopDomains) > 0 {
+			type domainCount struct {
+				domain string
+				count  int
+			}
+			var domains []domainCount
+			for domain, count := range browsers.TopDomains {
+				domains = append(domains, domainCount{domain, count})
+			}
+			// Sort by count descending
+			sort.Slice(domains, func(i, j int) bool {
+				return domains[i].count > domains[j].count
+			})
+
+			// Show top 5 domains
+			fmt.Println(ui.RenderDataPoint("📊", "Top domains:"))
+			for i, dc := range domains {
+				if i >= 5 {
+					break
+				}
+				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
+				fmt.Println(ui.RenderSubItem(domainText))
+			}
+		}
+	}
+
 	fmt.Println()
 
 	// Show hints for missing data
 	if !apps.Available && apps.Error != nil {
 		fmt.Println(ui.RenderHint("Run 'rekap init' to enable Full Disk Access for app tracking"))
 	}
+}
+
+func pluralize(count int) string {
+	if count == 1 {
+		return ""
+	}
+	return "s"
 }
