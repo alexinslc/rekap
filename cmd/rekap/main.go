@@ -192,8 +192,15 @@ func runDemo(cfg *config.Config) {
 			"mail.google.com":   5,
 			"chatgpt.com":       4,
 			"youtube.com":       3,
+			"reddit.com":        2,
+			"twitter.com":       2,
+			"docs.python.org":   3,
+			"linear.app":        2,
 		},
-		Available: true,
+		WorkVisits:        19, // github(8) + stackoverflow(6) + docs.python.org(3) + linear.app(2)
+		DistractionVisits: 7,  // youtube(3) + reddit(2) + twitter(2)
+		NeutralVisits:     9,  // mail.google.com(5) + chatgpt.com(4)
+		Available:         true,
 	}
 
 	// Show in human-friendly format
@@ -227,7 +234,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { focusCh <- collectors.CollectFocus(ctx) }()
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
-	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx, cfg) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -306,6 +313,13 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 		if browsers.Edge.Available {
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
+		}
+		// Domain categorization stats
+		totalCategorized := browsers.WorkVisits + browsers.DistractionVisits + browsers.NeutralVisits
+		if totalCategorized > 0 {
+			fmt.Printf("browser_work_visits=%d\n", browsers.WorkVisits)
+			fmt.Printf("browser_distraction_visits=%d\n", browsers.DistractionVisits)
+			fmt.Printf("browser_neutral_visits=%d\n", browsers.NeutralVisits)
 		}
 	}
 }
@@ -457,6 +471,22 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
 				fmt.Println(ui.RenderSubItem(domainText))
 			}
+		}
+
+		// Domain breakdown
+		totalCategorized := browsers.WorkVisits + browsers.DistractionVisits + browsers.NeutralVisits
+		if totalCategorized > 0 {
+			workPct := int(float64(browsers.WorkVisits) / float64(totalCategorized) * 100)
+			distractionPct := int(float64(browsers.DistractionVisits) / float64(totalCategorized) * 100)
+			neutralPct := int(float64(browsers.NeutralVisits) / float64(totalCategorized) * 100)
+
+			fmt.Println(ui.RenderDataPoint("📊", "Domain breakdown:"))
+			workText := fmt.Sprintf("   Work: %d visits (%d%%)", browsers.WorkVisits, workPct)
+			fmt.Println(ui.RenderSubItem(workText))
+			distractionText := fmt.Sprintf("   Distraction: %d visits (%d%%)", browsers.DistractionVisits, distractionPct)
+			fmt.Println(ui.RenderSubItem(distractionText))
+			neutralText := fmt.Sprintf("   Neutral: %d visits (%d%%)", browsers.NeutralVisits, neutralPct)
+			fmt.Println(ui.RenderSubItem(neutralText))
 		}
 	}
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/alexinslc/rekap/internal/config"
 )
 
 func TestCollectUptime(t *testing.T) {
@@ -158,7 +160,8 @@ func TestCollectBrowserTabs(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result := CollectBrowserTabs(ctx)
+	cfg := config.Default()
+	result := CollectBrowserTabs(ctx, cfg)
 
 	// Browser collection is best-effort and depends on running browsers
 	if !result.Available {

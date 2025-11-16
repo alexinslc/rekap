@@ -41,6 +41,15 @@ tracking:
     - "Activity Monitor"
     - "System Preferences"
     - "Calendar"
+
+domains:
+  work:
+    - "mycompany.atlassian.net"
+    - "internal.company.com"
+  distraction:
+    - "news.ycombinator.com"
+  neutral:
+    - "gmail.com"
 ```
 
 ### Color Options
@@ -72,6 +81,47 @@ Default color palette (matches fang's aesthetic):
   - Apps in this list won't appear in your top apps or focus streaks
   - Useful for filtering out system utilities or apps you don't want tracked
   - App names must match exactly as they appear in the output
+
+### Domain Categorization
+
+rekap automatically categorizes browser tab domains into three categories:
+
+- **work**: Development tools, documentation, project management, cloud platforms
+- **distraction**: Social media, entertainment, news sites
+- **neutral**: Email, uncategorized sites
+
+Default work domains include:
+- `github.com`, `gitlab.com`, `bitbucket.org`
+- `stackoverflow.com`, `stackexchange.com`
+- `docs.*`, `developer.*`, `api.*` (matches docs.python.org, developer.mozilla.org, etc.)
+- `atlassian.net` (Jira, Confluence)
+- `linear.app`, `asana.com`, `notion.so`
+- `aws.amazon.com`, `console.cloud.google.com`, `portal.azure.com`
+
+Default distraction domains include:
+- `twitter.com`, `x.com`, `reddit.com`
+- `facebook.com`, `instagram.com`
+- `youtube.com`, `tiktok.com`, `twitch.tv`
+
+You can override these defaults in your config:
+
+```yaml
+domains:
+  work:
+    - "mycompany.atlassian.net"
+    - "internal.company.com"
+    - "work-app.*"
+  distraction:
+    - "news.ycombinator.com"  # Personal preference
+  neutral:
+    - "gmail.com"
+```
+
+**Pattern matching:**
+- Exact matches: `github.com` matches only `github.com`
+- Prefix wildcards: `docs.*` matches `docs.python.org`, `docs.microsoft.com`, etc.
+- Suffix wildcards: `*.google.com` matches `mail.google.com`, `drive.google.com`, etc.
+- Suffix matching: `atlassian.net` matches `mycompany.atlassian.net`, `yourcompany.atlassian.net`, etc.
 
 ## Partial Configs
 
