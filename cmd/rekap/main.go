@@ -134,8 +134,10 @@ func runDemo(cfg *config.Config) {
 	}
 
 	demoScreen := collectors.ScreenResult{
-		ScreenOnMinutes: 215, // 3h 35m
-		Available:       true,
+		ScreenOnMinutes:    215, // 3h 35m
+		LockCount:          12,
+		AvgMinsBetweenLock: 45,
+		Available:          true,
 	}
 
 	demoApps := collectors.AppsResult{
@@ -302,6 +304,10 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 
 	if screen.Available {
 		fmt.Printf("screen_on_minutes=%d\n", screen.ScreenOnMinutes)
+		if screen.LockCount > 0 {
+			fmt.Printf("screen_lock_count=%d\n", screen.LockCount)
+			fmt.Printf("avg_mins_between_locks=%d\n", screen.AvgMinsBetweenLock)
+		}
 	}
 
 	if apps.Available {
@@ -421,6 +427,22 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 			plugText := fmt.Sprintf("%d plug event(s) today", battery.PlugCount)
 			fmt.Println(ui.RenderDataPoint("🔌", plugText))
 		}
+	}
+
+	// Screen lock events
+	if screen.Available && screen.LockCount > 0 {
+		var lockText string
+		if screen.AvgMinsBetweenLock > 0 {
+			lockText = fmt.Sprintf("Screen locked %d time%s (avg %s between breaks)", 
+				screen.LockCount, 
+				pluralize(screen.LockCount),
+				ui.FormatDuration(screen.AvgMinsBetweenLock))
+		} else {
+			lockText = fmt.Sprintf("Screen locked %d time%s today", 
+				screen.LockCount, 
+				pluralize(screen.LockCount))
+		}
+		fmt.Println(ui.RenderDataPoint("🔒", lockText))
 	}
 
 	// Productivity Section

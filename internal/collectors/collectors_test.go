@@ -64,6 +64,24 @@ func TestCollectScreen(t *testing.T) {
 	if result.ScreenOnMinutes < 0 {
 		t.Errorf("ScreenOnMinutes should be >= 0, got %d", result.ScreenOnMinutes)
 	}
+
+	// Lock count should be non-negative
+	if result.LockCount < 0 {
+		t.Errorf("LockCount should be >= 0, got %d", result.LockCount)
+	}
+
+	// If there are locks, avg should be non-negative
+	if result.LockCount > 0 && result.AvgMinsBetweenLock < 0 {
+		t.Errorf("AvgMinsBetweenLock should be >= 0 when locks exist, got %d", result.AvgMinsBetweenLock)
+	}
+
+	// If there are no locks, avg should be 0
+	if result.LockCount == 0 && result.AvgMinsBetweenLock != 0 {
+		t.Errorf("AvgMinsBetweenLock should be 0 when no locks, got %d", result.AvgMinsBetweenLock)
+	}
+
+	t.Logf("Screen on: %d minutes, Locks: %d, Avg between: %d minutes",
+		result.ScreenOnMinutes, result.LockCount, result.AvgMinsBetweenLock)
 }
 
 func TestCollectApps(t *testing.T) {
