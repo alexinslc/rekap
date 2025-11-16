@@ -9,14 +9,16 @@ import (
 	"time"
 )
 
-// ScreenResult contains screen-on time information
+// ScreenResult contains screen-on time and lock event information
 type ScreenResult struct {
-	ScreenOnMinutes int
-	Available       bool
-	Error           error
+	ScreenOnMinutes    int
+	LockCount          int
+	AvgMinsBetweenLock int
+	Available          bool
+	Error              error
 }
 
-// CollectScreen retrieves screen-on time since midnight
+// CollectScreen retrieves screen-on time and lock events since midnight
 func CollectScreen(ctx context.Context) ScreenResult {
 	result := ScreenResult{Available: false}
 
@@ -41,6 +43,15 @@ func CollectScreen(ctx context.Context) ScreenResult {
 	var totalMinutes int
 	var lastOnTime time.Time
 	isOn := false
+
+	// Track lock events (display sleep/wake cycles)
+	type lockEvent struct {
+		sleepTime time.Time
+		wakeTime  time.Time
+		duration  time.Duration
+	}
+	var lockEvents []lockEvent
+	var lastSleepTime time.Time
 
 	// Parse display on/off events
 	timeRe := regexp.MustCompile(`(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})`)
@@ -67,6 +78,26 @@ func CollectScreen(ctx context.Context) ScreenResult {
 			if !isOn {
 				lastOnTime = eventTime
 				isOn = true
+				
+				// Track wake event (end of lock)
+				if !lastSleepTime.IsZero() {
+					// Only count locks that started on or after midnight (today)
+					if lastSleepTime.Before(midnight) {
+						// Sleep started before today, skip this lock event
+						lastSleepTime = time.Time{}
+					} else {
+						duration := eventTime.Sub(lastSleepTime)
+						// Only count locks longer than 1 minute
+						if duration.Minutes() >= 1 {
+							lockEvents = append(lockEvents, lockEvent{
+								sleepTime: lastSleepTime,
+								wakeTime:  eventTime,
+								duration:  duration,
+							})
+						}
+						lastSleepTime = time.Time{}
+					}
+				}
 			}
 		} else if strings.Contains(lowerLine, "display is turned off") ||
 			strings.Contains(lowerLine, "display sleep") {
@@ -75,6 +106,8 @@ func CollectScreen(ctx context.Context) ScreenResult {
 				totalMinutes += int(duration.Minutes())
 				isOn = false
 			}
+			// Track sleep event (start of lock)
+			lastSleepTime = eventTime
 		}
 	}
 
@@ -82,6 +115,25 @@ func CollectScreen(ctx context.Context) ScreenResult {
 	if isOn && !lastOnTime.IsZero() {
 		duration := now.Sub(lastOnTime)
 		totalMinutes += int(duration.Minutes())
+	}
+
+	// Calculate lock statistics
+	result.LockCount = len(lockEvents)
+	if result.LockCount > 0 {
+		// Calculate average time between locks (time between wake and next sleep)
+		var totalTimeBetweenLocks time.Duration
+		for i := 0; i < len(lockEvents)-1; i++ {
+			timeBetween := lockEvents[i+1].sleepTime.Sub(lockEvents[i].wakeTime)
+			totalTimeBetweenLocks += timeBetween
+		}
+		
+		// If we have multiple locks, calculate average
+		if result.LockCount > 1 {
+			result.AvgMinsBetweenLock = int(totalTimeBetweenLocks.Minutes() / float64(result.LockCount-1))
+		} else {
+			// Single lock: no meaningful "average between locks", set to 0
+			result.AvgMinsBetweenLock = 0
+		}
 	}
 
 	// If we have no data, fall back to rough estimate

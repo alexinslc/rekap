@@ -134,8 +134,10 @@ func runDemo(cfg *config.Config) {
 	}
 
 	demoScreen := collectors.ScreenResult{
-		ScreenOnMinutes: 215, // 3h 35m
-		Available:       true,
+		ScreenOnMinutes:    215, // 3h 35m
+		LockCount:          12,
+		AvgMinsBetweenLock: 45,
+		Available:          true,
 	}
 
 	demoApps := collectors.AppsResult{
@@ -171,21 +173,32 @@ func runDemo(cfg *config.Config) {
 
 	demoBrowsers := collectors.BrowsersResult{
 		Chrome: collectors.BrowserResult{
-			Browser:   "Chrome",
-			TabCount:  18,
-			Available: true,
+			Browser:         "Chrome",
+			TabCount:        18,
+			Available:       true,
+			URLsVisited:     89,
+			TopDomain:       "github.com",
+			TopDomainVisits: 34,
+			IssueURLs:       []string{"org/repo#89", "PROJ-123"},
 		},
 		Safari: collectors.BrowserResult{
-			Browser:   "Safari",
-			TabCount:  12,
-			Available: true,
+			Browser:         "Safari",
+			TabCount:        12,
+			Available:       true,
+			URLsVisited:     42,
+			TopDomain:       "stackoverflow.com",
+			TopDomainVisits: 18,
+			IssueURLs:       []string{"PROJ-456"},
 		},
 		Edge: collectors.BrowserResult{
-			Browser:   "Edge",
-			TabCount:  5,
-			Available: true,
+			Browser:         "Edge",
+			TabCount:        5,
+			Available:       true,
+			URLsVisited:     16,
+			TopDomain:       "mail.google.com",
+			TopDomainVisits: 12,
 		},
-		TotalTabs: 35,
+		TotalTabs:         35,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
@@ -200,11 +213,39 @@ func runDemo(cfg *config.Config) {
 		WorkVisits:        19, // github(8) + stackoverflow(6) + docs.python.org(3) + linear.app(2)
 		DistractionVisits: 7,  // youtube(3) + reddit(2) + twitter(2)
 		NeutralVisits:     9,  // mail.google.com(5) + chatgpt.com(4)
+		TotalURLsVisited:  147,
+		TopHistoryDomain:  "github.com",
+		TopDomainVisits:   34,
+		AllIssueURLs:      []string{"PROJ-123", "PROJ-456", "org/repo#89"},
 		Available:         true,
 	}
 
+	demoNotifications := collectors.NotificationsResult{
+		TotalNotifications: 47,
+		TopApps: []collectors.NotificationApp{
+			{Name: "Slack", Count: 18, BundleID: "com.tinyspeck.slackmacgap"},
+			{Name: "Mail", Count: 12, BundleID: "com.apple.mail"},
+			{Name: "Messages", Count: 9, BundleID: "com.apple.MobileSMS"},
+		},
+		Available: true,
+	}
+
+	// Calculate fragmentation for demo
+	fragmentationThresholds := collectors.FragmentationThresholds{
+		FocusedMax:    cfg.Fragmentation.FocusedMax,
+		ModerateMax:   cfg.Fragmentation.ModerateMax,
+		FragmentedMin: cfg.Fragmentation.FragmentedMin,
+	}
+	demoFragmentation := collectors.CalculateFragmentation(
+		context.Background(),
+		demoApps,
+		demoBrowsers,
+		demoUptime,
+		fragmentationThresholds,
+	)
+
 	// Show in human-friendly format
-	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers)
+	printHuman(cfg, demoUptime, demoBattery, demoScreen, demoApps, demoFocus, demoMedia, demoNetwork, demoBrowsers, demoNotifications, demoFragmentation)
 }
 
 func runSummary(quiet bool, cfg *config.Config) {
@@ -226,6 +267,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaCh := make(chan collectors.MediaResult, 1)
 	networkCh := make(chan collectors.NetworkResult, 1)
 	browsersCh := make(chan collectors.BrowsersResult, 1)
+	notificationsCh := make(chan collectors.NotificationsResult, 1)
 
 	go func() { uptimeCh <- collectors.CollectUptime(ctx) }()
 	go func() { batteryCh <- collectors.CollectBattery(ctx) }()
@@ -235,6 +277,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
 	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx, cfg) }()
+	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
 	uptimeResult := <-uptimeCh
@@ -245,17 +288,26 @@ func runSummary(quiet bool, cfg *config.Config) {
 	mediaResult := <-mediaCh
 	networkResult := <-networkCh
 	browsersResult := <-browsersCh
+	notificationsResult := <-notificationsCh
+
+	// Calculate fragmentation score after collecting data
+	fragmentationThresholds := collectors.FragmentationThresholds{
+		FocusedMax:    cfg.Fragmentation.FocusedMax,
+		ModerateMax:   cfg.Fragmentation.ModerateMax,
+		FragmentedMin: cfg.Fragmentation.FragmentedMin,
+	}
+	fragmentationResult := collectors.CalculateFragmentation(ctx, appsResult, browsersResult, uptimeResult, fragmentationThresholds)
 
 	if quiet {
 		// Machine-parsable output
-		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printQuiet(uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	} else {
 		// Human-friendly output
-		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult)
+		printHuman(cfg, uptimeResult, batteryResult, screenResult, appsResult, focusResult, mediaResult, networkResult, browsersResult, notificationsResult, fragmentationResult)
 	}
 }
 
-func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	if uptime.Available {
 		fmt.Printf("awake_minutes=%d\n", uptime.AwakeMinutes)
 		fmt.Printf("boot_time=%d\n", uptime.BootTime.Unix())
@@ -274,6 +326,10 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 
 	if screen.Available {
 		fmt.Printf("screen_on_minutes=%d\n", screen.ScreenOnMinutes)
+		if screen.LockCount > 0 {
+			fmt.Printf("screen_lock_count=%d\n", screen.LockCount)
+			fmt.Printf("avg_mins_between_locks=%d\n", screen.AvgMinsBetweenLock)
+		}
 	}
 
 	if apps.Available {
@@ -321,10 +377,37 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 			fmt.Printf("browser_distraction_visits=%d\n", browsers.DistractionVisits)
 			fmt.Printf("browser_neutral_visits=%d\n", browsers.NeutralVisits)
 		}
+		// History data
+		if browsers.TotalURLsVisited > 0 {
+			fmt.Printf("browser_urls_visited=%d\n", browsers.TotalURLsVisited)
+		}
+		if browsers.TopHistoryDomain != "" {
+			fmt.Printf("browser_top_domain=%s\n", browsers.TopHistoryDomain)
+			fmt.Printf("browser_top_domain_visits=%d\n", browsers.TopDomainVisits)
+		}
+		if len(browsers.AllIssueURLs) > 0 {
+			fmt.Printf("browser_issues_viewed=%d\n", len(browsers.AllIssueURLs))
+		}
+	}
+
+	if notifications.Available {
+		fmt.Printf("notifications_total=%d\n", notifications.TotalNotifications)
+		for i, app := range notifications.TopApps {
+			if i >= 3 {
+				break
+			}
+			fmt.Printf("notification_app_%d=%s\n", i+1, app.Name)
+			fmt.Printf("notification_app_%d_count=%d\n", i+1, app.Count)
+		}
+	}
+
+	if fragmentation.Available {
+		fmt.Printf("fragmentation_score=%d\n", fragmentation.Score)
+		fmt.Printf("fragmentation_level=%s\n", fragmentation.Level)
 	}
 }
 
-func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult) {
+func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery collectors.BatteryResult, screen collectors.ScreenResult, apps collectors.AppsResult, focus collectors.FocusResult, media collectors.MediaResult, network collectors.NetworkResult, browsers collectors.BrowsersResult, notifications collectors.NotificationsResult, fragmentation collectors.FragmentationResult) {
 	// Render title
 	title := ui.RenderTitle("📊 Today's rekap", ui.IsTTY())
 	if title != "" {
@@ -386,6 +469,22 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		}
 	}
 
+	// Screen lock events
+	if screen.Available && screen.LockCount > 0 {
+		var lockText string
+		if screen.AvgMinsBetweenLock > 0 {
+			lockText = fmt.Sprintf("Screen locked %d time%s (avg %s between breaks)", 
+				screen.LockCount, 
+				pluralize(screen.LockCount),
+				ui.FormatDuration(screen.AvgMinsBetweenLock))
+		} else {
+			lockText = fmt.Sprintf("Screen locked %d time%s today", 
+				screen.LockCount, 
+				pluralize(screen.LockCount))
+		}
+		fmt.Println(ui.RenderDataPoint("🔒", lockText))
+	}
+
 	// Productivity Section
 	if focus.Available || (apps.Available && len(apps.TopApps) > 0) {
 		fmt.Println()
@@ -429,47 +528,89 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		fmt.Println(ui.RenderDataPoint("🌐", text))
 	}
 
-	// Browser Tabs Section
-	if browsers.Available && browsers.TotalTabs > 0 {
+	// Browser Activity Section (tabs + history)
+	if browsers.Available && (browsers.TotalTabs > 0 || browsers.TotalURLsVisited > 0) {
 		fmt.Println()
-		fmt.Println(ui.RenderHeader("BROWSER TABS"))
+		fmt.Println(ui.RenderHeader("BROWSER ACTIVITY"))
 
-		// Total count
-		text := fmt.Sprintf("%d tabs open", browsers.TotalTabs)
-		if browsers.Chrome.Available {
-			text += fmt.Sprintf(" • Chrome: %d", browsers.Chrome.TabCount)
-		}
-		if browsers.Safari.Available {
-			text += fmt.Sprintf(" • Safari: %d", browsers.Safari.TabCount)
-		}
-		if browsers.Edge.Available {
-			text += fmt.Sprintf(" • Edge: %d", browsers.Edge.TabCount)
-		}
-		fmt.Println(ui.RenderDataPoint("🌐", text))
-
-		// Top domains
-		if len(browsers.TopDomains) > 0 {
-			type domainCount struct {
-				domain string
-				count  int
+		// History summary
+		if browsers.TotalURLsVisited > 0 {
+			historyText := fmt.Sprintf("%d URLs visited today", browsers.TotalURLsVisited)
+			if browsers.TopHistoryDomain != "" {
+				historyText += fmt.Sprintf(" • Top: %s (%d visit%s)", 
+					browsers.TopHistoryDomain, 
+					browsers.TopDomainVisits, 
+					pluralize(browsers.TopDomainVisits))
 			}
-			var domains []domainCount
-			for domain, count := range browsers.TopDomains {
-				domains = append(domains, domainCount{domain, count})
-			}
-			// Sort by count descending
-			sort.Slice(domains, func(i, j int) bool {
-				return domains[i].count > domains[j].count
-			})
+			fmt.Println(ui.RenderDataPoint("📊", historyText))
 
-			// Show top 5 domains
-			fmt.Println(ui.RenderDataPoint("📊", "Top domains:"))
-			for i, dc := range domains {
-				if i >= 5 {
+			// Show issue URLs if any
+			if len(browsers.AllIssueURLs) > 0 {
+				issueText := fmt.Sprintf("Issues viewed: %s", collectors.FormatIssueURLs(browsers.AllIssueURLs))
+				fmt.Println(ui.RenderDataPoint("🎫", issueText))
+			}
+		}
+
+		// Open tabs count
+		if browsers.TotalTabs > 0 {
+			text := fmt.Sprintf("%d tabs open", browsers.TotalTabs)
+			if browsers.Chrome.Available {
+				text += fmt.Sprintf(" • Chrome: %d", browsers.Chrome.TabCount)
+			}
+			if browsers.Safari.Available {
+				text += fmt.Sprintf(" • Safari: %d", browsers.Safari.TabCount)
+			}
+			if browsers.Edge.Available {
+				text += fmt.Sprintf(" • Edge: %d", browsers.Edge.TabCount)
+			}
+			fmt.Println(ui.RenderDataPoint("🌐", text))
+
+			// Top domains from tabs
+			if len(browsers.TopDomains) > 0 {
+				type domainCount struct {
+					domain string
+					count  int
+				}
+				var domains []domainCount
+				for domain, count := range browsers.TopDomains {
+					domains = append(domains, domainCount{domain, count})
+				}
+				// Sort by count descending
+				sort.Slice(domains, func(i, j int) bool {
+					return domains[i].count > domains[j].count
+				})
+
+				// Show top 5 domains
+				fmt.Println(ui.RenderDataPoint("📑", "Top tab domains:"))
+				for i, dc := range domains {
+					if i >= 5 {
+						break
+					}
+					domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
+					fmt.Println(ui.RenderSubItem(domainText))
+				}
+			}
+		}
+	}
+
+	// Notifications Section
+	if notifications.Available && notifications.TotalNotifications > 0 {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("NOTIFICATIONS"))
+
+		// Total notifications
+		text := fmt.Sprintf("%d notification%s today", notifications.TotalNotifications, pluralize(notifications.TotalNotifications))
+		fmt.Println(ui.RenderDataPoint("🔔", text))
+
+		// Top apps by notification count
+		if len(notifications.TopApps) > 0 {
+			fmt.Println(ui.RenderDataPoint("📱", "Top interrupting apps:"))
+			for i, app := range notifications.TopApps {
+				if i >= 3 {
 					break
 				}
-				domainText := fmt.Sprintf("   %s (%d tab%s)", dc.domain, dc.count, pluralize(dc.count))
-				fmt.Println(ui.RenderSubItem(domainText))
+				appText := fmt.Sprintf("   %s (%d notification%s)", app.Name, app.Count, pluralize(app.Count))
+				fmt.Println(ui.RenderSubItem(appText))
 			}
 		}
 
@@ -488,6 +629,15 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 			neutralText := fmt.Sprintf("   Neutral: %d visits (%d%%)", browsers.NeutralVisits, neutralPct)
 			fmt.Println(ui.RenderSubItem(neutralText))
 		}
+	}
+
+	// Context Fragmentation Section
+	if fragmentation.Available {
+		fmt.Println()
+		fmt.Println(ui.RenderHeader("CONTEXT FRAGMENTATION"))
+
+		text := fmt.Sprintf("%d/100 (%s)", fragmentation.Score, fragmentation.Level)
+		fmt.Println(ui.RenderDataPoint(fragmentation.Emoji, text))
 	}
 
 	fmt.Println()
