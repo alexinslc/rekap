@@ -151,6 +151,8 @@ func runDemo(cfg *config.Config) {
 	demoFocus := collectors.FocusResult{
 		StreakMinutes: 87, // 1h 27m
 		AppName:       "VS Code",
+		StartTime:     time.Now().Add(-2 * time.Hour).Add(-30 * time.Minute),
+		EndTime:       time.Now().Add(-1 * time.Hour).Add(-3 * time.Minute),
 		Available:     true,
 	}
 
@@ -282,6 +284,8 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 	if focus.Available {
 		fmt.Printf("focus_streak_minutes=%d\n", focus.StreakMinutes)
 		fmt.Printf("focus_streak_app=%s\n", focus.AppName)
+		fmt.Printf("focus_streak_start=%d\n", focus.StartTime.Unix())
+		fmt.Printf("focus_streak_end=%d\n", focus.EndTime.Unix())
 	}
 
 	if media.Available {
@@ -378,7 +382,14 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		fmt.Println(ui.RenderHeader("PRODUCTIVITY"))
 
 		if focus.Available {
-			text := fmt.Sprintf("Best focus: %s in %s", ui.FormatDuration(focus.StreakMinutes), focus.AppName)
+			// Format time window
+			timeWindow := fmt.Sprintf("%s - %s",
+				ui.FormatTime(focus.StartTime, cfg.Display.TimeFormat),
+				ui.FormatTime(focus.EndTime, cfg.Display.TimeFormat))
+			text := fmt.Sprintf("Best flow: %s in %s without switching (%s)",
+				ui.FormatDuration(focus.StreakMinutes),
+				focus.AppName,
+				timeWindow)
 			fmt.Println(ui.RenderHighlight("⏱️ ", text))
 		}
 
