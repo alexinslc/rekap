@@ -117,7 +117,7 @@ func CollectNotifications(ctx context.Context) NotificationsResult {
 
 	result.TotalNotifications = totalCount
 	result.TopApps = apps
-	result.Available = totalCount > 0
+	result.Available = true
 
 	// Get notifications during focus periods (optional enhancement)
 	// This would require correlating notification timestamps with focus streaks
