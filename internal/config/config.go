@@ -9,9 +9,10 @@ import (
 
 // Config holds all user preferences
 type Config struct {
-	Colors   ColorConfig    `yaml:"colors"`
-	Display  DisplayConfig  `yaml:"display"`
-	Tracking TrackingConfig `yaml:"tracking"`
+	Colors        ColorConfig                         `yaml:"colors"`
+	Display       DisplayConfig                       `yaml:"display"`
+	Tracking      TrackingConfig                      `yaml:"tracking"`
+	Fragmentation FragmentationThresholdsConfig       `yaml:"fragmentation"`
 }
 
 // ColorConfig holds color customization settings
@@ -37,6 +38,13 @@ type TrackingConfig struct {
 	ExcludeApps []string `yaml:"exclude_apps"`
 }
 
+// FragmentationThresholdsConfig holds configurable thresholds for fragmentation scoring
+type FragmentationThresholdsConfig struct {
+	FocusedMax    int `yaml:"focused_max"`    // 0-30 = Focused
+	ModerateMax   int `yaml:"moderate_max"`   // 31-60 = Moderate
+	FragmentedMin int `yaml:"fragmented_min"` // 61-100 = Fragmented
+}
+
 // Default returns a config with sensible defaults
 func Default() *Config {
 	showMedia := true
@@ -59,6 +67,11 @@ func Default() *Config {
 		},
 		Tracking: TrackingConfig{
 			ExcludeApps: []string{},
+		},
+		Fragmentation: FragmentationThresholdsConfig{
+			FocusedMax:    30,
+			ModerateMax:   60,
+			FragmentedMin: 61,
 		},
 	}
 }
@@ -145,6 +158,24 @@ func (c *Config) Validate() {
 	}
 	if c.Colors.Text == "" {
 		c.Colors.Text = defaults.Colors.Text
+	}
+
+	// Validate fragmentation thresholds
+	if c.Fragmentation.FocusedMax <= 0 {
+		c.Fragmentation.FocusedMax = defaults.Fragmentation.FocusedMax
+	}
+	if c.Fragmentation.ModerateMax <= 0 {
+		c.Fragmentation.ModerateMax = defaults.Fragmentation.ModerateMax
+	}
+	if c.Fragmentation.FragmentedMin <= 0 {
+		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
+	}
+	// Ensure logical ordering: FocusedMax <= ModerateMax < FragmentedMin
+	if !(c.Fragmentation.FocusedMax <= c.Fragmentation.ModerateMax &&
+		c.Fragmentation.ModerateMax < c.Fragmentation.FragmentedMin) {
+		c.Fragmentation.FocusedMax = defaults.Fragmentation.FocusedMax
+		c.Fragmentation.ModerateMax = defaults.Fragmentation.ModerateMax
+		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
 	}
 }
 
