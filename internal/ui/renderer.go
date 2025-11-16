@@ -319,22 +319,22 @@ func removeEmoji(text string) string {
 }
 
 // getAccessibleIcon returns a text-based alternative to emoji icons
+var accessibleIconMap = map[string]string{
+	"⏰": "[TIME]",
+	"🔋": "[BAT]",
+	"🔌": "[PWR]",
+	"📱": "[APP]",
+	"⏱️": "[FOCUS]",
+	"🎵": "[MUSIC]",
+	"🌐": "[NET]",
+	"📊": "[DATA]",
+	"💡": "[INFO]",
+	"✓":  "[OK]",
+	"✗":  "[ERR]",
+}
+
 func getAccessibleIcon(emoji string) string {
-	iconMap := map[string]string{
-		"⏰": "[TIME]",
-		"🔋": "[BAT]",
-		"🔌": "[PWR]",
-		"📱": "[APP]",
-		"⏱️": "[FOCUS]",
-		"🎵": "[MUSIC]",
-		"🌐": "[NET]",
-		"📊": "[DATA]",
-		"💡": "[INFO]",
-		"✓":  "[OK]",
-		"✗":  "[ERR]",
-	}
-	
-	if alt, ok := iconMap[emoji]; ok {
+	if alt, ok := accessibleIconMap[emoji]; ok {
 		return alt
 	}
 	return "[*]"
