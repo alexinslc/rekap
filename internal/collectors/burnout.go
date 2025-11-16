@@ -194,11 +194,6 @@ func detectLateNightWork(ctx context.Context) (int, error) {
 	earlyMorning := midnight.Add(6 * time.Hour) // 06:00
 	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// Only check if current time is within the late night window
-	if now.Hour() >= 6 {
-		return 0, nil // Not in late night period
-	}
-
 	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
 	endTimestamp := earlyMorning.Sub(coreDataEpoch).Seconds()
 
