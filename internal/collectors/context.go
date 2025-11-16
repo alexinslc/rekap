@@ -15,7 +15,7 @@ type ContextOverload struct {
 // Triggers:
 // - >5 apps actively used (not just open)
 // - >30 browser tabs open
-// - >10 unique domains visited
+// - >10 unique domains from open tabs
 func CheckContextOverload(apps AppsResult, browsers BrowsersResult) ContextOverload {
 	result := ContextOverload{}
 
