@@ -70,6 +70,10 @@ var (
 
 	dividerStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
+
+	warningSubtleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("214")). // Orange
+			Italic(true)
 )
 
 // ApplyColors updates the color scheme based on config
@@ -138,6 +142,10 @@ func ApplyColors(cfg *config.Config) {
 
 	dividerStyle = lipgloss.NewStyle().
 		Foreground(mutedColor)
+
+	warningSubtleStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(cfg.Colors.Warning)).
+		Italic(true)
 }
 
 // IsTTY returns true if stdout is a terminal
@@ -251,6 +259,11 @@ func RenderError(text string) string {
 	return errorStyle.Render("✗ " + text)
 }
 
+// RenderWarning formats a warning message
+func RenderWarning(text string) string {
+	return errorStyle.Render("⚠️ " + text)
+}
+
 // FormatDuration formats minutes into human-readable duration
 func FormatDuration(minutes int) string {
 	hours := minutes / 60
@@ -338,4 +351,9 @@ func getAccessibleIcon(emoji string) string {
 		return alt
 	}
 	return "[*]"
+}
+
+// RenderBurnoutWarning formats a subtle burnout warning
+func RenderBurnoutWarning(icon, text string) string {
+	return fmt.Sprintf("  %s  %s", icon, warningSubtleStyle.Render(text))
 }

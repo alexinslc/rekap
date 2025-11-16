@@ -3,16 +3,19 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 // Config holds all user preferences
 type Config struct {
-	Colors        ColorConfig         `yaml:"colors"`
-	Display       DisplayConfig       `yaml:"display"`
-	Tracking      TrackingConfig      `yaml:"tracking"`
-	Accessibility AccessibilityConfig `yaml:"accessibility"`
+	Colors        ColorConfig                   `yaml:"colors"`
+	Display       DisplayConfig                 `yaml:"display"`
+	Tracking      TrackingConfig                `yaml:"tracking"`
+	Accessibility AccessibilityConfig           `yaml:"accessibility"`
+	Domains       DomainsConfig                 `yaml:"domains"`
+	Fragmentation FragmentationThresholdsConfig `yaml:"fragmentation"`
 }
 
 // ColorConfig holds color customization settings
@@ -40,9 +43,23 @@ type TrackingConfig struct {
 
 // AccessibilityConfig holds accessibility preferences
 type AccessibilityConfig struct {
-	Enabled       bool `yaml:"enabled"`
-	HighContrast  bool `yaml:"high_contrast"`
-	NoEmoji       bool `yaml:"no_emoji"`
+	Enabled      bool `yaml:"enabled"`
+	HighContrast bool `yaml:"high_contrast"`
+	NoEmoji      bool `yaml:"no_emoji"`
+}
+
+// DomainsConfig holds domain categorization configuration
+type DomainsConfig struct {
+	Work        []string `yaml:"work"`
+	Distraction []string `yaml:"distraction"`
+	Neutral     []string `yaml:"neutral"`
+}
+
+// FragmentationThresholdsConfig holds configurable thresholds for fragmentation scoring
+type FragmentationThresholdsConfig struct {
+	FocusedMax    int `yaml:"focused_max"`    // 0-30 = Focused
+	ModerateMax   int `yaml:"moderate_max"`   // 31-60 = Moderate
+	FragmentedMin int `yaml:"fragmented_min"` // 61-100 = Fragmented
 }
 
 // Default returns a config with sensible defaults
@@ -72,6 +89,41 @@ func Default() *Config {
 			Enabled:      false,
 			HighContrast: false,
 			NoEmoji:      false,
+		},
+		Domains: DomainsConfig{
+			Work: []string{
+				"github.com",
+				"gitlab.com",
+				"bitbucket.org",
+				"stackoverflow.com",
+				"stackexchange.com",
+				"docs.*",
+				"developer.*",
+				"api.*",
+				"atlassian.net",
+				"linear.app",
+				"asana.com",
+				"notion.so",
+				"aws.amazon.com",
+				"console.cloud.google.com",
+				"portal.azure.com",
+			},
+			Distraction: []string{
+				"twitter.com",
+				"x.com",
+				"reddit.com",
+				"facebook.com",
+				"instagram.com",
+				"youtube.com",
+				"tiktok.com",
+				"twitch.tv",
+			},
+			Neutral: []string{},
+		},
+		Fragmentation: FragmentationThresholdsConfig{
+			FocusedMax:    30,
+			ModerateMax:   60,
+			FragmentedMin: 61,
 		},
 	}
 }
@@ -159,6 +211,24 @@ func (c *Config) Validate() {
 	if c.Colors.Text == "" {
 		c.Colors.Text = defaults.Colors.Text
 	}
+
+	// Validate fragmentation thresholds
+	if c.Fragmentation.FocusedMax <= 0 {
+		c.Fragmentation.FocusedMax = defaults.Fragmentation.FocusedMax
+	}
+	if c.Fragmentation.ModerateMax <= 0 {
+		c.Fragmentation.ModerateMax = defaults.Fragmentation.ModerateMax
+	}
+	if c.Fragmentation.FragmentedMin <= 0 {
+		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
+	}
+	// Ensure logical ordering: FocusedMax <= ModerateMax < FragmentedMin
+	if !(c.Fragmentation.FocusedMax <= c.Fragmentation.ModerateMax &&
+		c.Fragmentation.ModerateMax < c.Fragmentation.FragmentedMin) {
+		c.Fragmentation.FocusedMax = defaults.Fragmentation.FocusedMax
+		c.Fragmentation.ModerateMax = defaults.Fragmentation.ModerateMax
+		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
+	}
 }
 
 // ShouldShowMedia returns whether to show media section
@@ -184,5 +254,69 @@ func (c *Config) IsAppExcluded(appName string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// CategorizeDomain returns "work", "distraction", "neutral", or "" (uncategorized)
+func (c *Config) CategorizeDomain(domain string) string {
+	if domain == "" {
+		return ""
+	}
+
+	// Check work domains
+	for _, pattern := range c.Domains.Work {
+		if matchDomainPattern(domain, pattern) {
+			return "work"
+		}
+	}
+
+	// Check distraction domains
+	for _, pattern := range c.Domains.Distraction {
+		if matchDomainPattern(domain, pattern) {
+			return "distraction"
+		}
+	}
+
+	// Check neutral domains
+	for _, pattern := range c.Domains.Neutral {
+		if matchDomainPattern(domain, pattern) {
+			return "neutral"
+		}
+	}
+
+	// Default to neutral if not categorized
+	return "neutral"
+}
+
+// matchDomainPattern matches a domain against a pattern
+// Supports wildcards like "docs.*" or "*.google.com"
+func matchDomainPattern(domain, pattern string) bool {
+	// Exact match
+	if domain == pattern {
+		return true
+	}
+
+	// Wildcard pattern matching
+	if strings.Contains(pattern, "*") {
+		// Convert pattern to regex-like matching
+		// docs.* matches docs.python.org, docs.microsoft.com, etc.
+		// *.google.com matches mail.google.com, drive.google.com, etc.
+		
+		if strings.HasPrefix(pattern, "*.") {
+			// *.example.com pattern
+			suffix := pattern[1:] // Remove the *
+			return strings.HasSuffix(domain, suffix)
+		} else if strings.HasSuffix(pattern, ".*") {
+			// docs.* pattern
+			prefix := pattern[:len(pattern)-1] // Remove the *
+			return strings.HasPrefix(domain, prefix)
+		}
+	}
+
+	// Check if domain ends with .pattern (e.g., "atlassian.net" matches "mycompany.atlassian.net")
+	if strings.HasSuffix(domain, "."+pattern) {
+		return true
+	}
+
 	return false
 }
