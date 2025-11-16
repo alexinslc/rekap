@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	_ "modernc.org/sqlite"
 )
 
 // NotificationApp represents notification count for a single app
