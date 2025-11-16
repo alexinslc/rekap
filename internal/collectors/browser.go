@@ -343,14 +343,18 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 		// Safari uses Core Data timestamp (seconds since 2001-01-01)
 		coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
 		startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
+		endTimestamp := now.Sub(coreDataEpoch).Seconds()
 		
+		// Join history_items and history_visits to get all visits for today
 		query := `
-			SELECT url, visit_count
-			FROM history_items
-			WHERE visit_time >= ?
-			ORDER BY visit_count DESC
+			SELECT hi.url, COUNT(*) as today_visit_count
+			FROM history_items hi
+			JOIN history_visits hv ON hi.id = hv.history_item
+			WHERE hv.visit_time >= ? AND hv.visit_time < ?
+			GROUP BY hi.url
+			ORDER BY today_visit_count DESC
 		`
-		rows, err = db.QueryContext(ctx, query, startTimestamp)
+		rows, err = db.QueryContext(ctx, query, startTimestamp, endTimestamp)
 	} else {
 		// Chrome/Edge use microseconds since Unix epoch
 		startTimestamp := midnight.UnixMicro()
