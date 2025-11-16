@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -169,17 +170,20 @@ func Load(nameOrPath string) (Theme, error) {
 	// Try to load from file path
 	path := nameOrPath
 
-	// If not an absolute path, check in themes directory
-	if !filepath.IsAbs(path) {
-		homeDir, err := os.UserHomeDir()
-		if err == nil {
-			themesDir := filepath.Join(homeDir, ".config", "rekap", "themes")
-			// Try with .yaml extension
-			if filepath.Ext(path) == "" {
-				path = filepath.Join(themesDir, path+".yaml")
-			} else {
-				path = filepath.Join(themesDir, path)
-			}
+	// If it's an absolute path or starts with ./ or ../, use it as-is
+	if filepath.IsAbs(path) || strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../") {
+		return LoadFromFile(path)
+	}
+
+	// Otherwise, check in themes directory
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		themesDir := filepath.Join(homeDir, ".config", "rekap", "themes")
+		// Try with .yaml extension
+		if filepath.Ext(path) == "" {
+			path = filepath.Join(themesDir, path+".yaml")
+		} else {
+			path = filepath.Join(themesDir, path)
 		}
 	}
 
