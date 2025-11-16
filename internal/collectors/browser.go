@@ -387,7 +387,9 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 	}
 	defer rows.Close()
 
-	// Process results
+	// Process results - use map to deduplicate issue IDs
+	issueIDSet := make(map[string]struct{})
+	
 	for rows.Next() {
 		var urlStr string
 		var visitCount int
@@ -404,11 +406,17 @@ func collectBrowserHistory(ctx context.Context, dbPath, browserType string) Brow
 			result.HistoryDomains[domain] += visitCount
 		}
 
-		// Check if it's an issue URL
+		// Check if it's an issue URL and deduplicate
 		if isIssueURL(urlStr) {
 			issueID := extractIssueIdentifier(urlStr)
-			result.IssueURLs = append(result.IssueURLs, issueID)
+			issueIDSet[issueID] = struct{}{}
 		}
+	}
+
+	// Convert deduplicated issue IDs to slice
+	result.IssueURLs = make([]string, 0, len(issueIDSet))
+	for issueID := range issueIDSet {
+		result.IssueURLs = append(result.IssueURLs, issueID)
 	}
 
 	// Find top domain
