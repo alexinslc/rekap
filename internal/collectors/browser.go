@@ -359,9 +359,9 @@ func CollectIssues(ctx context.Context) IssuesResult {
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
 	// Merge issues from all browsers
-	mergeIssues(issueMap, collectChromeHistory(ctx, todayStart))
-	mergeIssues(issueMap, collectSafariHistory(ctx, todayStart))
-	mergeIssues(issueMap, collectEdgeHistory(ctx, todayStart))
+	mergeIssues(issueMap, collectChromeIssues(ctx, todayStart))
+	mergeIssues(issueMap, collectSafariIssues(ctx, todayStart))
+	mergeIssues(issueMap, collectEdgeIssues(ctx, todayStart))
 
 	// Convert map to slice
 	for _, issue := range issueMap {
@@ -378,8 +378,8 @@ func CollectIssues(ctx context.Context) IssuesResult {
 	return result
 }
 
-// collectChromeHistory reads Chrome history database
-func collectChromeHistory(ctx context.Context, since time.Time) []IssueVisit {
+// collectChromeIssues reads Chrome history database for issue URLs
+func collectChromeIssues(ctx context.Context, since time.Time) []IssueVisit {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil
@@ -389,8 +389,8 @@ func collectChromeHistory(ctx context.Context, since time.Time) []IssueVisit {
 	return parseHistoryDB(ctx, historyPath, since, "chrome")
 }
 
-// collectSafariHistory reads Safari history database
-func collectSafariHistory(ctx context.Context, since time.Time) []IssueVisit {
+// collectSafariIssues reads Safari history database for issue URLs
+func collectSafariIssues(ctx context.Context, since time.Time) []IssueVisit {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil
@@ -400,8 +400,8 @@ func collectSafariHistory(ctx context.Context, since time.Time) []IssueVisit {
 	return parseSafariHistoryDB(ctx, historyPath, since)
 }
 
-// collectEdgeHistory reads Edge history database
-func collectEdgeHistory(ctx context.Context, since time.Time) []IssueVisit {
+// collectEdgeIssues reads Edge history database for issue URLs
+func collectEdgeIssues(ctx context.Context, since time.Time) []IssueVisit {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil
