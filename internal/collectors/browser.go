@@ -81,19 +81,23 @@ func CollectBrowserTabs(ctx context.Context) BrowsersResult {
 	return result
 }
 
-func collectChromeTabs(ctx context.Context) BrowserResult {
+// collectBrowserTabsForApp is a generic helper to collect browser tabs
+// browserName: display name for the browser (e.g., "Chrome")
+// appName: AppleScript application name (e.g., "Google Chrome")
+// titleProperty: AppleScript property for tab title ("title of t" or "name of t")
+func collectBrowserTabsForApp(ctx context.Context, browserName, appName, titleProperty string) BrowserResult {
 	result := BrowserResult{
-		Browser: "Chrome",
+		Browser: browserName,
 		Domains: make(map[string]int),
 	}
 
-	script := `
-tell application "Google Chrome"
+	script := fmt.Sprintf(`
+tell application "%s"
 	if it is running then
 		set tabList to {}
 		repeat with w in windows
 			repeat with t in tabs of w
-				set end of tabList to (title of t) & "|||" & (URL of t)
+				set end of tabList to (%s) & "|||" & (URL of t)
 			end repeat
 		end repeat
 		set AppleScript's text item delimiters to ":::"
@@ -103,12 +107,12 @@ tell application "Google Chrome"
 	end if
 end tell
 return ""
-`
+`, appName, titleProperty)
 
 	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
 	output, err := cmd.Output()
 	if err != nil {
-		result.Error = fmt.Errorf("chrome not running or unavailable: %w", err)
+		result.Error = fmt.Errorf("%s not running or unavailable: %w", strings.ToLower(browserName), err)
 		return result
 	}
 
@@ -148,144 +152,18 @@ return ""
 	}
 
 	return result
+}
+
+func collectChromeTabs(ctx context.Context) BrowserResult {
+	return collectBrowserTabsForApp(ctx, "Chrome", "Google Chrome", "title of t")
 }
 
 func collectSafariTabs(ctx context.Context) BrowserResult {
-	result := BrowserResult{
-		Browser: "Safari",
-		Domains: make(map[string]int),
-	}
-
-	script := `
-tell application "Safari"
-	if it is running then
-		set tabList to {}
-		repeat with w in windows
-			repeat with t in tabs of w
-				set end of tabList to (name of t) & "|||" & (URL of t)
-			end repeat
-		end repeat
-		set AppleScript's text item delimiters to ":::"
-		set tabText to tabList as text
-		set AppleScript's text item delimiters to ""
-		return tabText
-	end if
-end tell
-return ""
-`
-
-	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
-	output, err := cmd.Output()
-	if err != nil {
-		result.Error = fmt.Errorf("safari not running or unavailable: %w", err)
-		return result
-	}
-
-	outputStr := strings.TrimSpace(string(output))
-	if outputStr == "" {
-		return result
-	}
-
-	result.Available = true
-	tabs := strings.Split(outputStr, ":::")
-
-	for _, tab := range tabs {
-		if tab == "" {
-			continue
-		}
-
-		parts := strings.Split(tab, "|||")
-		if len(parts) != 2 {
-			continue
-		}
-
-		title := strings.TrimSpace(parts[0])
-		urlStr := strings.TrimSpace(parts[1])
-
-		domain := extractDomain(urlStr)
-
-		result.Tabs = append(result.Tabs, BrowserTab{
-			Title:  title,
-			URL:    urlStr,
-			Domain: domain,
-		})
-		result.TabCount++
-
-		if domain != "" {
-			result.Domains[domain]++
-		}
-	}
-
-	return result
+	return collectBrowserTabsForApp(ctx, "Safari", "Safari", "name of t")
 }
 
 func collectEdgeTabs(ctx context.Context) BrowserResult {
-	result := BrowserResult{
-		Browser: "Edge",
-		Domains: make(map[string]int),
-	}
-
-	script := `
-tell application "Microsoft Edge"
-	if it is running then
-		set tabList to {}
-		repeat with w in windows
-			repeat with t in tabs of w
-				set end of tabList to (title of t) & "|||" & (URL of t)
-			end repeat
-		end repeat
-		set AppleScript's text item delimiters to ":::"
-		set tabText to tabList as text
-		set AppleScript's text item delimiters to ""
-		return tabText
-	end if
-end tell
-return ""
-`
-
-	cmd := exec.CommandContext(ctx, "osascript", "-e", script)
-	output, err := cmd.Output()
-	if err != nil {
-		result.Error = fmt.Errorf("edge not running or unavailable: %w", err)
-		return result
-	}
-
-	outputStr := strings.TrimSpace(string(output))
-	if outputStr == "" {
-		return result
-	}
-
-	result.Available = true
-	tabs := strings.Split(outputStr, ":::")
-
-	for _, tab := range tabs {
-		if tab == "" {
-			continue
-		}
-
-		parts := strings.Split(tab, "|||")
-		if len(parts) != 2 {
-			continue
-		}
-
-		title := strings.TrimSpace(parts[0])
-		urlStr := strings.TrimSpace(parts[1])
-
-		domain := extractDomain(urlStr)
-
-		result.Tabs = append(result.Tabs, BrowserTab{
-			Title:  title,
-			URL:    urlStr,
-			Domain: domain,
-		})
-		result.TabCount++
-
-		if domain != "" {
-			result.Domains[domain]++
-		}
-	}
-
-	return result
+	return collectBrowserTabsForApp(ctx, "Edge", "Microsoft Edge", "title of t")
 }
 
 func extractDomain(urlStr string) string {
