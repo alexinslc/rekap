@@ -81,16 +81,22 @@ func CollectScreen(ctx context.Context) ScreenResult {
 				
 				// Track wake event (end of lock)
 				if !lastSleepTime.IsZero() {
-					duration := eventTime.Sub(lastSleepTime)
-					// Only count locks longer than 1 minute
-					if duration.Minutes() >= 1 {
-						lockEvents = append(lockEvents, lockEvent{
-							sleepTime: lastSleepTime,
-							wakeTime:  eventTime,
-							duration:  duration,
-						})
+					// Only count locks that started on or after midnight (today)
+					if lastSleepTime.Before(midnight) {
+						// Sleep started before today, skip this lock event
+						lastSleepTime = time.Time{}
+					} else {
+						duration := eventTime.Sub(lastSleepTime)
+						// Only count locks longer than 1 minute
+						if duration.Minutes() >= 1 {
+							lockEvents = append(lockEvents, lockEvent{
+								sleepTime: lastSleepTime,
+								wakeTime:  eventTime,
+								duration:  duration,
+							})
+						}
+						lastSleepTime = time.Time{}
 					}
-					lastSleepTime = time.Time{}
 				}
 			}
 		} else if strings.Contains(lowerLine, "display is turned off") ||
