@@ -20,6 +20,7 @@ const version = "0.1.0"
 
 func main() {
 	var quietFlag bool
+	var accessibleFlag bool
 
 	rootCmd := &cobra.Command{
 		Use:   "rekap",
@@ -33,12 +34,18 @@ func main() {
 				cfg = config.Default()
 			}
 
+			// Override config with flag if provided
+			if accessibleFlag {
+				cfg.Accessibility.Enabled = true
+			}
+
 			runSummary(quietFlag, cfg)
 			return nil
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output machine-parsable key=value format")
+	rootCmd.PersistentFlags().BoolVar(&accessibleFlag, "accessible", false, "Enable accessibility mode (color-blind friendly, high contrast)")
 
 	initCmd := &cobra.Command{
 		Use:   "init",
@@ -69,6 +76,11 @@ func main() {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 				cfg = config.Default()
+			}
+
+			// Override config with flag if provided
+			if accessibleFlag {
+				cfg.Accessibility.Enabled = true
 			}
 
 			runDemo(cfg)

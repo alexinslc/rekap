@@ -168,3 +168,64 @@ func TestIsAppExcluded(t *testing.T) {
 		}
 	}
 }
+
+func TestAccessibilityDefaults(t *testing.T) {
+	cfg := Default()
+
+	if cfg.Accessibility.Enabled {
+		t.Error("Expected accessibility to be disabled by default")
+	}
+
+	if cfg.Accessibility.HighContrast {
+		t.Error("Expected high contrast to be disabled by default")
+	}
+
+	if cfg.Accessibility.NoEmoji {
+		t.Error("Expected no_emoji to be disabled by default")
+	}
+}
+
+func TestLoadAccessibilityConfig(t *testing.T) {
+	// Create a temporary directory
+	tmpDir := t.TempDir()
+	configDir := filepath.Join(tmpDir, ".config", "rekap")
+	err := os.MkdirAll(configDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+
+	// Override home directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Write a test config with accessibility settings
+	configPath := filepath.Join(configDir, "config.yaml")
+	configContent := `accessibility:
+  enabled: true
+  high_contrast: true
+  no_emoji: true
+`
+	err = os.WriteFile(configPath, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	// Verify loaded values
+	if !cfg.Accessibility.Enabled {
+		t.Error("Expected accessibility to be enabled")
+	}
+
+	if !cfg.Accessibility.HighContrast {
+		t.Error("Expected high contrast to be enabled")
+	}
+
+	if !cfg.Accessibility.NoEmoji {
+		t.Error("Expected no_emoji to be enabled")
+	}
+}

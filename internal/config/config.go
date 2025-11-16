@@ -9,9 +9,10 @@ import (
 
 // Config holds all user preferences
 type Config struct {
-	Colors   ColorConfig    `yaml:"colors"`
-	Display  DisplayConfig  `yaml:"display"`
-	Tracking TrackingConfig `yaml:"tracking"`
+	Colors        ColorConfig         `yaml:"colors"`
+	Display       DisplayConfig       `yaml:"display"`
+	Tracking      TrackingConfig      `yaml:"tracking"`
+	Accessibility AccessibilityConfig `yaml:"accessibility"`
 }
 
 // ColorConfig holds color customization settings
@@ -37,6 +38,13 @@ type TrackingConfig struct {
 	ExcludeApps []string `yaml:"exclude_apps"`
 }
 
+// AccessibilityConfig holds accessibility preferences
+type AccessibilityConfig struct {
+	Enabled       bool `yaml:"enabled"`
+	HighContrast  bool `yaml:"high_contrast"`
+	NoEmoji       bool `yaml:"no_emoji"`
+}
+
 // Default returns a config with sensible defaults
 func Default() *Config {
 	showMedia := true
@@ -59,6 +67,11 @@ func Default() *Config {
 		},
 		Tracking: TrackingConfig{
 			ExcludeApps: []string{},
+		},
+		Accessibility: AccessibilityConfig{
+			Enabled:      false,
+			HighContrast: false,
+			NoEmoji:      false,
 		},
 	}
 }
