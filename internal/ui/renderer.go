@@ -147,8 +147,8 @@ func IsTTY() bool {
 
 // RenderTitle renders the main title with optional animation
 func RenderTitle(text string, animate bool) string {
-	// Remove emoji if in no-emoji mode
-	if accessibilityNoEmoji {
+	// Remove emoji if accessibility mode is enabled and no-emoji is set
+	if accessibilityEnabled && accessibilityNoEmoji {
 		text = removeEmoji(text)
 	}
 	
