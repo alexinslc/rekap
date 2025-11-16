@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexinslc/rekap/internal/config"
 	_ "modernc.org/sqlite"
 )
 
@@ -41,12 +42,15 @@ type BrowserResult struct {
 
 // BrowsersResult aggregates all browser data
 type BrowsersResult struct {
-	Chrome           BrowserResult
-	Safari           BrowserResult
-	Edge             BrowserResult
-	TotalTabs        int
-	TopDomains       map[string]int // aggregated across all browsers
-	Available        bool
+	Chrome            BrowserResult
+	Safari            BrowserResult
+	Edge              BrowserResult
+	TotalTabs         int
+	TopDomains        map[string]int // aggregated across all browsers
+	WorkVisits        int
+	DistractionVisits int
+	NeutralVisits     int
+	Available         bool
 	// History aggregation
 	TotalURLsVisited int
 	AllIssueURLs     []string
@@ -56,7 +60,7 @@ type BrowsersResult struct {
 
 // CollectBrowserTabs retrieves open tabs from Chrome, Safari, and Edge
 // and also parses browser history for today's activity
-func CollectBrowserTabs(ctx context.Context) BrowsersResult {
+func CollectBrowserTabs(ctx context.Context, cfg *config.Config) BrowsersResult {
 	result := BrowsersResult{
 		TopDomains: make(map[string]int),
 	}
@@ -96,6 +100,23 @@ func CollectBrowserTabs(ctx context.Context) BrowsersResult {
 		result.TopDomains[domain] += count
 	}
 
+	// Categorize domains if config is provided
+	if cfg != nil {
+		for domain, count := range result.TopDomains {
+			category := cfg.CategorizeDomain(domain)
+			switch category {
+			case "work":
+				result.WorkVisits += count
+			case "distraction":
+				result.DistractionVisits += count
+			case "neutral":
+				result.NeutralVisits += count
+			default:
+				result.NeutralVisits += count
+			}
+		}
+	}
+
 	// Aggregate history data
 	result.TotalURLsVisited = result.Chrome.URLsVisited + result.Safari.URLsVisited + result.Edge.URLsVisited
 	
@@ -114,6 +135,7 @@ func CollectBrowserTabs(ctx context.Context) BrowsersResult {
 	for url := range issueURLSet {
 		result.AllIssueURLs = append(result.AllIssueURLs, url)
 	}
+	
 	// Find top history domain across all browsers
 	allHistoryDomains := make(map[string]int)
 	for domain, count := range result.Chrome.HistoryDomains {

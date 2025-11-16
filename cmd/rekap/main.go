@@ -198,19 +198,26 @@ func runDemo(cfg *config.Config) {
 			TopDomain:       "mail.google.com",
 			TopDomainVisits: 12,
 		},
-		TotalTabs:        35,
-		TotalURLsVisited: 147,
+		TotalTabs:         35,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
 			"mail.google.com":   5,
 			"chatgpt.com":       4,
 			"youtube.com":       3,
+			"reddit.com":        2,
+			"twitter.com":       2,
+			"docs.python.org":   3,
+			"linear.app":        2,
 		},
-		TopHistoryDomain: "github.com",
-		TopDomainVisits:  34,
-		AllIssueURLs:     []string{"PROJ-123", "PROJ-456", "org/repo#89"},
-		Available:        true,
+		WorkVisits:        19, // github(8) + stackoverflow(6) + docs.python.org(3) + linear.app(2)
+		DistractionVisits: 7,  // youtube(3) + reddit(2) + twitter(2)
+		NeutralVisits:     9,  // mail.google.com(5) + chatgpt.com(4)
+		TotalURLsVisited:  147,
+		TopHistoryDomain:  "github.com",
+		TopDomainVisits:   34,
+		AllIssueURLs:      []string{"PROJ-123", "PROJ-456", "org/repo#89"},
+		Available:         true,
 	}
 
 	demoNotifications := collectors.NotificationsResult{
@@ -269,7 +276,7 @@ func runSummary(quiet bool, cfg *config.Config) {
 	go func() { focusCh <- collectors.CollectFocus(ctx) }()
 	go func() { mediaCh <- collectors.CollectMedia(ctx) }()
 	go func() { networkCh <- collectors.CollectNetwork(ctx) }()
-	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx) }()
+	go func() { browsersCh <- collectors.CollectBrowserTabs(ctx, cfg) }()
 	go func() { notificationsCh <- collectors.CollectNotifications(ctx) }()
 
 	// Wait for all results
@@ -362,6 +369,13 @@ func printQuiet(uptime collectors.UptimeResult, battery collectors.BatteryResult
 		}
 		if browsers.Edge.Available {
 			fmt.Printf("browser_edge_tabs=%d\n", browsers.Edge.TabCount)
+		}
+		// Domain categorization stats
+		totalCategorized := browsers.WorkVisits + browsers.DistractionVisits + browsers.NeutralVisits
+		if totalCategorized > 0 {
+			fmt.Printf("browser_work_visits=%d\n", browsers.WorkVisits)
+			fmt.Printf("browser_distraction_visits=%d\n", browsers.DistractionVisits)
+			fmt.Printf("browser_neutral_visits=%d\n", browsers.NeutralVisits)
 		}
 		// History data
 		if browsers.TotalURLsVisited > 0 {
@@ -598,6 +612,22 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 				appText := fmt.Sprintf("   %s (%d notification%s)", app.Name, app.Count, pluralize(app.Count))
 				fmt.Println(ui.RenderSubItem(appText))
 			}
+		}
+
+		// Domain breakdown
+		totalCategorized := browsers.WorkVisits + browsers.DistractionVisits + browsers.NeutralVisits
+		if totalCategorized > 0 {
+			workPct := int(float64(browsers.WorkVisits) / float64(totalCategorized) * 100)
+			distractionPct := int(float64(browsers.DistractionVisits) / float64(totalCategorized) * 100)
+			neutralPct := int(float64(browsers.NeutralVisits) / float64(totalCategorized) * 100)
+
+			fmt.Println(ui.RenderDataPoint("📊", "Domain breakdown:"))
+			workText := fmt.Sprintf("   Work: %d visits (%d%%)", browsers.WorkVisits, workPct)
+			fmt.Println(ui.RenderSubItem(workText))
+			distractionText := fmt.Sprintf("   Distraction: %d visits (%d%%)", browsers.DistractionVisits, distractionPct)
+			fmt.Println(ui.RenderSubItem(distractionText))
+			neutralText := fmt.Sprintf("   Neutral: %d visits (%d%%)", browsers.NeutralVisits, neutralPct)
+			fmt.Println(ui.RenderSubItem(neutralText))
 		}
 	}
 
