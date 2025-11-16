@@ -16,11 +16,17 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 
 ## Installation
 
-Coming soon via Homebrew:
+### Homebrew (Recommended)
 
 ```bash
 brew tap alexinslc/rekap
 brew install rekap
+```
+
+Or install directly without tapping:
+
+```bash
+brew install alexinslc/rekap/rekap
 ```
 
 ### Manual Installation
@@ -178,6 +184,11 @@ go build -o rekap ./cmd/rekap
 **Binary won't run:**
 - On first run, right-click the binary and select "Open" to bypass Gatekeeper
 - Or run: `xattr -d com.apple.quarantine /usr/local/bin/rekap`
+
+**Homebrew installation issues:**
+- Ensure you have the latest Homebrew: `brew update`
+- If the tap isn't found, verify the repository exists at https://github.com/alexinslc/homebrew-rekap
+- Try untapping and tapping again: `brew untap alexinslc/rekap && brew tap alexinslc/rekap`
 
 **Check permissions status:**
 ```bash
