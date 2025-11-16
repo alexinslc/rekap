@@ -348,24 +348,25 @@ func TestCollectIssues(t *testing.T) {
 
 	// This is best-effort and may not find any issues
 	// Just verify the structure is correct
-	if result.Available {
-		if len(result.Issues) == 0 {
-			t.Error("Available is true but no issues found")
-		}
+	// Available should be true if and only if there are issues
+	if result.Available && len(result.Issues) == 0 {
+		t.Error("Available is true but no issues found")
+	} else if !result.Available && len(result.Issues) > 0 {
+		t.Error("Available is false but issues were found")
+	}
 
-		for _, issue := range result.Issues {
-			if issue.ID == "" {
-				t.Error("Issue ID should not be empty")
-			}
-			if issue.Tracker == "" {
-				t.Error("Issue Tracker should not be empty")
-			}
-			if issue.URL == "" {
-				t.Error("Issue URL should not be empty")
-			}
-			if issue.VisitCount <= 0 {
-				t.Errorf("Issue visit count should be > 0, got %d", issue.VisitCount)
-			}
+	for _, issue := range result.Issues {
+		if issue.ID == "" {
+			t.Error("Issue ID should not be empty")
+		}
+		if issue.Tracker == "" {
+			t.Error("Issue Tracker should not be empty")
+		}
+		if issue.URL == "" {
+			t.Error("Issue URL should not be empty")
+		}
+		if issue.VisitCount <= 0 {
+			t.Errorf("Issue visit count should be > 0, got %d", issue.VisitCount)
 		}
 	}
 }
