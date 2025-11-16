@@ -127,11 +127,8 @@ func CollectScreen(ctx context.Context) ScreenResult {
 		if result.LockCount > 1 {
 			result.AvgMinsBetweenLock = int(totalTimeBetweenLocks.Minutes() / float64(result.LockCount-1))
 		} else {
-			// Single lock: time from wake to now (if awake) or to last sleep
-			if isOn {
-				timeSinceWake := now.Sub(lockEvents[0].wakeTime)
-				result.AvgMinsBetweenLock = int(timeSinceWake.Minutes())
-			}
+			// Single lock: no meaningful "average between locks", set to 0
+			result.AvgMinsBetweenLock = 0
 		}
 	}
 
