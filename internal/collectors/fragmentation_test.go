@@ -423,10 +423,10 @@ func TestFragmentationBreakdownPopulation(t *testing.T) {
 		t.Errorf("UniqueDomains = %d, want 3", result.Breakdown.UniqueDomains)
 	}
 
-	// 3 apps / 3 hours = 1.0 switches per hour
-	expectedSwitches := 1.0
-	if result.Breakdown.AppSwitchesPerHour != expectedSwitches {
+	// 3 unique apps / 3 hours = 1.0 apps per hour
+	expectedAppsPerHour := 1.0
+	if result.Breakdown.AppSwitchesPerHour != expectedAppsPerHour {
 		t.Errorf("AppSwitchesPerHour = %.2f, want %.2f",
-			result.Breakdown.AppSwitchesPerHour, expectedSwitches)
+			result.Breakdown.AppSwitchesPerHour, expectedAppsPerHour)
 	}
 }
