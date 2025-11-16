@@ -5,6 +5,7 @@ import (
 )
 
 func TestCheck(t *testing.T) {
+	t.Parallel()
 	caps := Check()
 
 	// These are boolean values, just verify they're set
@@ -14,6 +15,7 @@ func TestCheck(t *testing.T) {
 }
 
 func TestGetCapabilitiesMatrix(t *testing.T) {
+	t.Parallel()
 	matrix := GetCapabilitiesMatrix()
 
 	// Uptime and battery should always be available
@@ -44,6 +46,7 @@ func TestGetCapabilitiesMatrix(t *testing.T) {
 }
 
 func TestFormatCapabilities(t *testing.T) {
+	t.Parallel()
 	caps := Capabilities{
 		FullDiskAccess: true,
 		Accessibility:  true,

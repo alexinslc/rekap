@@ -6,6 +6,7 @@ import (
 )
 
 func TestFormatDuration(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		minutes  int
 		expected string
@@ -28,6 +29,7 @@ func TestFormatDuration(t *testing.T) {
 }
 
 func TestFormatDurationCompact(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		minutes  int
 		expected string
@@ -50,6 +52,7 @@ func TestFormatDurationCompact(t *testing.T) {
 }
 
 func TestRenderDataPoint(t *testing.T) {
+	t.Parallel()
 	result := RenderDataPoint("🔋", "Battery: 75%")
 	if result == "" {
 		t.Error("RenderDataPoint should not return empty string")
@@ -62,6 +65,7 @@ func TestRenderDataPoint(t *testing.T) {
 }
 
 func TestRenderHint(t *testing.T) {
+	t.Parallel()
 	result := RenderHint("Test hint message")
 	if result == "" {
 		t.Error("RenderHint should not return empty string")
@@ -69,6 +73,7 @@ func TestRenderHint(t *testing.T) {
 }
 
 func TestRenderError(t *testing.T) {
+	t.Parallel()
 	result := RenderError("Test error message")
 	if result == "" {
 		t.Error("RenderError should not return empty string")
@@ -76,6 +81,7 @@ func TestRenderError(t *testing.T) {
 }
 
 func TestRenderWarning(t *testing.T) {
+	t.Parallel()
 	result := RenderWarning("Context overload: 7 apps + 45 tabs active")
 	if result == "" {
 		t.Error("RenderWarning should not return empty string")
@@ -87,6 +93,7 @@ func TestRenderWarning(t *testing.T) {
 }
 
 func TestRenderSummaryLine(t *testing.T) {
+	t.Parallel()
 	parts := []string{"3h 35m screen-on", "2 plug-ins", "Top apps: VS Code"}
 	result := RenderSummaryLine(parts)
 
@@ -96,6 +103,7 @@ func TestRenderSummaryLine(t *testing.T) {
 }
 
 func TestRenderSummaryLineEmpty(t *testing.T) {
+	t.Parallel()
 	result := RenderSummaryLine([]string{})
 
 	if result != "" {
@@ -104,6 +112,7 @@ func TestRenderSummaryLineEmpty(t *testing.T) {
 }
 
 func TestFormatTime(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		timeFormat string
@@ -133,6 +142,7 @@ func TestFormatTime(t *testing.T) {
 }
 
 func TestRemoveEmoji(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input    string
 		expected string
@@ -153,6 +163,7 @@ func TestRemoveEmoji(t *testing.T) {
 }
 
 func TestGetAccessibleIcon(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		emoji    string
 		expected string

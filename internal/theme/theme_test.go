@@ -7,6 +7,7 @@ import (
 )
 
 func TestGetBuiltIn(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		themeName string
@@ -41,6 +42,7 @@ func TestGetBuiltIn(t *testing.T) {
 }
 
 func TestListBuiltIn(t *testing.T) {
+	t.Parallel()
 	themes := ListBuiltIn()
 	if len(themes) < 7 {
 		t.Errorf("ListBuiltIn() returned %d themes, want at least 7", len(themes))
@@ -60,6 +62,7 @@ func TestListBuiltIn(t *testing.T) {
 }
 
 func TestThemeValidate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		theme   Theme
@@ -125,6 +128,7 @@ func TestThemeValidate(t *testing.T) {
 }
 
 func TestLoadFromFile(t *testing.T) {
+	t.Parallel()
 	// Create a temporary directory for test theme files
 	tmpDir, err := os.MkdirTemp("", "rekap-theme-test-*")
 	if err != nil {

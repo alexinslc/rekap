@@ -9,7 +9,8 @@ import (
 )
 
 func TestCollectUptime(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectUptime(ctx)
@@ -33,7 +34,8 @@ func TestCollectUptime(t *testing.T) {
 }
 
 func TestCollectBattery(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectBattery(ctx)
@@ -52,7 +54,8 @@ func TestCollectBattery(t *testing.T) {
 }
 
 func TestCollectScreen(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectScreen(ctx)
@@ -87,7 +90,8 @@ func TestCollectScreen(t *testing.T) {
 }
 
 func TestCollectApps(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectApps(ctx)
@@ -109,7 +113,8 @@ func TestCollectApps(t *testing.T) {
 }
 
 func TestCollectMedia(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectMedia(ctx)
@@ -130,7 +135,8 @@ func TestCollectMedia(t *testing.T) {
 }
 
 func TestCollectFocus(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectFocus(ctx)
@@ -168,6 +174,7 @@ func TestCollectFocus(t *testing.T) {
 }
 
 func TestCollectorTimeout(t *testing.T) {
+	t.Parallel()
 	// Test that collectors respect context timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
@@ -184,7 +191,8 @@ func TestCollectorTimeout(t *testing.T) {
 }
 
 func TestCollectNetwork(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectNetwork(ctx)
@@ -213,7 +221,8 @@ func TestCollectNetwork(t *testing.T) {
 }
 
 func TestCollectBrowserTabs(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	cfg := config.Default()
@@ -269,6 +278,7 @@ func TestCollectBrowserTabs(t *testing.T) {
 }
 
 func TestIsExcluded(t *testing.T) {
+	t.Parallel()
 	excludedApps := []string{"Activity Monitor", "System Preferences", "Slack"}
 
 	tests := []struct {
@@ -293,6 +303,7 @@ func TestIsExcluded(t *testing.T) {
 }
 
 func TestFormatBytes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		bytes    int64
 		expected string
@@ -315,6 +326,7 @@ func TestFormatBytes(t *testing.T) {
 }
 
 func TestExtractDomain(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected string
@@ -336,6 +348,7 @@ func TestExtractDomain(t *testing.T) {
 }
 
 func TestIssuePatterns(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url          string
 		expectMatch  bool
@@ -400,6 +413,7 @@ func TestIssuePatterns(t *testing.T) {
 }
 
 func TestIsIssueURL(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected bool
@@ -441,7 +455,8 @@ func TestIsIssueURL(t *testing.T) {
 }
 
 func TestCollectIssues(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	result := CollectIssues(ctx)
@@ -472,6 +487,7 @@ func TestCollectIssues(t *testing.T) {
 }
 
 func TestExtractIssueIdentifier(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected string
@@ -511,6 +527,7 @@ func TestExtractIssueIdentifier(t *testing.T) {
 }
 
 func TestFormatIssueURLs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		urls     []string
@@ -549,7 +566,8 @@ func TestFormatIssueURLs(t *testing.T) {
 }
 
 func TestCollectNotifications(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectNotifications(ctx)
@@ -580,7 +598,8 @@ func TestCollectNotifications(t *testing.T) {
 }
 
 func TestCollectAppsWithSwitching(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectApps(ctx)

@@ -7,6 +7,7 @@ import (
 )
 
 func TestDefault(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	if cfg.Colors.Primary != "13" {
@@ -31,6 +32,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestLoadNonExistent(t *testing.T) {
+	t.Parallel()
 	// Create a temporary directory
 	tmpDir := t.TempDir()
 
@@ -125,6 +127,7 @@ tracking:
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Display: DisplayConfig{
 			TimeFormat: "invalid",
@@ -145,6 +148,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestIsAppExcluded(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Tracking: TrackingConfig{
 			ExcludeApps: []string{"App1", "App2"},
@@ -170,6 +174,7 @@ func TestIsAppExcluded(t *testing.T) {
 }
 
 func TestAccessibilityDefaults(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	if cfg.Accessibility.Enabled {
@@ -231,6 +236,7 @@ func TestLoadAccessibilityConfig(t *testing.T) {
 }
 
 func TestCategorizeDomain(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	tests := []struct {
@@ -272,6 +278,7 @@ func TestCategorizeDomain(t *testing.T) {
 }
 
 func TestCategorizeDomainCustomConfig(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Domains: DomainsConfig{
 			Work:        []string{"mycompany.com", "internal.*"},
@@ -300,6 +307,7 @@ func TestCategorizeDomainCustomConfig(t *testing.T) {
 }
 
 func TestMatchDomainPattern(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		domain   string
 		pattern  string

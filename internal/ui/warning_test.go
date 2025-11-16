@@ -6,6 +6,7 @@ import (
 )
 
 func TestRenderBurnoutWarning(t *testing.T) {
+	t.Parallel()
 	result := RenderBurnoutWarning("⚠️", "Test warning message")
 
 	if !strings.Contains(result, "⚠️") {

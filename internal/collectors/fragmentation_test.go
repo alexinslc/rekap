@@ -6,6 +6,7 @@ import (
 )
 
 func TestCalculateFragmentation(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	thresholds := DefaultFragmentationThresholds()
 
@@ -228,6 +229,7 @@ func TestCalculateFragmentation(t *testing.T) {
 }
 
 func TestDefaultFragmentationThresholds(t *testing.T) {
+	t.Parallel()
 	thresholds := DefaultFragmentationThresholds()
 
 	if thresholds.FocusedMax != 30 {
@@ -244,6 +246,7 @@ func TestDefaultFragmentationThresholds(t *testing.T) {
 }
 
 func TestNormalizeValue(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		value        float64
@@ -270,6 +273,7 @@ func TestNormalizeValue(t *testing.T) {
 }
 
 func TestCalculateWeightedScore(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		breakdown FragmentationBreakdown
@@ -325,6 +329,7 @@ func TestCalculateWeightedScore(t *testing.T) {
 }
 
 func TestFragmentationWithCustomThresholds(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Custom thresholds: more relaxed
@@ -377,6 +382,7 @@ func TestFragmentationWithCustomThresholds(t *testing.T) {
 }
 
 func TestFragmentationBreakdownPopulation(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	thresholds := DefaultFragmentationThresholds()
 
