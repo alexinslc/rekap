@@ -432,31 +432,29 @@ func copyToTemp(srcPath string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
+// Precompiled regexes for common issue trackers
+var issueURLRegexes = []*regexp.Regexp{
+	// Jira: project-123, PROJ-456
+	regexp.MustCompile(`[A-Z]+-\d+`),
+	// GitHub: /issues/, /pull/
+	regexp.MustCompile(`github\.com/.+/(issues|pull)/\d+`),
+	// Linear: /issue/
+	regexp.MustCompile(`linear\.app/.+/issue/`),
+	// GitLab: /issues/, /merge_requests/
+	regexp.MustCompile(`gitlab\.com/.+/(issues|merge_requests)/\d+`),
+	// Bitbucket: /issues/
+	regexp.MustCompile(`bitbucket\.org/.+/issues/\d+`),
+	// Azure DevOps: /_workitems/ or /workitems/
+	regexp.MustCompile(`dev\.azure\.com/.+/_?workitems/\d+`),
+}
+
 // isIssueURL checks if a URL is an issue/ticket URL
 func isIssueURL(urlStr string) bool {
-	// Patterns for common issue trackers
-	patterns := []string{
-		// Jira: project-123, PROJ-456
-		`[A-Z]+-\d+`,
-		// GitHub: /issues/, /pull/
-		`github\.com/.+/(issues|pull)/\d+`,
-		// Linear: /issue/
-		`linear\.app/.+/issue/`,
-		// GitLab: /issues/, /merge_requests/
-		`gitlab\.com/.+/(issues|merge_requests)/\d+`,
-		// Bitbucket: /issues/
-		`bitbucket\.org/.+/issues/\d+`,
-		// Azure DevOps: /_workitems/ or /workitems/
-		`dev\.azure\.com/.+/_?workitems/\d+`,
-	}
-
-	for _, pattern := range patterns {
-		matched, _ := regexp.MatchString(pattern, urlStr)
-		if matched {
+	for _, re := range issueURLRegexes {
+		if re.MatchString(urlStr) {
 			return true
 		}
 	}
-
 	return false
 }
 
