@@ -28,22 +28,35 @@ universal_binaries:
   - id: rekap-universal
     ids:
       - rekap
-    name_template: "rekap"
-    replace: true
+    name_template: "rekap-universal"
+    replace: false
 
 archives:
   - id: rekap-archive
-    format: tar.gz
+    format_overrides:
+      - goos: darwin
+        format: tar.gz
     name_template: >-
       {{ .ProjectName }}-
       {{- .Version }}-
       {{- .Os }}-
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "386" }}386
       {{- else }}{{ .Arch }}{{ end }}
     files:
       - README.md
       - LICENSE*
+  
+  - id: rekap-binaries
+    format_overrides:
+      - goos: darwin
+        format: binary
+    name_template: >-
+      {{ .ProjectName }}-
+      {{- .Os }}-
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "386" }}386
+      {{- else }}{{ .Arch }}{{ end }}
 
 checksum:
   name_template: "checksums.txt"
@@ -62,13 +75,16 @@ changelog:
       - Merge branch
 
 brews:
-  - repository:
+  - name: rekap
+    ids:
+      - rekap-archive
+    repository:
       owner: alexinslc
       name: homebrew-rekap
     homepage: https://github.com/alexinslc/rekap
     description: "Daily Mac activity summary in your terminal"
     license: MIT
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "rekap"
     test: |
