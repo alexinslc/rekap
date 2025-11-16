@@ -10,6 +10,7 @@ Daily Mac Activity Summary - A single-binary macOS CLI that summarizes today's c
 - Top 3 apps by usage time
 - Screen-on time calculation
 - Focus streak detection
+- Browser tab tracking (Chrome, Safari, Edge)
 - Now Playing tracking (optional)
 - Network activity summary (data transferred, active connection)
 
@@ -71,6 +72,10 @@ top_app_1=VS Code
 top_app_1_minutes=142
 focus_streak_minutes=87
 focus_streak_app=VS Code
+browser_total_tabs=24
+browser_chrome_tabs=18
+browser_safari_tabs=2
+browser_edge_tabs=4
 network_interface=en0
 network_name=Home-5GHz
 network_bytes_received=2469606195
@@ -81,11 +86,12 @@ network_bytes_sent=471859200
 
 rekap works without any permissions but provides more data when granted:
 
-| Permission | Enables | Required For |
-|------------|---------|--------------|
-| **Full Disk Access** | App usage, screen time, focus streaks | Top apps, screen-on time |
-| **Accessibility** | Frontmost app detection | App tracking fallback |
-| **Media/Now Playing** | Track currently playing media | Now Playing section |
+| Permission | Enables |
+|------------|---------|
+| **Full Disk Access** | App usage, screen time, focus streaks |
+| **Accessibility** | Frontmost app detection (fallback) |
+| **Media/Now Playing** | Track currently playing media |
+| None required | Browser tabs, uptime, battery, network |
 
 Run `rekap init` for guided permission setup. Run `rekap doctor` to check current status.
 
