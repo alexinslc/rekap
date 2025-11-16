@@ -199,7 +199,7 @@ func RenderSummaryLine(parts []string) string {
 
 // RenderDataPoint formats a single data point with icon and enhanced styling
 func RenderDataPoint(icon, text string) string {
-	if accessibilityNoEmoji {
+	if accessibilityEnabled && accessibilityNoEmoji {
 		icon = getAccessibleIcon(icon)
 	}
 	if accessibilityEnabled {
@@ -211,7 +211,7 @@ func RenderDataPoint(icon, text string) string {
 
 // RenderHighlight formats highlighted text with extra emphasis
 func RenderHighlight(icon, text string) string {
-	if accessibilityNoEmoji {
+	if accessibilityEnabled && accessibilityNoEmoji {
 		icon = getAccessibleIcon(icon)
 	}
 	styledText := highlightStyle.Render(text)

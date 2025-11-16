@@ -37,6 +37,7 @@ func main() {
 			// Override config with flag if provided
 			if accessibleFlag {
 				cfg.Accessibility.Enabled = true
+				cfg.Accessibility.HighContrast = true
 			}
 
 			runSummary(quietFlag, cfg)
@@ -81,6 +82,7 @@ func main() {
 			// Override config with flag if provided
 			if accessibleFlag {
 				cfg.Accessibility.Enabled = true
+				cfg.Accessibility.HighContrast = true
 			}
 
 			runDemo(cfg)
