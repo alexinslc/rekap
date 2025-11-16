@@ -170,6 +170,13 @@ func (c *Config) Validate() {
 	if c.Fragmentation.FragmentedMin <= 0 {
 		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
 	}
+	// Ensure logical ordering: FocusedMax <= ModerateMax < FragmentedMin
+	if !(c.Fragmentation.FocusedMax <= c.Fragmentation.ModerateMax &&
+		c.Fragmentation.ModerateMax < c.Fragmentation.FragmentedMin) {
+		c.Fragmentation.FocusedMax = defaults.Fragmentation.FocusedMax
+		c.Fragmentation.ModerateMax = defaults.Fragmentation.ModerateMax
+		c.Fragmentation.FragmentedMin = defaults.Fragmentation.FragmentedMin
+	}
 }
 
 // ShouldShowMedia returns whether to show media section
