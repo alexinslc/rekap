@@ -266,7 +266,7 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 	var switchTimestamps []float64
 	lastBundleID := events[0].bundleID
 	
-	// Track the first switch as reference point
+	// Initialize with the first event's timestamp as the starting point
 	switchTimestamps = append(switchTimestamps, events[0].start)
 
 	for i := 1; i < len(events); i++ {
