@@ -1,11 +1,15 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/alexinslc/rekap/internal/config"
 )
 
 func TestFormatDuration(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		minutes  int
 		expected string
@@ -28,6 +32,7 @@ func TestFormatDuration(t *testing.T) {
 }
 
 func TestFormatDurationCompact(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		minutes  int
 		expected string
@@ -50,6 +55,7 @@ func TestFormatDurationCompact(t *testing.T) {
 }
 
 func TestRenderDataPoint(t *testing.T) {
+	t.Parallel()
 	result := RenderDataPoint("🔋", "Battery: 75%")
 	if result == "" {
 		t.Error("RenderDataPoint should not return empty string")
@@ -62,6 +68,7 @@ func TestRenderDataPoint(t *testing.T) {
 }
 
 func TestRenderHint(t *testing.T) {
+	t.Parallel()
 	result := RenderHint("Test hint message")
 	if result == "" {
 		t.Error("RenderHint should not return empty string")
@@ -69,6 +76,7 @@ func TestRenderHint(t *testing.T) {
 }
 
 func TestRenderError(t *testing.T) {
+	t.Parallel()
 	result := RenderError("Test error message")
 	if result == "" {
 		t.Error("RenderError should not return empty string")
@@ -76,6 +84,7 @@ func TestRenderError(t *testing.T) {
 }
 
 func TestRenderWarning(t *testing.T) {
+	t.Parallel()
 	result := RenderWarning("Context overload: 7 apps + 45 tabs active")
 	if result == "" {
 		t.Error("RenderWarning should not return empty string")
@@ -87,6 +96,7 @@ func TestRenderWarning(t *testing.T) {
 }
 
 func TestRenderSummaryLine(t *testing.T) {
+	t.Parallel()
 	parts := []string{"3h 35m screen-on", "2 plug-ins", "Top apps: VS Code"}
 	result := RenderSummaryLine(parts)
 
@@ -96,6 +106,7 @@ func TestRenderSummaryLine(t *testing.T) {
 }
 
 func TestRenderSummaryLineEmpty(t *testing.T) {
+	t.Parallel()
 	result := RenderSummaryLine([]string{})
 
 	if result != "" {
@@ -104,6 +115,7 @@ func TestRenderSummaryLineEmpty(t *testing.T) {
 }
 
 func TestFormatTime(t *testing.T) {
+	// Note: Not parallelized due to global state in renderer
 	tests := []struct {
 		name       string
 		timeFormat string
@@ -133,6 +145,7 @@ func TestFormatTime(t *testing.T) {
 }
 
 func TestRemoveEmoji(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input    string
 		expected string
@@ -153,6 +166,7 @@ func TestRemoveEmoji(t *testing.T) {
 }
 
 func TestGetAccessibleIcon(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		emoji    string
 		expected string
@@ -177,4 +191,101 @@ func TestGetAccessibleIcon(t *testing.T) {
 			t.Errorf("getAccessibleIcon(%q) = %q, want %q", tt.emoji, result, tt.expected)
 		}
 	}
+}
+
+func TestRenderTitle(t *testing.T) {
+	t.Parallel()
+	result := RenderTitle("Test Title", false)
+	if result == "" {
+		t.Error("RenderTitle should not return empty string")
+	}
+	if !strings.Contains(result, "Test Title") {
+		t.Error("RenderTitle should contain the title text")
+	}
+}
+
+func TestRenderHeader(t *testing.T) {
+	t.Parallel()
+	result := RenderHeader("Test Header")
+	if result == "" {
+		t.Error("RenderHeader should not return empty string")
+	}
+	if !strings.Contains(result, "Test Header") {
+		t.Error("RenderHeader should contain the header text")
+	}
+}
+
+func TestRenderDivider(t *testing.T) {
+	t.Parallel()
+	result := RenderDivider()
+	if result == "" {
+		t.Error("RenderDivider should not return empty string")
+	}
+}
+
+func TestRenderHighlight(t *testing.T) {
+	t.Parallel()
+	result := RenderHighlight("✨", "Important Text")
+	if result == "" {
+		t.Error("RenderHighlight should not return empty string")
+	}
+	if !strings.Contains(result, "Important Text") {
+		t.Error("RenderHighlight should contain the highlighted text")
+	}
+}
+
+func TestRenderSubItem(t *testing.T) {
+	// Note: Not parallelized due to global state in renderer
+	result := RenderSubItem("Sub Item")
+	if result == "" {
+		t.Error("RenderSubItem should not return empty string")
+	}
+	if !strings.Contains(result, "Sub Item") {
+		t.Error("RenderSubItem should contain the sub item text")
+	}
+}
+
+func TestRenderSuccess(t *testing.T) {
+	t.Parallel()
+	result := RenderSuccess("Success message")
+	if result == "" {
+		t.Error("RenderSuccess should not return empty string")
+	}
+	if !strings.Contains(result, "Success message") {
+		t.Error("RenderSuccess should contain the success message")
+	}
+}
+
+func TestIsTTY(t *testing.T) {
+	t.Parallel()
+	// Just test that the function doesn't panic
+	_ = IsTTY()
+}
+
+func TestApplyColors(t *testing.T) {
+	// Note: Not parallelized due to modifying global state
+	cfg := config.Default()
+
+	// Test that ApplyColors doesn't panic
+	ApplyColors(cfg)
+
+	// Test with custom colors
+	customCfg := &config.Config{
+		Colors: config.ColorConfig{
+			Primary:   "#ff0000",
+			Secondary: "#00ff00",
+			Accent:    "#0000ff",
+			Success:   "#ffff00",
+			Warning:   "#ff00ff",
+			Muted:     "#808080",
+			Text:      "#ffffff",
+		},
+	}
+	ApplyColors(customCfg)
+}
+
+func TestClearScreen(t *testing.T) {
+	t.Parallel()
+	// Just test that the function doesn't panic
+	ClearScreen()
 }

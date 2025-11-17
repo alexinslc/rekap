@@ -6,6 +6,7 @@ import (
 )
 
 func TestDefaultBurnoutConfig(t *testing.T) {
+	t.Parallel()
 	cfg := DefaultBurnoutConfig()
 
 	if cfg.LongDayHours != 10 {
@@ -26,6 +27,7 @@ func TestDefaultBurnoutConfig(t *testing.T) {
 }
 
 func TestCollectBurnout_LongDay(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	config := DefaultBurnoutConfig()
 
@@ -68,6 +70,7 @@ func TestCollectBurnout_LongDay(t *testing.T) {
 }
 
 func TestCollectBurnout_TabOverload(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	config := DefaultBurnoutConfig()
 
@@ -110,6 +113,7 @@ func TestCollectBurnout_TabOverload(t *testing.T) {
 }
 
 func TestCollectBurnout_NoWarnings(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	config := DefaultBurnoutConfig()
 
@@ -136,6 +140,7 @@ func TestCollectBurnout_NoWarnings(t *testing.T) {
 }
 
 func TestCollectBurnout_MultipleWarnings(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	config := DefaultBurnoutConfig()
 
@@ -175,6 +180,7 @@ func TestCollectBurnout_MultipleWarnings(t *testing.T) {
 }
 
 func TestCollectBurnout_UnavailableData(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	config := DefaultBurnoutConfig()
 

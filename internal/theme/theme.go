@@ -60,13 +60,13 @@ var builtInThemes = map[string]Theme{
 		Name:   "Hacker",
 		Author: "rekap",
 		Colors: ThemeColors{
-			Primary:   "10",  // Bright green
-			Secondary: "2",   // Green
-			Accent:    "10",  // Bright green
-			Success:   "10",  // Bright green
-			Warning:   "2",   // Green
-			Muted:     "22",  // Dark green
-			Text:      "2",   // Green
+			Primary:   "10", // Bright green
+			Secondary: "2",  // Green
+			Accent:    "10", // Bright green
+			Success:   "10", // Bright green
+			Warning:   "2",  // Green
+			Muted:     "22", // Dark green
+			Text:      "2",  // Green
 		},
 	},
 	"pastel": {

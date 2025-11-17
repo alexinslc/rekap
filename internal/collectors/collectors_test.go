@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,7 +10,8 @@ import (
 )
 
 func TestCollectUptime(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectUptime(ctx)
@@ -33,7 +35,8 @@ func TestCollectUptime(t *testing.T) {
 }
 
 func TestCollectBattery(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectBattery(ctx)
@@ -52,7 +55,8 @@ func TestCollectBattery(t *testing.T) {
 }
 
 func TestCollectScreen(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectScreen(ctx)
@@ -87,7 +91,8 @@ func TestCollectScreen(t *testing.T) {
 }
 
 func TestCollectApps(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectApps(ctx)
@@ -109,7 +114,8 @@ func TestCollectApps(t *testing.T) {
 }
 
 func TestCollectMedia(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectMedia(ctx)
@@ -130,7 +136,8 @@ func TestCollectMedia(t *testing.T) {
 }
 
 func TestCollectFocus(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectFocus(ctx)
@@ -168,6 +175,7 @@ func TestCollectFocus(t *testing.T) {
 }
 
 func TestCollectorTimeout(t *testing.T) {
+	t.Parallel()
 	// Test that collectors respect context timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
@@ -184,7 +192,8 @@ func TestCollectorTimeout(t *testing.T) {
 }
 
 func TestCollectNetwork(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectNetwork(ctx)
@@ -213,7 +222,8 @@ func TestCollectNetwork(t *testing.T) {
 }
 
 func TestCollectBrowserTabs(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	cfg := config.Default()
@@ -269,6 +279,7 @@ func TestCollectBrowserTabs(t *testing.T) {
 }
 
 func TestIsExcluded(t *testing.T) {
+	t.Parallel()
 	excludedApps := []string{"Activity Monitor", "System Preferences", "Slack"}
 
 	tests := []struct {
@@ -293,6 +304,7 @@ func TestIsExcluded(t *testing.T) {
 }
 
 func TestFormatBytes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		bytes    int64
 		expected string
@@ -315,6 +327,7 @@ func TestFormatBytes(t *testing.T) {
 }
 
 func TestExtractDomain(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected string
@@ -336,30 +349,31 @@ func TestExtractDomain(t *testing.T) {
 }
 
 func TestIssuePatterns(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
-		url           string
-		expectMatch   bool
-		expectedID    string
-		expectedType  string
+		url          string
+		expectMatch  bool
+		expectedID   string
+		expectedType string
 	}{
 		// GitHub
 		{"https://github.com/alexinslc/rekap/issues/42", true, "github.com/alexinslc/rekap/issues/42", "GitHub"},
 		{"https://github.com/org/repo/issues/123", true, "github.com/org/repo/issues/123", "GitHub"},
-		
+
 		// Jira
 		{"https://company.atlassian.net/browse/PROJ-123", true, "PROJ-123", "Jira"},
 		{"https://myorg.atlassian.net/browse/ABC-456", true, "ABC-456", "Jira"},
-		
+
 		// Linear
 		{"https://linear.app/issue/ENG-789", true, "ENG-789", "Linear"},
 		{"https://linear.app/workspace/issue/TEAM-123", true, "TEAM-123", "Linear"},
-		
+
 		// GitLab
 		{"https://gitlab.com/group/project/-/issues/99", true, "gitlab.com/group/project/-/issues/99", "GitLab"},
-		
+
 		// Azure DevOps
 		{"https://dev.azure.com/org/project/_workitems/edit/555", true, "555", "Azure DevOps"},
-		
+
 		// Non-matching URLs
 		{"https://github.com/user/repo", false, "", ""},
 		{"https://example.com", false, "", ""},
@@ -400,6 +414,7 @@ func TestIssuePatterns(t *testing.T) {
 }
 
 func TestIsIssueURL(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected bool
@@ -407,24 +422,24 @@ func TestIsIssueURL(t *testing.T) {
 		// Jira patterns
 		{"https://company.atlassian.net/browse/PROJ-123", true},
 		{"https://jira.example.com/browse/ABC-456", true},
-		
+
 		// GitHub patterns
 		{"https://github.com/owner/repo/issues/123", true},
 		{"https://github.com/owner/repo/pull/456", true},
-		
+
 		// Linear patterns
 		{"https://linear.app/team/issue/ABC-123", true},
-		
+
 		// GitLab patterns
 		{"https://gitlab.com/owner/repo/issues/123", true},
 		{"https://gitlab.com/owner/repo/merge_requests/456", true},
-		
+
 		// Bitbucket patterns
 		{"https://bitbucket.org/owner/repo/issues/123", true},
-		
+
 		// Azure DevOps patterns
 		{"https://dev.azure.com/org/project/_workitems/123", true},
-		
+
 		// Non-issue URLs
 		{"https://github.com", false},
 		{"https://stackoverflow.com/questions/12345", false},
@@ -441,7 +456,8 @@ func TestIsIssueURL(t *testing.T) {
 }
 
 func TestCollectIssues(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	result := CollectIssues(ctx)
@@ -472,6 +488,7 @@ func TestCollectIssues(t *testing.T) {
 }
 
 func TestExtractIssueIdentifier(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		url      string
 		expected string
@@ -479,25 +496,25 @@ func TestExtractIssueIdentifier(t *testing.T) {
 		// Jira
 		{"https://company.atlassian.net/browse/PROJ-123", "PROJ-123"},
 		{"https://jira.example.com/browse/ABC-456", "ABC-456"},
-		
+
 		// GitHub issues
 		{"https://github.com/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// GitHub pull requests
 		{"https://github.com/owner/repo/pull/456", "owner/repo#456"},
-		
+
 		// Linear
 		{"https://linear.app/team/issue/ABC-123", "ABC-123"},
-		
+
 		// GitLab issues
 		{"https://gitlab.com/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// GitLab merge requests
 		{"https://gitlab.com/owner/repo/merge_requests/456", "owner/repo!456"},
-		
+
 		// Bitbucket
 		{"https://bitbucket.org/owner/repo/issues/123", "owner/repo#123"},
-		
+
 		// Azure DevOps
 		{"https://dev.azure.com/org/project/_workitems/123", "WI-123"},
 	}
@@ -511,6 +528,7 @@ func TestExtractIssueIdentifier(t *testing.T) {
 }
 
 func TestFormatIssueURLs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		urls     []string
@@ -549,7 +567,8 @@ func TestFormatIssueURLs(t *testing.T) {
 }
 
 func TestCollectNotifications(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectNotifications(ctx)
@@ -579,8 +598,48 @@ func TestCollectNotifications(t *testing.T) {
 	t.Logf("Collected %d total notifications from %d apps", result.TotalNotifications, len(result.TopApps))
 }
 
+func TestResolveAppName(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		bundleID   string
+		wantSuffix string // Check it ends with this
+	}{
+		{
+			name:       "Apple bundle ID",
+			bundleID:   "com.apple.Safari",
+			wantSuffix: "Safari",
+		},
+		{
+			name:       "Microsoft bundle ID",
+			bundleID:   "com.microsoft.VSCode",
+			wantSuffix: "VSCode",
+		},
+		{
+			name:       "Simple bundle ID",
+			bundleID:   "Slack",
+			wantSuffix: "Slack",
+		},
+		{
+			name:       "Empty bundle ID",
+			bundleID:   "",
+			wantSuffix: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := resolveAppName(tt.bundleID)
+			if !strings.HasSuffix(result, tt.wantSuffix) {
+				t.Errorf("resolveAppName(%q) = %q, want suffix %q", tt.bundleID, result, tt.wantSuffix)
+			}
+		})
+	}
+}
+
 func TestCollectAppsWithSwitching(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	result := CollectApps(ctx)

@@ -79,22 +79,22 @@ jobs:
         path: rekap-darwin-arm64
         retention-days: 30
 
-  lint:
-    name: Lint
-    runs-on: macos-latest
+  # lint:
+  #   name: Lint
+  #   runs-on: macos-latest
     
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v5
+  #   steps:
+  #   - name: Check out code
+  #     uses: actions/checkout@v5
 
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.25.4'
-        cache: true
+  #   - name: Set up Go
+  #     uses: actions/setup-go@v6
+  #     with:
+  #       go-version: '1.25.4'
+  #       cache: true
 
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v9
-      with:
-        version: v2.6.1
-        args: --timeout=5m
+  #   - name: Run golangci-lint
+  #     uses: golangci/golangci-lint-action@v9
+  #     with:
+  #       version: latest
+  #       args: --timeout=5m

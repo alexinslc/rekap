@@ -1,0 +1,59 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Go vet
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Go staticcheck
+    - unused        # Check for unused constants, variables, functions and types
+    - gofmt         # Check formatting
+    - goimports     # Check imports
+    - misspell      # Check for misspelled English words
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Check for unused function parameters
+    - gosec         # Security checks
+
+linters-settings:
+  errcheck:
+    check-blank: true
+    check-type-assertions: false
+  
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+      - fieldalignment
+  
+  staticcheck:
+    checks: ["all"]
+
+  gosec:
+    excludes:
+      - G104  # Allow unhandled errors in some cases
+      - G304  # Allow file path from variable (needed for config loading)
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+    
+    # Exclude known issues in dependencies
+    - path: vendor/
+      linters:
+        - all
+
+  max-issues-per-linter: 50
+  max-same-issues: 10
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

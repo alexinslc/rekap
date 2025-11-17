@@ -238,7 +238,7 @@ func runDemo(cfg *config.Config) {
 			TopDomain:       "mail.google.com",
 			TopDomainVisits: 12,
 		},
-		TotalTabs:         45,
+		TotalTabs: 45,
 		TopDomains: map[string]int{
 			"github.com":        8,
 			"stackoverflow.com": 6,
@@ -603,13 +603,13 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 	if screen.Available && screen.LockCount > 0 {
 		var lockText string
 		if screen.AvgMinsBetweenLock > 0 {
-			lockText = fmt.Sprintf("Screen locked %d time%s (avg %s between breaks)", 
-				screen.LockCount, 
+			lockText = fmt.Sprintf("Screen locked %d time%s (avg %s between breaks)",
+				screen.LockCount,
 				pluralize(screen.LockCount),
 				ui.FormatDuration(screen.AvgMinsBetweenLock))
 		} else {
-			lockText = fmt.Sprintf("Screen locked %d time%s today", 
-				screen.LockCount, 
+			lockText = fmt.Sprintf("Screen locked %d time%s today",
+				screen.LockCount,
 				pluralize(screen.LockCount))
 		}
 		fmt.Println(ui.RenderDataPoint("🔒", lockText))
@@ -667,9 +667,9 @@ func printHuman(cfg *config.Config, uptime collectors.UptimeResult, battery coll
 		if browsers.TotalURLsVisited > 0 {
 			historyText := fmt.Sprintf("%d URLs visited today", browsers.TotalURLsVisited)
 			if browsers.TopHistoryDomain != "" {
-				historyText += fmt.Sprintf(" • Top: %s (%d visit%s)", 
-					browsers.TopHistoryDomain, 
-					browsers.TopDomainVisits, 
+				historyText += fmt.Sprintf(" • Top: %s (%d visit%s)",
+					browsers.TopHistoryDomain,
+					browsers.TopDomainVisits,
 					pluralize(browsers.TopDomainVisits))
 			}
 			fmt.Println(ui.RenderDataPoint("📊", historyText))

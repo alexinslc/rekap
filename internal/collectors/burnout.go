@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"time"
-	_ "modernc.org/sqlite"
 )
 
 // BurnoutWarning represents a specific burnout indicator
@@ -28,11 +28,11 @@ type BurnoutResult struct {
 
 // BurnoutConfig contains thresholds for burnout detection
 type BurnoutConfig struct {
-	LongDayHours         int // Default: 10 hours
-	AppSwitchesPerHour   int // Default: 50 switches/hour
-	MaxTabs              int // Default: 100 tabs
-	LateNightHour        int // Default: 0 (midnight)
-	NoBreakHours         int // Default: 4 hours
+	LongDayHours       int // Default: 10 hours
+	AppSwitchesPerHour int // Default: 50 switches/hour
+	MaxTabs            int // Default: 100 tabs
+	LateNightHour      int // Default: 0 (midnight)
+	NoBreakHours       int // Default: 4 hours
 }
 
 // DefaultBurnoutConfig returns default burnout detection thresholds

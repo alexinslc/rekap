@@ -6,18 +6,19 @@ import (
 )
 
 func TestCalculateFragmentation(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	thresholds := DefaultFragmentationThresholds()
 
 	tests := []struct {
-		name            string
-		apps            AppsResult
-		browsers        BrowsersResult
-		uptime          UptimeResult
-		expectedLevel   string
-		expectedAvail   bool
-		minScore        int
-		maxScore        int
+		name          string
+		apps          AppsResult
+		browsers      BrowsersResult
+		uptime        UptimeResult
+		expectedLevel string
+		expectedAvail bool
+		minScore      int
+		maxScore      int
 	}{
 		{
 			name: "focused - few apps and tabs",
@@ -31,7 +32,7 @@ func TestCalculateFragmentation(t *testing.T) {
 			browsers: BrowsersResult{
 				TotalTabs: 5,
 				TopDomains: map[string]int{
-					"github.com": 3,
+					"github.com":  3,
 					"docs.go.dev": 2,
 				},
 				Available: true,
@@ -62,13 +63,13 @@ func TestCalculateFragmentation(t *testing.T) {
 			browsers: BrowsersResult{
 				TotalTabs: 20,
 				TopDomains: map[string]int{
-					"github.com": 5,
+					"github.com":        5,
 					"stackoverflow.com": 4,
-					"mail.google.com": 3,
-					"docs.go.dev": 2,
-					"twitter.com": 2,
-					"reddit.com": 2,
-					"youtube.com": 2,
+					"mail.google.com":   3,
+					"docs.go.dev":       2,
+					"twitter.com":       2,
+					"reddit.com":        2,
+					"youtube.com":       2,
 				},
 				Available: true,
 			},
@@ -101,20 +102,20 @@ func TestCalculateFragmentation(t *testing.T) {
 			browsers: BrowsersResult{
 				TotalTabs: 50,
 				TopDomains: map[string]int{
-					"github.com": 8,
-					"stackoverflow.com": 6,
-					"mail.google.com": 5,
-					"docs.go.dev": 4,
-					"twitter.com": 4,
-					"reddit.com": 4,
-					"youtube.com": 3,
-					"medium.com": 3,
-					"dev.to": 3,
-					"linkedin.com": 2,
-					"facebook.com": 2,
+					"github.com":           8,
+					"stackoverflow.com":    6,
+					"mail.google.com":      5,
+					"docs.go.dev":          4,
+					"twitter.com":          4,
+					"reddit.com":           4,
+					"youtube.com":          3,
+					"medium.com":           3,
+					"dev.to":               3,
+					"linkedin.com":         2,
+					"facebook.com":         2,
 					"news.ycombinator.com": 2,
-					"producthunt.com": 2,
-					"slack.com": 2,
+					"producthunt.com":      2,
+					"slack.com":            2,
 				},
 				Available: true,
 			},
@@ -168,7 +169,7 @@ func TestCalculateFragmentation(t *testing.T) {
 			browsers: BrowsersResult{
 				TotalTabs: 8,
 				TopDomains: map[string]int{
-					"github.com": 4,
+					"github.com":  4,
 					"docs.go.dev": 4,
 				},
 				Available: true,
@@ -228,6 +229,7 @@ func TestCalculateFragmentation(t *testing.T) {
 }
 
 func TestDefaultFragmentationThresholds(t *testing.T) {
+	t.Parallel()
 	thresholds := DefaultFragmentationThresholds()
 
 	if thresholds.FocusedMax != 30 {
@@ -244,6 +246,7 @@ func TestDefaultFragmentationThresholds(t *testing.T) {
 }
 
 func TestNormalizeValue(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		value        float64
@@ -270,6 +273,7 @@ func TestNormalizeValue(t *testing.T) {
 }
 
 func TestCalculateWeightedScore(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		breakdown FragmentationBreakdown
@@ -325,6 +329,7 @@ func TestCalculateWeightedScore(t *testing.T) {
 }
 
 func TestFragmentationWithCustomThresholds(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Custom thresholds: more relaxed
@@ -348,8 +353,8 @@ func TestFragmentationWithCustomThresholds(t *testing.T) {
 	browsers := BrowsersResult{
 		TotalTabs: 15,
 		TopDomains: map[string]int{
-			"github.com": 5,
-			"docs.go.dev": 5,
+			"github.com":        5,
+			"docs.go.dev":       5,
 			"stackoverflow.com": 5,
 		},
 		Available: true,
@@ -377,6 +382,7 @@ func TestFragmentationWithCustomThresholds(t *testing.T) {
 }
 
 func TestFragmentationBreakdownPopulation(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	thresholds := DefaultFragmentationThresholds()
 

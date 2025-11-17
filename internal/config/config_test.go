@@ -7,6 +7,7 @@ import (
 )
 
 func TestDefault(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	if cfg.Colors.Primary != "13" {
@@ -31,6 +32,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestLoadNonExistent(t *testing.T) {
+	t.Parallel()
 	// Create a temporary directory
 	tmpDir := t.TempDir()
 
@@ -125,6 +127,7 @@ tracking:
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Display: DisplayConfig{
 			TimeFormat: "invalid",
@@ -145,6 +148,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestIsAppExcluded(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Tracking: TrackingConfig{
 			ExcludeApps: []string{"App1", "App2"},
@@ -170,6 +174,7 @@ func TestIsAppExcluded(t *testing.T) {
 }
 
 func TestAccessibilityDefaults(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	if cfg.Accessibility.Enabled {
@@ -231,6 +236,7 @@ func TestLoadAccessibilityConfig(t *testing.T) {
 }
 
 func TestCategorizeDomain(t *testing.T) {
+	t.Parallel()
 	cfg := Default()
 
 	tests := []struct {
@@ -248,7 +254,7 @@ func TestCategorizeDomain(t *testing.T) {
 		{"mycompany.atlassian.net", "work"},
 		{"linear.app", "work"},
 		{"notion.so", "work"},
-		
+
 		// Distraction domains
 		{"twitter.com", "distraction"},
 		{"x.com", "distraction"},
@@ -256,7 +262,7 @@ func TestCategorizeDomain(t *testing.T) {
 		{"facebook.com", "distraction"},
 		{"youtube.com", "distraction"},
 		{"tiktok.com", "distraction"},
-		
+
 		// Neutral/uncategorized domains
 		{"gmail.com", "neutral"},
 		{"example.com", "neutral"},
@@ -272,6 +278,7 @@ func TestCategorizeDomain(t *testing.T) {
 }
 
 func TestCategorizeDomainCustomConfig(t *testing.T) {
+	t.Parallel()
 	cfg := &Config{
 		Domains: DomainsConfig{
 			Work:        []string{"mycompany.com", "internal.*"},
@@ -300,6 +307,7 @@ func TestCategorizeDomainCustomConfig(t *testing.T) {
 }
 
 func TestMatchDomainPattern(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		domain   string
 		pattern  string
@@ -308,18 +316,18 @@ func TestMatchDomainPattern(t *testing.T) {
 		// Exact matches
 		{"github.com", "github.com", true},
 		{"gitlab.com", "github.com", false},
-		
+
 		// Wildcard prefix patterns (docs.*)
 		{"docs.python.org", "docs.*", true},
 		{"docs.microsoft.com", "docs.*", true},
 		{"api.github.com", "docs.*", false},
-		
+
 		// Wildcard suffix patterns (*.google.com)
 		{"mail.google.com", "*.google.com", true},
 		{"drive.google.com", "*.google.com", true},
 		{"google.com", "*.google.com", false},
 		{"gmail.com", "*.google.com", false},
-		
+
 		// Suffix matching (for patterns like "atlassian.net")
 		{"example.com", "example.com", true},
 		{"mycompany.atlassian.net", "atlassian.net", true},

@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"time"
-	_ "modernc.org/sqlite"
 )
 
 // NotificationApp represents notification count for a single app

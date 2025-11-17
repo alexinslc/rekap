@@ -5,6 +5,7 @@ import (
 )
 
 func TestCheckContextOverload(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		apps           AppsResult
@@ -179,6 +180,7 @@ func TestCheckContextOverload(t *testing.T) {
 }
 
 func TestFormatWithCount(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		count    int
 		singular string
