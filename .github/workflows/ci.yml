@@ -98,5 +98,3 @@ jobs:
       with:
         version: latest
         args: --timeout=5m
-        skip-cache: true
-        skip-pkg-cache: true
