@@ -46,6 +46,7 @@ archives:
     files:
       - README.md
       - LICENSE*
+      - rekap.1
   
   - id: rekap-binaries
     format_overrides:
@@ -87,5 +88,6 @@ brews:
     directory: Formula
     install: |
       bin.install "rekap"
+      man1.install "rekap.1"
     test: |
       system "#{bin}/rekap --version"
