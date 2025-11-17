@@ -1,4 +1,4 @@
-.PHONY: build run clean install test test-fast test-coverage test-bench lint fmt vet release
+.PHONY: build run clean install install-man test test-fast test-coverage test-bench lint fmt vet release
 
 # Build the binary
 build:
@@ -16,6 +16,15 @@ clean:
 # Install to /usr/local/bin
 install: build
 	cp rekap /usr/local/bin/
+	@echo "Binary installed to /usr/local/bin/rekap"
+	@echo "To install man page, run: sudo make install-man"
+
+# Install man page to /usr/local/share/man/man1
+install-man:
+	@mkdir -p /usr/local/share/man/man1
+	cp rekap.1 /usr/local/share/man/man1/
+	@echo "Man page installed to /usr/local/share/man/man1/rekap.1"
+	@echo "You can now run: man rekap"
 
 # Run all tests with verbose output
 test:

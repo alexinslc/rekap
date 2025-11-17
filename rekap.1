@@ -1,0 +1,358 @@
+.TH REKAP 1 "November 2025" "rekap 0.1.0" "User Commands"
+.SH NAME
+rekap \- Daily Mac Activity Summary
+.SH SYNOPSIS
+.B rekap
+[\fIOPTIONS\fR]
+[\fICOMMAND\fR]
+.SH DESCRIPTION
+.B rekap
+is a single-binary macOS CLI application that provides a daily activity summary with a friendly, animated terminal UI. It analyzes today's computer activity including uptime, battery usage, app usage, screen time, browser activity, network activity, and notifications.
+.PP
+rekap is privacy-first: no historical database, no cloud sync, no telemetry. All data stays local on your Mac and only today's activity is analyzed.
+.SH OPTIONS
+.TP
+.BR \-\-accessible
+Enable accessibility mode (color-blind friendly, high contrast)
+.TP
+.BR \-h ", " \-\-help
+Display help information
+.TP
+.BR \-q ", " \-\-quiet
+Output machine-parsable key=value format for scripting
+.TP
+.BR \-\-theme " " \fITHEME\fR
+Use a color theme. Built-in themes: default, minimal, hacker, pastel, nord, dracula, solarized. Can also specify a path to a custom theme file.
+.TP
+.BR \-v ", " \-\-version
+Display version information
+.SH COMMANDS
+.TP
+.B rekap
+Display today's activity summary with all available data
+.TP
+.B rekap completion \fISHELL\fR
+Generate shell completion script for bash, zsh, or fish
+.TP
+.B rekap demo
+Display sample output with randomized fake data to preview the format
+.TP
+.BR "rekap demo \-\-theme " \fITHEME\fR
+Preview a color theme using demo data
+.TP
+.B rekap doctor
+Check capabilities and permissions status. Shows which macOS permissions are granted and what features are available.
+.TP
+.B rekap init
+Run the guided permission setup wizard to enable Full Disk Access and other permissions
+.SH FEATURES
+.B rekap
+provides the following information about today's computer activity:
+.TP
+.B System
+.RS
+.IP \(bu 2
+Uptime and awake time tracking
+.IP \(bu 2
+Battery usage monitoring (start/current percentage, plug events)
+.IP \(bu 2
+Screen lock events and break patterns
+.RE
+.TP
+.B Productivity
+.RS
+.IP \(bu 2
+Top apps by usage time (up to 3 apps displayed)
+.IP \(bu 2
+Screen-on time calculation
+.IP \(bu 2
+Focus streak detection (longest continuous time in one app)
+.IP \(bu 2
+Context fragmentation score (measures task-switching)
+.RE
+.TP
+.B Browser Activity
+.RS
+.IP \(bu 2
+Open tabs count per browser (Chrome, Safari, Edge)
+.IP \(bu 2
+Browser history analysis (today's URLs only)
+.IP \(bu 2
+Most-visited domains
+.IP \(bu 2
+Issue/ticket URL detection (Jira, GitHub, Linear, GitLab, Azure DevOps, etc.)
+.IP \(bu 2
+Domain categorization (work vs distraction vs neutral)
+.RE
+.TP
+.B Network Activity
+.RS
+.IP \(bu 2
+Active network interface and name
+.IP \(bu 2
+Data transferred (bytes received/sent)
+.RE
+.TP
+.B Notifications
+.RS
+.IP \(bu 2
+Total notification count
+.IP \(bu 2
+Top interrupting apps
+.RE
+.TP
+.B Now Playing
+.RS
+.IP \(bu 2
+Currently playing media track and app (optional)
+.RE
+.TP
+.B Wellness Check
+.RS
+.IP \(bu 2
+Burnout warnings for long days, excessive task-switching, tab overload
+.IP \(bu 2
+Screen time alerts
+.RE
+.SH PERMISSIONS
+.B rekap
+works without any permissions but provides enhanced data when granted:
+.TP
+.B Full Disk Access
+Required for: App usage tracking, screen time data, focus streaks, notification tracking
+.TP
+.B Accessibility
+Required for: Frontmost app detection (fallback method)
+.TP
+.B Media/Now Playing
+Required for: Track currently playing media
+.PP
+To set up permissions, run:
+.B rekap init
+.PP
+To check current permission status, run:
+.B rekap doctor
+.SH CONFIGURATION
+.B rekap
+supports a configuration file at:
+.PP
+.RS
+.B ~/.config/rekap/config.yaml
+.RE
+.PP
+Available configuration options:
+.TP
+.B Color Scheme
+Customize primary, secondary, accent, and text colors
+.TP
+.B Display Preferences
+Show/hide specific sections (battery, media, etc.)
+.TP
+.B Time Format
+Choose between 12-hour or 24-hour format
+.TP
+.B App Exclusions
+Exclude specific apps from tracking
+.TP
+.B Accessibility Features
+Enable color-blind friendly mode
+.PP
+For detailed configuration examples, see:
+.RS
+.I /usr/local/share/doc/rekap/CONFIG.md
+.RE
+.SH THEMES
+.B rekap
+supports custom color themes. Built-in themes:
+.TP
+.B default
+Magenta/cyan color scheme (current default)
+.TP
+.B minimal
+Grayscale theme
+.TP
+.B hacker
+Matrix-style green theme
+.TP
+.B pastel
+Soft pastel colors
+.TP
+.B nord
+Nord color scheme
+.TP
+.B dracula
+Dracula theme
+.TP
+.B solarized
+Solarized dark theme
+.PP
+Custom themes can be created at:
+.RS
+.B ~/.config/rekap/themes/\fImytheme\fR.yaml
+.RE
+.PP
+Example theme file:
+.RS
+.nf
+name: "My Theme"
+author: "Your Name"
+colors:
+  primary: "#0077be"
+  secondary: "#00a8e8"
+  accent: "#00c9ff"
+  success: "#00ffa3"
+  error: "#ff6b6b"
+  muted: "#6c757d"
+  text: "#ffffff"
+.fi
+.RE
+.SH EXAMPLES
+.TP
+.B rekap
+Display today's activity summary with default settings
+.TP
+.B rekap --quiet
+Output machine-parsable key=value pairs for scripting:
+.RS
+.nf
+awake_minutes=287
+battery_start_pct=92
+battery_now_pct=68
+screen_on_minutes=215
+top_app_1=VS Code
+top_app_1_minutes=142
+...
+.fi
+.RE
+.TP
+.B rekap --theme hacker
+Display summary using the Matrix-style green theme
+.TP
+.B rekap --theme ~/.config/rekap/themes/mytheme.yaml
+Use a custom theme file
+.TP
+.B rekap --accessible
+Enable accessibility mode with high contrast and color-blind friendly colors
+.TP
+.B rekap demo
+Preview the output format with randomized sample data
+.TP
+.B rekap demo --theme nord
+Preview the Nord theme using demo data
+.TP
+.B rekap doctor
+Check which permissions are granted and what features are available
+.TP
+.B rekap init
+Run the interactive permission setup wizard
+.TP
+.B rekap completion zsh > ~/.zsh/completion/_rekap
+Generate zsh completion script
+.SH SHELL COMPLETION
+.B rekap
+supports shell completion for bash, zsh, and fish.
+.TP
+.B Zsh
+.RS
+.nf
+rekap completion zsh > ~/.zsh/completion/_rekap
+# Or for Homebrew on macOS:
+rekap completion zsh > $(brew --prefix)/share/zsh/site-functions/_rekap
+.fi
+.RE
+.TP
+.B Bash
+.RS
+.nf
+# macOS with Homebrew's bash-completion:
+rekap completion bash > $(brew --prefix)/etc/bash_completion.d/rekap
+# Linux:
+rekap completion bash > /etc/bash_completion.d/rekap
+.fi
+.RE
+.TP
+.B Fish
+.RS
+.nf
+rekap completion fish > ~/.config/fish/completions/rekap.fish
+.fi
+.RE
+.SH FILES
+.TP
+.B ~/.config/rekap/config.yaml
+Main configuration file
+.TP
+.B ~/.config/rekap/themes/*.yaml
+Custom theme files
+.TP
+.B ~/Library/Application Support/Knowledge/knowledgeC.db
+macOS Screen Time database (requires Full Disk Access)
+.SH PRIVACY
+All data stays on your Mac. rekap does not:
+.RS
+.IP \(bu 2
+Store historical data
+.IP \(bu 2
+Sync to the cloud
+.IP \(bu 2
+Send telemetry
+.IP \(bu 2
+Track you across days
+.RE
+.PP
+Only today's activity is analyzed, and all analysis happens locally on your device.
+.SH REQUIREMENTS
+.TP
+.B Operating System
+macOS 11.0 (Big Sur) or later
+.TP
+.B Permissions (Optional)
+Full Disk Access, Accessibility, Media/Now Playing
+.SH TROUBLESHOOTING
+.TP
+.B "Screen Time unavailable" message
+Run
+.B rekap init
+to set up Full Disk Access. Grant permission to your terminal app in System Settings → Privacy & Security → Full Disk Access.
+.TP
+.B No app data showing
+Ensure Full Disk Access is granted (check with
+.B rekap doctor
+). Restart your terminal after granting permissions. Verify that macOS Screen Time is enabled in System Settings → Screen Time.
+.TP
+.B Binary won't run (Gatekeeper)
+On first run, right-click the binary and select "Open" to bypass Gatekeeper, or run:
+.RS
+.nf
+xattr -d com.apple.quarantine /usr/local/bin/rekap
+.fi
+.RE
+.TP
+.B Check permissions status
+Run
+.B rekap doctor
+to see current permission status and available features.
+.SH SEE ALSO
+Documentation and configuration guides are available at:
+.PP
+.RS
+.I https://github.com/alexinslc/rekap
+.RE
+.PP
+Related macOS tools:
+.BR screencapture (1),
+.BR system_profiler (8),
+.BR pmset (1),
+.BR networksetup (8)
+.SH BUGS
+Report bugs at:
+.PP
+.RS
+.I https://github.com/alexinslc/rekap/issues
+.RE
+.SH AUTHOR
+Alex Moundalexis
+.PP
+rekap is licensed under the MIT License.
+.SH COPYRIGHT
+Copyright (c) 2025 Alex Moundalexis. All rights reserved.

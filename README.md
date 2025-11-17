@@ -34,6 +34,12 @@ Or install directly without tapping:
 brew install alexinslc/rekap/rekap
 ```
 
+The man page is automatically installed with Homebrew and can be accessed via:
+
+```bash
+man rekap
+```
+
 ### Manual Installation
 
 Download the latest release for your architecture:
@@ -50,6 +56,15 @@ chmod +x rekap
 sudo mv rekap /usr/local/bin/
 ```
 
+To install the man page:
+
+```bash
+# Download the man page from the release archive
+curl -L https://github.com/alexinslc/rekap/releases/latest/download/rekap-0.1.0-darwin-arm64.tar.gz | tar xz rekap.1
+sudo cp rekap.1 /usr/local/share/man/man1/
+man rekap
+```
+
 ### Build from Source
 
 ```bash
@@ -57,6 +72,7 @@ git clone https://github.com/alexinslc/rekap.git
 cd rekap
 make build
 sudo make install
+sudo make install-man  # Install man page
 ```
 
 ## Usage
@@ -71,6 +87,27 @@ rekap --theme <name>      # Use a color theme
 rekap --accessible        # Accessibility mode (color-blind friendly)
 rekap completion <shell>  # Generate shell completion script (bash/zsh/fish)
 ```
+
+## Documentation
+
+For detailed documentation, use the man page:
+
+```bash
+man rekap
+```
+
+The man page includes:
+- Complete command reference
+- All available options and flags
+- Configuration file format and examples
+- Theme customization guide
+- Permission setup instructions
+- Troubleshooting tips
+- Privacy policy details
+
+Additional documentation:
+- [Configuration Guide](docs/CONFIG.md) - Detailed configuration options
+- [Themes Documentation](docs/THEMES.md) - Theme customization guide
 
 ### Themes
 
