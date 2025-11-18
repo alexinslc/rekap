@@ -4,63 +4,94 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/lipgloss"
 )
 
-// Spinner represents a simple loading spinner
-type Spinner struct {
-	frames   []string
-	current  int
-	mu       sync.Mutex
+var spinnerStyle = lipgloss.NewStyle().Foreground(primaryColor)
+
+// LoadingSpinner wraps the bubbles spinner for simple loading states
+type LoadingSpinner struct {
+	spinner  spinner.Model
+	message  string
 	done     bool
-	interval time.Duration
+	mu       sync.Mutex
+	ticker   *time.Ticker
+	stopChan chan bool
 }
 
-// NewSpinner creates a new spinner
-func NewSpinner() *Spinner {
-	return &Spinner{
-		frames:   []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-		interval: 80 * time.Millisecond,
+// NewLoadingSpinner creates a new loading spinner with the given message
+func NewLoadingSpinner(message string) *LoadingSpinner {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = spinnerStyle
+
+	return &LoadingSpinner{
+		spinner:  s,
+		message:  message,
+		stopChan: make(chan bool),
 	}
 }
 
-// Start begins the spinner animation
-func (s *Spinner) Start(label string) {
+// Start begins the spinner animation in a goroutine
+func (ls *LoadingSpinner) Start() {
 	if !IsTTY() {
-		fmt.Printf("%s...\n", label)
 		return
 	}
 
+	ls.ticker = time.NewTicker(100 * time.Millisecond)
+
 	go func() {
 		for {
-			s.mu.Lock()
-			if s.done {
-				s.mu.Unlock()
+			select {
+			case <-ls.stopChan:
+				ls.ticker.Stop()
 				return
+			case <-ls.ticker.C:
+				ls.mu.Lock()
+				if !ls.done {
+					fmt.Printf("\r%s %s  ", ls.spinner.View(), ls.message)
+					ls.spinner, _ = ls.spinner.Update(ls.spinner.Tick())
+				}
+				ls.mu.Unlock()
 			}
-			frame := s.frames[s.current]
-			s.current = (s.current + 1) % len(s.frames)
-			s.mu.Unlock()
-
-			fmt.Printf("\r%s %s", frame, label)
-			time.Sleep(s.interval)
 		}
 	}()
 }
 
-// Stop stops the spinner
-func (s *Spinner) Stop(success bool, finalLabel string) {
-	s.mu.Lock()
-	s.done = true
-	s.mu.Unlock()
-
+// UpdateMessage updates the spinner message
+func (ls *LoadingSpinner) UpdateMessage(message string) {
 	if !IsTTY() {
 		return
 	}
 
-	symbol := "✓"
-	if !success {
-		symbol = "✗"
+	ls.mu.Lock()
+	ls.message = message
+	ls.mu.Unlock()
+}
+
+// Stop stops the spinner and clears the line
+func (ls *LoadingSpinner) Stop() {
+	if !IsTTY() {
+		return
 	}
 
-	fmt.Printf("\r%s %s\n", symbol, finalLabel)
+	ls.mu.Lock()
+	ls.done = true
+	ls.mu.Unlock()
+
+	// Send stop signal and wait briefly for goroutine to finish
+	close(ls.stopChan)
+	time.Sleep(50 * time.Millisecond)
+
+	// Clear the line
+	fmt.Print("\r\033[K")
+}
+
+// ShowLoadingWithSpinner is a convenience function that creates and starts a spinner
+func ShowLoadingWithSpinner(message string) *LoadingSpinner {
+	spinner := NewLoadingSpinner(message)
+	spinner.Start()
+	return spinner
 }

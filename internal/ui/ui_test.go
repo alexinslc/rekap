@@ -289,3 +289,47 @@ func TestClearScreen(t *testing.T) {
 	// Just test that the function doesn't panic
 	ClearScreen()
 }
+
+func TestNewLoadingSpinner(t *testing.T) {
+	t.Parallel()
+	spinner := NewLoadingSpinner("Test message")
+	if spinner == nil {
+		t.Error("NewLoadingSpinner should not return nil")
+	}
+	if spinner.message != "Test message" {
+		t.Errorf("Expected message 'Test message', got %s", spinner.message)
+	}
+}
+
+func TestLoadingSpinnerStartStop(t *testing.T) {
+	t.Parallel()
+	spinner := NewLoadingSpinner("Loading...")
+	
+	// Test that Start and Stop don't panic
+	spinner.Start()
+	time.Sleep(200 * time.Millisecond) // Let it spin for a bit
+	spinner.Stop()
+}
+
+func TestLoadingSpinnerUpdateMessage(t *testing.T) {
+	t.Parallel()
+	spinner := NewLoadingSpinner("Initial message")
+	spinner.Start()
+	
+	time.Sleep(150 * time.Millisecond) // Wait for spinner to start
+	spinner.UpdateMessage("Updated message")
+	time.Sleep(150 * time.Millisecond) // Wait for update to take effect
+	
+	// Test that UpdateMessage doesn't panic and the spinner still works
+	spinner.Stop()
+}
+
+func TestShowLoadingWithSpinner(t *testing.T) {
+	t.Parallel()
+	spinner := ShowLoadingWithSpinner("Testing...")
+	if spinner == nil {
+		t.Error("ShowLoadingWithSpinner should not return nil")
+	}
+	time.Sleep(150 * time.Millisecond)
+	spinner.Stop()
+}
