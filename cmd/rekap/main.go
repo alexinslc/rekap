@@ -149,6 +149,15 @@ func runDemo(cfg *config.Config) {
 	// Apply colors from config
 	ui.ApplyColors(cfg)
 
+	// Show loading spinner during demo data generation
+	var spinner *ui.LoadingSpinner
+	if ui.IsTTY() {
+		spinner = ui.ShowLoadingWithSpinner("Generating demo data...")
+		// Give a brief moment to show the spinner
+		time.Sleep(500 * time.Millisecond)
+		defer spinner.Stop()
+	}
+
 	// Enhanced styling for demo mode
 	fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
 	fmt.Println(ui.RenderHint("Showing randomized sample data"))
@@ -347,6 +356,13 @@ func runSummary(quiet bool, cfg *config.Config) {
 	// Apply colors from config (for non-quiet mode)
 	if !quiet {
 		ui.ApplyColors(cfg)
+	}
+
+	// Show loading spinner during data collection
+	var spinner *ui.LoadingSpinner
+	if !quiet && ui.IsTTY() {
+		spinner = ui.ShowLoadingWithSpinner("Collecting system data...")
+		defer spinner.Stop()
 	}
 
 	// Create context with timeout for all collectors
