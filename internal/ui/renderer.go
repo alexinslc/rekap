@@ -153,6 +153,34 @@ func IsTTY() bool {
 	return term.IsTerminal(int(os.Stdout.Fd()))
 }
 
+// GetColor returns the current color value for a given color role
+// (e.g., "primary", "secondary", "accent", etc.)
+func GetColor(role string) string {
+	switch strings.ToLower(role) {
+	case "primary":
+		return string(primaryColor)
+	case "secondary":
+		return string(secondaryColor)
+	case "accent":
+		return string(accentColor)
+	case "success":
+		return string(successColor)
+	case "warning", "error":
+		return string(warningColor)
+	case "muted":
+		return string(mutedColor)
+	case "text":
+		return string(textColor)
+	default:
+		return string(textColor)
+	}
+}
+
+// RenderBold renders text in bold using the current theme
+func RenderBold(text string) string {
+	return lipgloss.NewStyle().Bold(true).Render(text)
+}
+
 // RenderTitle renders the main title with optional animation
 func RenderTitle(text string, animate bool) string {
 	// Remove emoji if accessibility mode is enabled and no-emoji is set

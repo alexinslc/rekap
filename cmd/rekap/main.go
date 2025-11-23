@@ -12,8 +12,10 @@ import (
 	"github.com/alexinslc/rekap/internal/config"
 	"github.com/alexinslc/rekap/internal/permissions"
 	"github.com/alexinslc/rekap/internal/theme"
+	"github.com/alexinslc/rekap/internal/tui"
 	"github.com/alexinslc/rekap/internal/ui"
 	"github.com/charmbracelet/fang"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -113,14 +115,46 @@ func main() {
 	}
 	demoCmd.Flags().StringVar(&demoThemeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
 
-	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
+	// Add themes command
+	themesCmd := &cobra.Command{
+		Use:   "themes",
+		Short: "Manage color themes",
+		Long:  "List, preview, and apply color themes.",
+	}
 
-	if err := fang.Execute(
-		context.Background(),
-		rootCmd,
-		fang.WithVersion(version),
-		fang.WithNotifySignal(os.Interrupt),
-	); err != nil {
+	themesListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List available themes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return listThemes()
+		},
+	}
+
+	themesPreviewCmd := &cobra.Command{
+		Use:   "preview",
+		Short: "Interactive theme previewer",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runThemePreview()
+		},
+	}
+
+	themesSetCmd := &cobra.Command{
+		Use:   "set [theme-name]",
+		Short: "Apply theme to config",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return setTheme(args[0])
+		},
+	}
+
+	themesCmd.AddCommand(themesListCmd, themesPreviewCmd, themesSetCmd)
+	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd, themesCmd)
+
+	// Add fang configuration
+	fang.Configure(rootCmd, "REKAP")
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -829,4 +863,101 @@ func pluralize(count int) string {
 		return ""
 	}
 	return "s"
+}
+
+// listThemes lists all available themes with color samples
+func listThemes() error {
+	themes := theme.ListBuiltIn()
+	
+	// Create a temporary config to apply colors
+	cfg := config.Default()
+	ui.ApplyColors(cfg)
+	
+	fmt.Println(ui.RenderTitle("Available Themes", false))
+	fmt.Println()
+	
+	for _, name := range themes {
+		t, err := theme.Load(name)
+		if err != nil {
+			continue
+		}
+		
+		// Apply theme temporarily to get colors
+		tempCfg := config.Default()
+		tempCfg.ApplyTheme(t)
+		ui.ApplyColors(tempCfg)
+		
+		// Create color samples
+		primarySample := lipgloss.NewStyle().
+			Background(lipgloss.Color(t.Colors.Primary)).
+			Foreground(lipgloss.Color(t.Colors.Text)).
+			Render("  Primary  ")
+		
+		secondarySample := lipgloss.NewStyle().
+			Background(lipgloss.Color(t.Colors.Secondary)).
+			Foreground(lipgloss.Color(t.Colors.Text)).
+			Render("  Secondary  ")
+		
+		accentSample := lipgloss.NewStyle().
+			Background(lipgloss.Color(t.Colors.Accent)).
+			Foreground(lipgloss.Color("#000")). // Use black text for better contrast on accent
+			Render("  Accent  ")
+		
+		// Display theme info
+		fmt.Printf("%s %s\n", ui.RenderBold(name), t.Description)
+		fmt.Printf("  %s %s %s\n\n", primarySample, secondarySample, accentSample)
+	}
+	
+	// Reset colors
+	ui.ApplyColors(cfg)
+	
+	fmt.Println(ui.RenderHint("Run 'rekap themes preview' to see full previews"))
+	return nil
+}
+
+// runThemePreview starts the interactive theme previewer
+func runThemePreview() error {
+	// Load config to get current theme
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.Default()
+	}
+	
+	// Start the interactive preview
+	return tui.RunThemePreview()
+}
+
+// setTheme applies a theme to the config
+func setTheme(themeName string) error {
+	// Validate theme exists
+	if !theme.Exists(themeName) {
+		return fmt.Errorf("theme '%s' not found. Use 'rekap themes list' to see available themes", themeName)
+	}
+	
+	// Load the theme
+	t, err := theme.Load(themeName)
+	if err != nil {
+		return fmt.Errorf("failed to load theme: %w", err)
+	}
+	
+	// Load or create config
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.Default()
+	}
+	
+	// Apply theme
+	cfg.ApplyTheme(t)
+	
+	// Save config
+	if err := cfg.Save(); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+	
+	// Apply colors to UI for immediate feedback
+	ui.ApplyColors(cfg)
+	
+	fmt.Println(ui.RenderSuccess(fmt.Sprintf("Theme '%s' applied successfully!", themeName)))
+	fmt.Println(ui.RenderHint("Run 'rekap' to see your new theme in action"))
+	return nil
 }
