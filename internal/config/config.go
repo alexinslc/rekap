@@ -172,6 +172,29 @@ func GetConfigPath() (string, error) {
 	return filepath.Join(homeDir, ".config", "rekap", "config.yaml"), nil
 }
 
+// Save writes the config to the config file
+func (c *Config) Save() error {
+	configPath, err := GetConfigPath()
+	if err != nil {
+		return err
+	}
+
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(configPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	// Marshal to YAML
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	// Write to file
+	return os.WriteFile(configPath, data, 0644)
+}
+
 // Validate ensures config values are valid, applying defaults where needed
 func (c *Config) Validate() {
 	// Ensure time format is valid
