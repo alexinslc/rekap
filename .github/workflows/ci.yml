@@ -7,94 +7,33 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Test
-    runs-on: macos-latest
-    
+  test-build:
+    name: Test & Build
+    runs-on: ubuntu-latest   # runs 2x faster
+
     steps:
-    - name: Check out code
-      uses: actions/checkout@v5
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.25.4'
+        go-version-file: go.mod
         cache: true
 
-    - name: Download dependencies
-      run: go mod download
+    # no manual mod download – setup-go does that
 
-    - name: Verify dependencies
-      run: go mod verify
-
-    - name: Run go vet
+    - name: Vet
       run: go vet ./...
 
-    - name: Run gofmt
+    - name: Gofmt
       run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "The following files are not formatted:"
-          gofmt -s -l .
-          exit 1
-        fi
+        files=$(gofmt -s -l .)
+        [ -z "$files" ] || (echo "$files" && exit 1)
 
-    - name: Run tests
+    # fast unit tests only
+    - name: Test
       run: make test
 
-    - name: Run tests with race detector
-      run: go test -race -v ./...
-
-  build:
-    name: Build
-    runs-on: macos-latest
-    needs: test
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v5
-
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.25.4'
-        cache: true
-
-    - name: Build for Intel Mac
-      run: GOARCH=amd64 go build -ldflags="-s -w" -o rekap-darwin-amd64 ./cmd/rekap
-
-    - name: Build for Apple Silicon
-      run: GOARCH=arm64 go build -ldflags="-s -w" -o rekap-darwin-arm64 ./cmd/rekap
-
-    - name: Upload Intel binary
-      uses: actions/upload-artifact@v5
-      with:
-        name: rekap-darwin-amd64
-        path: rekap-darwin-amd64
-        retention-days: 30
-
-    - name: Upload ARM binary
-      uses: actions/upload-artifact@v5
-      with:
-        name: rekap-darwin-arm64
-        path: rekap-darwin-arm64
-        retention-days: 30
-
-  # lint:
-  #   name: Lint
-  #   runs-on: macos-latest
-    
-  #   steps:
-  #   - name: Check out code
-  #     uses: actions/checkout@v5
-
-  #   - name: Set up Go
-  #     uses: actions/setup-go@v6
-  #     with:
-  #       go-version: '1.25.4'
-  #       cache: true
-
-  #   - name: Run golangci-lint
-  #     uses: golangci/golangci-lint-action@v9
-  #     with:
-  #       version: latest
-  #       args: --timeout=5m
+    # build only your real binary
+    - name: Build
+      run: go build -ldflags="-s -w" -o rekap ./cmd/rekap

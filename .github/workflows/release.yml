@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   goreleaser:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest   # faster than macOS
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -20,7 +21,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.25.4'
+          go-version-file: go.mod
+          cache: true
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
