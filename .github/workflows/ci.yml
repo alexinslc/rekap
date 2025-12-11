@@ -6,10 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+# Cancel old runs when new commits are pushed to the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test
-    runs-on: macos-latest
+  # Fast checks on Ubuntu (syntax, formatting, basic compilation)
+  quick-checks:
+    name: Quick Checks
+    runs-on: ubuntu-latest
     
     steps:
     - name: Check out code
@@ -20,9 +26,6 @@ jobs:
       with:
         go-version: '1.25.4'
         cache: true
-
-    - name: Download dependencies
-      run: go mod download
 
     - name: Verify dependencies
       run: go mod verify
@@ -38,16 +41,33 @@ jobs:
           exit 1
         fi
 
-    - name: Run tests
-      run: make test
+    # This will compile but won't run tests that need macOS APIs
+    - name: Verify code compiles
+      run: go build ./...
 
+  # Real tests on macOS (where your app actually runs)
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+    
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25.4'
+        cache: true
+
+    # Run tests ONCE with race detector (combined from your original two steps)
     - name: Run tests with race detector
-      run: go test -race -v ./...
+      run: go test -race -v -timeout=5m ./...
 
   build:
     name: Build
     runs-on: macos-latest
-    needs: test
+    needs: [quick-checks, test-macos]  # Wait for both to pass
     
     steps:
     - name: Check out code
@@ -65,34 +85,28 @@ jobs:
     - name: Build for Apple Silicon
       run: GOARCH=arm64 go build -ldflags="-s -w" -o rekap-darwin-arm64 ./cmd/rekap
 
-    - name: Upload Intel binary
+    - name: Upload binaries
       uses: actions/upload-artifact@v5
       with:
-        name: rekap-darwin-amd64
-        path: rekap-darwin-amd64
-        retention-days: 30
+        name: rekap-binaries
+        path: rekap-darwin-*
+        retention-days: 7
 
-    - name: Upload ARM binary
-      uses: actions/upload-artifact@v5
-      with:
-        name: rekap-darwin-arm64
-        path: rekap-darwin-arm64
-        retention-days: 30
-
+  # Uncomment when golangci-lint v9 supports Go 1.25.4
   # lint:
   #   name: Lint
-  #   runs-on: macos-latest
-    
+  #   runs-on: ubuntu-latest  # Linting can run on Ubuntu (it's just static analysis)
+  #   
   #   steps:
   #   - name: Check out code
   #     uses: actions/checkout@v5
-
+  #   
   #   - name: Set up Go
   #     uses: actions/setup-go@v6
   #     with:
   #       go-version: '1.25.4'
   #       cache: true
-
+  #   
   #   - name: Run golangci-lint
   #     uses: golangci/golangci-lint-action@v9
   #     with:
