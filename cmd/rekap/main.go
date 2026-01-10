@@ -12,8 +12,11 @@ import (
 	"github.com/alexinslc/rekap/internal/config"
 	"github.com/alexinslc/rekap/internal/permissions"
 	"github.com/alexinslc/rekap/internal/theme"
+	"github.com/alexinslc/rekap/internal/tui"
 	"github.com/alexinslc/rekap/internal/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/fang"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -113,7 +116,40 @@ func main() {
 	}
 	demoCmd.Flags().StringVar(&demoThemeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
 
-	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
+	themesCmd := &cobra.Command{
+		Use:   "themes",
+		Short: "Manage color themes",
+		Long:  `List, preview, and apply color themes.`,
+	}
+
+	themesListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List available themes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return listThemes()
+		},
+	}
+
+	themesPreviewCmd := &cobra.Command{
+		Use:   "preview",
+		Short: "Interactive theme previewer",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runThemePreview()
+		},
+	}
+
+	themesSetCmd := &cobra.Command{
+		Use:   "set [theme-name]",
+		Short: "Apply theme to config",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return setTheme(args[0])
+		},
+	}
+
+	themesCmd.AddCommand(themesListCmd, themesPreviewCmd, themesSetCmd)
+
+	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd, themesCmd)
 
 	if err := fang.Execute(
 		context.Background(),
@@ -829,4 +865,105 @@ func pluralize(count int) string {
 		return ""
 	}
 	return "s"
+}
+
+func listThemes() error {
+	themes := theme.ListBuiltIn()
+	
+	// Sort themes alphabetically
+	sort.Strings(themes)
+	
+	fmt.Println(ui.RenderHeader("Available Themes"))
+	fmt.Println()
+	
+	for _, name := range themes {
+		t, err := theme.Load(name)
+		if err != nil {
+			continue
+		}
+		
+		// Show theme name with sample colors
+		primarySample := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(t.Colors.Primary)).
+			Render("█████")
+		secondarySample := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(t.Colors.Secondary)).
+			Render("█████")
+		accentSample := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(t.Colors.Accent)).
+			Render("█████")
+		
+		description := t.Description
+		if description == "" {
+			description = t.Name
+		}
+		
+		fmt.Printf("  %-15s %s %s %s  %s\n", 
+			name, 
+			primarySample, 
+			secondarySample, 
+			accentSample,
+			description)
+	}
+	
+	fmt.Println()
+	fmt.Println(ui.RenderHint("Run 'rekap themes preview' to see full previews"))
+	
+	return nil
+}
+
+func runThemePreview() error {
+	model := tui.NewThemePreview()
+	
+	p := tea.NewProgram(
+		model,
+		tea.WithAltScreen(),
+	)
+	
+	finalModel, err := p.Run()
+	if err != nil {
+		return fmt.Errorf("error running theme preview: %w", err)
+	}
+	
+	// Check if theme was applied
+	if m, ok := finalModel.(tui.ThemePreviewModel); ok {
+		appliedTheme := m.GetAppliedTheme()
+		if appliedTheme != "" {
+			fmt.Println(ui.RenderSuccess(fmt.Sprintf("Theme '%s' applied", appliedTheme)))
+			fmt.Println(ui.RenderHint("Run 'rekap' to see your new theme"))
+		}
+	}
+	
+	return nil
+}
+
+func setTheme(themeName string) error {
+	// Validate theme exists
+	if !theme.Exists(themeName) {
+		return fmt.Errorf("theme '%s' not found", themeName)
+	}
+	
+	// Load config
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.Default()
+	}
+	
+	// Apply theme
+	t, err := theme.Load(themeName)
+	if err != nil {
+		return fmt.Errorf("failed to load theme: %w", err)
+	}
+	
+	cfg.ApplyTheme(t)
+	
+	// Save config
+	if err := cfg.Save(); err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+	
+	fmt.Println(ui.RenderSuccess(fmt.Sprintf("Theme '%s' applied", themeName)))
+	fmt.Println(ui.RenderHint("Run 'rekap' to see your new theme"))
+	
+	return nil
 }

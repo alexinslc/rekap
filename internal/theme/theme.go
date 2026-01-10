@@ -11,9 +11,10 @@ import (
 
 // Theme represents a complete color theme
 type Theme struct {
-	Name   string      `yaml:"name"`
-	Author string      `yaml:"author,omitempty"`
-	Colors ThemeColors `yaml:"colors"`
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description,omitempty"`
+	Author      string      `yaml:"author,omitempty"`
+	Colors      ThemeColors `yaml:"colors"`
 }
 
 // ThemeColors defines all color values for a theme
@@ -31,8 +32,9 @@ type ThemeColors struct {
 // builtInThemes contains all the built-in themes
 var builtInThemes = map[string]Theme{
 	"default": {
-		Name:   "Default",
-		Author: "rekap",
+		Name:        "Default",
+		Description: "Default colorful theme",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "13",  // Bright magenta/pink
 			Secondary: "14",  // Cyan
@@ -44,8 +46,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"minimal": {
-		Name:   "Minimal",
-		Author: "rekap",
+		Name:        "Minimal",
+		Description: "Minimalist monochrome",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "255", // White
 			Secondary: "250", // Light gray
@@ -57,8 +60,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"hacker": {
-		Name:   "Hacker",
-		Author: "rekap",
+		Name:        "Hacker",
+		Description: "Matrix green aesthetic",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "10", // Bright green
 			Secondary: "2",  // Green
@@ -70,8 +74,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"pastel": {
-		Name:   "Pastel",
-		Author: "rekap",
+		Name:        "Pastel",
+		Description: "Soft pastel colors",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "#ff99cc", // Soft pink
 			Secondary: "#99ccff", // Soft blue
@@ -83,8 +88,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"nord": {
-		Name:   "Nord",
-		Author: "rekap",
+		Name:        "Nord",
+		Description: "Arctic inspired palette",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "#88c0d0", // Nord frost
 			Secondary: "#81a1c1", // Nord frost
@@ -96,8 +102,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"dracula": {
-		Name:   "Dracula",
-		Author: "rekap",
+		Name:        "Dracula",
+		Description: "Dark purple theme",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "#ff79c6", // Pink
 			Secondary: "#8be9fd", // Cyan
@@ -109,8 +116,9 @@ var builtInThemes = map[string]Theme{
 		},
 	},
 	"solarized": {
-		Name:   "Solarized Dark",
-		Author: "rekap",
+		Name:        "Solarized Dark",
+		Description: "Solarized color scheme",
+		Author:      "rekap",
 		Colors: ThemeColors{
 			Primary:   "#268bd2", // Blue
 			Secondary: "#2aa198", // Cyan
@@ -220,4 +228,35 @@ func (t *Theme) Validate() error {
 	}
 
 	return nil
+}
+
+// Exists checks if a theme exists (built-in or custom)
+func Exists(name string) bool {
+	// Check built-in themes
+	if _, ok := GetBuiltIn(name); ok {
+		return true
+	}
+
+	// Check custom themes in user directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
+
+	themesDir := filepath.Join(homeDir, ".config", "rekap", "themes")
+	
+	// Try with .yaml extension
+	if filepath.Ext(name) == "" {
+		themePath := filepath.Join(themesDir, name+".yaml")
+		if _, err := os.Stat(themePath); err == nil {
+			return true
+		}
+	} else {
+		themePath := filepath.Join(themesDir, name)
+		if _, err := os.Stat(themePath); err == nil {
+			return true
+		}
+	}
+
+	return false
 }
