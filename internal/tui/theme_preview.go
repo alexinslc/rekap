@@ -58,13 +58,13 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			// Apply theme and exit
 			themeName := m.themes[m.currentIndex]
-			
+
 			// Load config
 			cfg, err := config.Load()
 			if err != nil {
 				cfg = config.Default()
 			}
-			
+
 			// Load and apply theme
 			t, err := theme.Load(themeName)
 			if err == nil {
@@ -72,7 +72,7 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				_ = cfg.Save() // Ignore error for now
 				m.applied = true
 			}
-			
+
 			return m, tea.Quit
 		}
 

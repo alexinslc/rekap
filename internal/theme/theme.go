@@ -244,7 +244,7 @@ func Exists(name string) bool {
 	}
 
 	themesDir := filepath.Join(homeDir, ".config", "rekap", "themes")
-	
+
 	// Try with .yaml extension
 	if filepath.Ext(name) == "" {
 		themePath := filepath.Join(themesDir, name+".yaml")

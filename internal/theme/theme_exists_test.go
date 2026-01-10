@@ -36,7 +36,7 @@ func TestThemeDescriptions(t *testing.T) {
 	t.Parallel()
 	// Verify all built-in themes have descriptions
 	themes := ListBuiltIn()
-	
+
 	for _, name := range themes {
 		t.Run(name, func(t *testing.T) {
 			theme, ok := GetBuiltIn(name)
@@ -44,11 +44,11 @@ func TestThemeDescriptions(t *testing.T) {
 				t.Errorf("Failed to get built-in theme %q", name)
 				return
 			}
-			
+
 			if theme.Description == "" {
 				t.Errorf("Theme %q is missing description", name)
 			}
-			
+
 			if theme.Name == "" {
 				t.Errorf("Theme %q has empty Name field", name)
 			}

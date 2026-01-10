@@ -869,19 +869,19 @@ func pluralize(count int) string {
 
 func listThemes() error {
 	themes := theme.ListBuiltIn()
-	
+
 	// Sort themes alphabetically
 	sort.Strings(themes)
-	
+
 	fmt.Println(ui.RenderHeader("Available Themes"))
 	fmt.Println()
-	
+
 	for _, name := range themes {
 		t, err := theme.Load(name)
 		if err != nil {
 			continue
 		}
-		
+
 		// Show theme name with sample colors
 		primarySample := lipgloss.NewStyle().
 			Foreground(lipgloss.Color(t.Colors.Primary)).
@@ -892,39 +892,39 @@ func listThemes() error {
 		accentSample := lipgloss.NewStyle().
 			Foreground(lipgloss.Color(t.Colors.Accent)).
 			Render("█████")
-		
+
 		description := t.Description
 		if description == "" {
 			description = t.Name
 		}
-		
-		fmt.Printf("  %-15s %s %s %s  %s\n", 
-			name, 
-			primarySample, 
-			secondarySample, 
+
+		fmt.Printf("  %-15s %s %s %s  %s\n",
+			name,
+			primarySample,
+			secondarySample,
 			accentSample,
 			description)
 	}
-	
+
 	fmt.Println()
 	fmt.Println(ui.RenderHint("Run 'rekap themes preview' to see full previews"))
-	
+
 	return nil
 }
 
 func runThemePreview() error {
 	model := tui.NewThemePreview()
-	
+
 	p := tea.NewProgram(
 		model,
 		tea.WithAltScreen(),
 	)
-	
+
 	finalModel, err := p.Run()
 	if err != nil {
 		return fmt.Errorf("error running theme preview: %w", err)
 	}
-	
+
 	// Check if theme was applied
 	if m, ok := finalModel.(tui.ThemePreviewModel); ok {
 		appliedTheme := m.GetAppliedTheme()
@@ -933,7 +933,7 @@ func runThemePreview() error {
 			fmt.Println(ui.RenderHint("Run 'rekap' to see your new theme"))
 		}
 	}
-	
+
 	return nil
 }
 
@@ -942,28 +942,28 @@ func setTheme(themeName string) error {
 	if !theme.Exists(themeName) {
 		return fmt.Errorf("theme '%s' not found", themeName)
 	}
-	
+
 	// Load config
 	cfg, err := config.Load()
 	if err != nil {
 		cfg = config.Default()
 	}
-	
+
 	// Apply theme
 	t, err := theme.Load(themeName)
 	if err != nil {
 		return fmt.Errorf("failed to load theme: %w", err)
 	}
-	
+
 	cfg.ApplyTheme(t)
-	
+
 	// Save config
 	if err := cfg.Save(); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
-	
+
 	fmt.Println(ui.RenderSuccess(fmt.Sprintf("Theme '%s' applied", themeName)))
 	fmt.Println(ui.RenderHint("Run 'rekap' to see your new theme"))
-	
+
 	return nil
 }
