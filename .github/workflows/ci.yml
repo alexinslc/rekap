@@ -13,7 +13,7 @@ jobs:
     
     steps:
     - name: Check out code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go
       uses: actions/setup-go@v6
@@ -51,7 +51,7 @@ jobs:
     
     steps:
     - name: Check out code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go
       uses: actions/setup-go@v6
@@ -66,14 +66,14 @@ jobs:
       run: GOARCH=arm64 go build -ldflags="-s -w" -o rekap-darwin-arm64 ./cmd/rekap
 
     - name: Upload Intel binary
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: rekap-darwin-amd64
         path: rekap-darwin-amd64
         retention-days: 30
 
     - name: Upload ARM binary
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: rekap-darwin-arm64
         path: rekap-darwin-arm64
@@ -85,7 +85,7 @@ jobs:
     
   #   steps:
   #   - name: Check out code
-  #     uses: actions/checkout@v5
+  #     uses: actions/checkout@v6
 
   #   - name: Set up Go
   #     uses: actions/setup-go@v6
