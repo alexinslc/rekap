@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "modernc.org/sqlite"
-	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -67,16 +64,46 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 		}
 	}
 
-	// Check 2: High app switching rate (>50 switches/hour)
-	appSwitchRate, err := calculateAppSwitchRate(ctx)
-	if err == nil && appSwitchRate > 0 {
-		if appSwitchRate >= config.AppSwitchesPerHour {
+	// Open knowledgeC.db once for all DB-backed checks
+	db, err := openKnowledgeDB()
+	if err == nil {
+		defer db.Close()
+
+		// Check 2: High app switching rate (>50 switches/hour)
+		appSwitchRate, err := calculateAppSwitchRate(ctx, db)
+		if err == nil && appSwitchRate > 0 {
+			if appSwitchRate >= config.AppSwitchesPerHour {
+				result.Warnings = append(result.Warnings, BurnoutWarning{
+					Type:        "high_switching",
+					Message:     fmt.Sprintf("High task switching: %d app switches/hour", appSwitchRate),
+					Severity:    "medium",
+					Detected:    true,
+					MetricValue: appSwitchRate,
+				})
+			}
+		}
+
+		// Check 4: Late night work (activity past midnight)
+		lateNightMinutes, err := detectLateNightWork(ctx, db)
+		if err == nil && lateNightMinutes > 0 {
 			result.Warnings = append(result.Warnings, BurnoutWarning{
-				Type:        "high_switching",
-				Message:     fmt.Sprintf("High task switching: %d app switches/hour", appSwitchRate),
-				Severity:    "medium",
+				Type:        "late_night",
+				Message:     fmt.Sprintf("Late night work: %d minutes past midnight", lateNightMinutes),
+				Severity:    "high",
 				Detected:    true,
-				MetricValue: appSwitchRate,
+				MetricValue: lateNightMinutes,
+			})
+		}
+
+		// Check 5: No breaks (continuous focus >4h)
+		longestStreak, err := calculateLongestNoBreakPeriod(ctx, db)
+		if err == nil && longestStreak >= config.NoBreakHours*60 {
+			result.Warnings = append(result.Warnings, BurnoutWarning{
+				Type:        "no_breaks",
+				Message:     fmt.Sprintf("No breaks: %dh+ continuous focus", longestStreak/60),
+				Severity:    "high",
+				Detected:    true,
+				MetricValue: longestStreak / 60,
 			})
 		}
 	}
@@ -92,57 +119,12 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 		})
 	}
 
-	// Check 4: Late night work (activity past midnight)
-	lateNightMinutes, err := detectLateNightWork(ctx)
-	if err == nil && lateNightMinutes > 0 {
-		result.Warnings = append(result.Warnings, BurnoutWarning{
-			Type:        "late_night",
-			Message:     fmt.Sprintf("Late night work: %d minutes past midnight", lateNightMinutes),
-			Severity:    "high",
-			Detected:    true,
-			MetricValue: lateNightMinutes,
-		})
-	}
-
-	// Check 5: No breaks (continuous focus >4h)
-	longestStreak, err := calculateLongestNoBreakPeriod(ctx)
-	if err == nil && longestStreak >= config.NoBreakHours*60 {
-		result.Warnings = append(result.Warnings, BurnoutWarning{
-			Type:        "no_breaks",
-			Message:     fmt.Sprintf("No breaks: %dh+ continuous focus", longestStreak/60),
-			Severity:    "high",
-			Detected:    true,
-			MetricValue: longestStreak / 60,
-		})
-	}
-
 	return result
 }
 
 // calculateAppSwitchRate calculates the number of app switches per hour
-func calculateAppSwitchRate(ctx context.Context) (int, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return 0, fmt.Errorf("Screen Time database not found")
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
-
-	now := time.Now()
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
-	endTimestamp := now.Sub(coreDataEpoch).Seconds()
+func calculateAppSwitchRate(ctx context.Context, db *sql.DB) (int, error) {
+	startTimestamp, endTimestamp := todayTimestampRange()
 
 	// Count distinct app usage events (each represents a switch)
 	query := `
@@ -156,12 +138,13 @@ func calculateAppSwitchRate(ctx context.Context) (int, error) {
 	`
 
 	var switchCount int
-	err = db.QueryRowContext(ctx, query, startTimestamp, endTimestamp).Scan(&switchCount)
-	if err != nil {
+	if err := db.QueryRowContext(ctx, query, startTimestamp, endTimestamp).Scan(&switchCount); err != nil {
 		return 0, fmt.Errorf("failed to query switch count: %w", err)
 	}
 
 	// Calculate rate per hour
+	now := time.Now()
+	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	hoursActive := time.Since(midnight).Hours()
 	if hoursActive < 1 {
 		hoursActive = 1
@@ -172,27 +155,10 @@ func calculateAppSwitchRate(ctx context.Context) (int, error) {
 }
 
 // detectLateNightWork detects app usage past midnight (00:00-06:00)
-func detectLateNightWork(ctx context.Context) (int, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return 0, fmt.Errorf("Screen Time database not found")
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
-
+func detectLateNightWork(ctx context.Context, db *sql.DB) (int, error) {
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	earlyMorning := midnight.Add(6 * time.Hour) // 06:00
-	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
+	earlyMorning := midnight.Add(6 * time.Hour)
 
 	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
 	endTimestamp := earlyMorning.Sub(coreDataEpoch).Seconds()
@@ -209,8 +175,7 @@ func detectLateNightWork(ctx context.Context) (int, error) {
 	`
 
 	var totalSeconds sql.NullFloat64
-	err = db.QueryRowContext(ctx, query, startTimestamp, endTimestamp).Scan(&totalSeconds)
-	if err != nil {
+	if err := db.QueryRowContext(ctx, query, startTimestamp, endTimestamp).Scan(&totalSeconds); err != nil {
 		return 0, fmt.Errorf("failed to query late night activity: %w", err)
 	}
 
@@ -222,29 +187,8 @@ func detectLateNightWork(ctx context.Context) (int, error) {
 }
 
 // calculateLongestNoBreakPeriod finds the longest continuous work period without breaks
-func calculateLongestNoBreakPeriod(ctx context.Context) (int, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get home directory: %w", err)
-	}
-
-	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return 0, fmt.Errorf("Screen Time database not found")
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
-
-	now := time.Now()
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
-	endTimestamp := now.Sub(coreDataEpoch).Seconds()
+func calculateLongestNoBreakPeriod(ctx context.Context, db *sql.DB) (int, error) {
+	startTimestamp, endTimestamp := todayTimestampRange()
 
 	// Get all app usage intervals ordered by time
 	query := `

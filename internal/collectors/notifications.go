@@ -2,12 +2,7 @@ package collectors
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	_ "modernc.org/sqlite"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 // NotificationApp represents notification count for a single app
@@ -29,24 +24,9 @@ type NotificationsResult struct {
 func CollectNotifications(ctx context.Context) NotificationsResult {
 	result := NotificationsResult{Available: false}
 
-	// Get home directory
-	homeDir, err := os.UserHomeDir()
+	db, err := openKnowledgeDB()
 	if err != nil {
-		result.Error = fmt.Errorf("failed to get home directory: %w", err)
-		return result
-	}
-
-	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-
-	// Check if database exists
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		result.Error = fmt.Errorf("Screen Time database not found (requires Full Disk Access)")
-		return result
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		result.Error = fmt.Errorf("failed to open Screen Time database: %w", err)
+		result.Error = err
 		return result
 	}
 	defer func() {
@@ -55,13 +35,7 @@ func CollectNotifications(ctx context.Context) NotificationsResult {
 		}
 	}()
 
-	// Calculate today's timestamp range in Core Data format (seconds since 2001-01-01)
-	now := time.Now()
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
-	endTimestamp := now.Sub(coreDataEpoch).Seconds()
+	startTimestamp, endTimestamp := todayTimestampRange()
 
 	// Query for notification events
 	// ZSTREAMNAME = '/notification/usage' contains notification events
