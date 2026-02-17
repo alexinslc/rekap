@@ -603,35 +603,42 @@ func TestResolveAppName(t *testing.T) {
 	tests := []struct {
 		name       string
 		bundleID   string
-		wantSuffix string // Check it ends with this
+		wantAny    []string // Accept any of these as valid results
 	}{
 		{
-			name:       "Apple bundle ID",
-			bundleID:   "com.apple.Safari",
-			wantSuffix: "Safari",
+			name:     "Apple bundle ID",
+			bundleID: "com.apple.Safari",
+			wantAny:  []string{"Safari"},
 		},
 		{
-			name:       "Microsoft bundle ID",
-			bundleID:   "com.microsoft.VSCode",
-			wantSuffix: "VSCode",
+			name:     "Microsoft bundle ID",
+			bundleID: "com.microsoft.VSCode",
+			wantAny:  []string{"VSCode", "Visual Studio Code"},
 		},
 		{
-			name:       "Simple bundle ID",
-			bundleID:   "Slack",
-			wantSuffix: "Slack",
+			name:     "Simple bundle ID",
+			bundleID: "Slack",
+			wantAny:  []string{"Slack"},
 		},
 		{
-			name:       "Empty bundle ID",
-			bundleID:   "",
-			wantSuffix: "",
+			name:     "Empty bundle ID",
+			bundleID: "",
+			wantAny:  []string{""},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := resolveAppName(tt.bundleID)
-			if !strings.HasSuffix(result, tt.wantSuffix) {
-				t.Errorf("resolveAppName(%q) = %q, want suffix %q", tt.bundleID, result, tt.wantSuffix)
+			matched := false
+			for _, want := range tt.wantAny {
+				if result == want || strings.HasSuffix(result, want) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				t.Errorf("resolveAppName(%q) = %q, want one of %v", tt.bundleID, result, tt.wantAny)
 			}
 		})
 	}

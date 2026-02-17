@@ -548,9 +548,11 @@ func extractIssuesFromRows(rows *sql.Rows) []IssueVisit {
 		}
 	}
 
-	// Convert map to slice
+	// Convert map to slice, filtering out zero-visit entries
 	for _, issue := range issueMap {
-		issues = append(issues, *issue)
+		if issue.VisitCount > 0 {
+			issues = append(issues, *issue)
+		}
 	}
 
 	return issues
