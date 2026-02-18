@@ -50,12 +50,28 @@ func TestParseSleepWakeEvents(t *testing.T) {
 			wantMins: 60, // 1 hour until end
 		},
 		{
-			name: "events before start time are ignored",
+			name: "cross-midnight sleep overlapping start",
 			output: `2026-02-17 23:00:00 -0700  Sleep  Entering Sleep state
 2026-02-18 06:00:00 -0700  Wake   Wake from Deep Idle`,
-			start:    time.Date(2026, 2, 18, 8, 0, 0, 0, loc),
+			start:    start, // midnight
+			end:      end,
+			wantMins: 360, // 6 hours (midnight to 06:00)
+		},
+		{
+			name: "cross-midnight sleep but wake before start is ignored",
+			output: `2026-02-17 22:00:00 -0700  Sleep  Entering Sleep state
+2026-02-17 23:30:00 -0700  Wake   Wake from Deep Idle`,
+			start:    start,
 			end:      end,
 			wantMins: 0,
+		},
+		{
+			name: "sleep before start with wake after start (partial overlap)",
+			output: `2026-02-17 23:00:00 -0700  Sleep  Entering Sleep state
+2026-02-18 09:00:00 -0700  Wake   Wake from Deep Idle`,
+			start:    time.Date(2026, 2, 18, 8, 0, 0, 0, loc),
+			end:      end,
+			wantMins: 60, // only 08:00-09:00 counted (clamped to start)
 		},
 		{
 			name: "malformed timestamps are skipped",

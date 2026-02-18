@@ -10,25 +10,13 @@ import (
 
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/config"
+	"github.com/alexinslc/rekap/internal/summary"
 	"github.com/alexinslc/rekap/internal/ui"
 	"github.com/alexinslc/rekap/internal/ui/tui"
 )
 
-// SummaryData holds all collector results for a single run
-type SummaryData struct {
-	Uptime        collectors.UptimeResult
-	Battery       collectors.BatteryResult
-	Screen        collectors.ScreenResult
-	Apps          collectors.AppsResult
-	Focus         collectors.FocusResult
-	Media         collectors.MediaResult
-	Network       collectors.NetworkResult
-	Browsers      collectors.BrowsersResult
-	Notifications collectors.NotificationsResult
-	Issues        collectors.IssuesResult
-	Fragmentation collectors.FragmentationResult
-	Burnout       collectors.BurnoutResult
-}
+// SummaryData is an alias for the shared summary.Data type.
+type SummaryData = summary.Data
 
 func runSummary(quiet bool, asJSON bool, print bool, cfg *config.Config) {
 	ui.ApplyColors(cfg)
@@ -97,21 +85,7 @@ func runSummary(quiet bool, asJSON bool, print bool, cfg *config.Config) {
 }
 
 func runTUI(cfg *config.Config, data *SummaryData) {
-	tuiData := &tui.SummaryData{
-		Uptime:        data.Uptime,
-		Battery:       data.Battery,
-		Screen:        data.Screen,
-		Apps:          data.Apps,
-		Focus:         data.Focus,
-		Media:         data.Media,
-		Network:       data.Network,
-		Browsers:      data.Browsers,
-		Notifications: data.Notifications,
-		Issues:        data.Issues,
-		Fragmentation: data.Fragmentation,
-		Burnout:       data.Burnout,
-	}
-	sections := tui.BuildSections(tuiData, cfg)
+	sections := tui.BuildSections(data, cfg)
 	m := tui.New(sections, cfg)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

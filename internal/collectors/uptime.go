@@ -86,9 +86,12 @@ func CollectUptime(ctx context.Context) UptimeResult {
 var sleepPattern = regexp.MustCompile(`\bSleep\b`)
 var wakePattern = regexp.MustCompile(`\bWake\b`)
 
+// uptimeTimestampPattern is a local copy to avoid cross-file dependency on battery.go
+var uptimeTimestampPattern = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})`)
+
 // collectSleepDuration runs pmset -g log and returns total sleep time between start and end.
 func collectSleepDuration(ctx context.Context, start, end time.Time) time.Duration {
-	cmd := exec.CommandContext(ctx, "bash", "-c", "pmset -g log 2>/dev/null | grep -E '(Sleep|Wake)\\b'")
+	cmd := exec.CommandContext(ctx, "pmset", "-g", "log")
 	output, err := cmd.Output()
 	if err != nil {
 		return 0
@@ -96,9 +99,10 @@ func collectSleepDuration(ctx context.Context, start, end time.Time) time.Durati
 	return parseSleepWakeEvents(string(output), start, end)
 }
 
-// parseSleepWakeEvents parses filtered pmset log output and returns total sleep duration
-// between start and end times. Exported for testing.
+// parseSleepWakeEvents parses pmset log output and returns total sleep duration
+// between start and end times. Internal helper, tested via same-package tests.
 func parseSleepWakeEvents(output string, start, end time.Time) time.Duration {
+	yesterday := start.Add(-24 * time.Hour).Format("2006-01-02")
 	today := start.Format("2006-01-02")
 	var totalSleep time.Duration
 	var sleepStart time.Time
@@ -108,11 +112,21 @@ func parseSleepWakeEvents(output string, start, end time.Time) time.Duration {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		tsMatches := timestampPattern.FindStringSubmatch(line)
+		// Only match Sleep/Wake lines
+		isSleep := sleepPattern.MatchString(line)
+		isWake := wakePattern.MatchString(line)
+		if !isSleep && !isWake {
+			continue
+		}
+
+		tsMatches := uptimeTimestampPattern.FindStringSubmatch(line)
 		if len(tsMatches) < 2 {
 			continue
 		}
-		if !strings.HasPrefix(tsMatches[1], today) {
+
+		// Allow yesterday's date (for cross-midnight sleep) and today's date
+		datePrefix := tsMatches[1][:10]
+		if datePrefix != today && datePrefix != yesterday {
 			continue
 		}
 
@@ -121,25 +135,33 @@ func parseSleepWakeEvents(output string, start, end time.Time) time.Duration {
 			continue
 		}
 
-		if ts.Before(start) || ts.After(end) {
+		if ts.After(end) {
 			continue
 		}
-
-		isSleep := sleepPattern.MatchString(line)
-		isWake := wakePattern.MatchString(line)
 
 		if isSleep && !inSleep {
 			sleepStart = ts
 			inSleep = true
 		} else if isWake && inSleep {
-			totalSleep += ts.Sub(sleepStart)
+			// Clamp sleep interval to [start, end]
+			effectiveStart := sleepStart
+			if effectiveStart.Before(start) {
+				effectiveStart = start
+			}
+			if ts.After(start) {
+				totalSleep += ts.Sub(effectiveStart)
+			}
 			inSleep = false
 		}
 	}
 
 	// If still in sleep at end time, count up to end
 	if inSleep {
-		totalSleep += end.Sub(sleepStart)
+		effectiveStart := sleepStart
+		if effectiveStart.Before(start) {
+			effectiveStart = start
+		}
+		totalSleep += end.Sub(effectiveStart)
 	}
 
 	return totalSleep

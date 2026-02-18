@@ -5,43 +5,32 @@ import "github.com/charmbracelet/lipgloss"
 const sidebarWidth = 22
 const minTermWidth = 80
 
-var (
-	// Colors -- these get overridden by ApplyThemeColors
-	primaryColor   = lipgloss.Color("13")
-	secondaryColor = lipgloss.Color("14")
-	accentColor    = lipgloss.Color("11")
-	successColor   = lipgloss.Color("10")
-	warningColor   = lipgloss.Color("9")
-	mutedColor     = lipgloss.Color("240")
-	textColor      = lipgloss.Color("255")
-)
-
-func buildStyles() tuiStyles {
+func buildStylesFromPalette(p colorPalette) tuiStyles {
 	return tuiStyles{
 		titleBar: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor).
+			Foreground(p.primary).
 			PaddingLeft(1),
 
 		sidebarContainer: lipgloss.NewStyle().
 			Width(sidebarWidth).
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderRight(true).
-			BorderForeground(mutedColor).
+			BorderForeground(p.muted).
 			PaddingLeft(1).
 			PaddingRight(1),
 
 		sidebarItem: lipgloss.NewStyle().
-			Foreground(textColor).
+			Foreground(p.text).
 			PaddingLeft(1),
 
 		sidebarActive: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor).
+			Foreground(p.primary).
 			PaddingLeft(0),
 
 		sidebarUnavailable: lipgloss.NewStyle().
-			Foreground(mutedColor).
+			Foreground(p.muted).
 			PaddingLeft(1),
 
 		detailPane: lipgloss.NewStyle().
@@ -50,31 +39,31 @@ func buildStyles() tuiStyles {
 
 		sectionHeader: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor).
+			Foreground(p.primary).
 			MarginBottom(1),
 
 		dataLabel: lipgloss.NewStyle().
-			Foreground(secondaryColor),
+			Foreground(p.secondary),
 
 		dataValue: lipgloss.NewStyle().
-			Foreground(textColor),
+			Foreground(p.text),
 
 		highlight: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(accentColor),
+			Foreground(p.accent),
 
 		success: lipgloss.NewStyle().
-			Foreground(successColor),
+			Foreground(p.success),
 
 		warning: lipgloss.NewStyle().
-			Foreground(warningColor),
+			Foreground(p.warning),
 
 		muted: lipgloss.NewStyle().
-			Foreground(mutedColor).
+			Foreground(p.muted).
 			Italic(true),
 
 		footerBar: lipgloss.NewStyle().
-			Foreground(mutedColor).
+			Foreground(p.muted).
 			PaddingLeft(1),
 	}
 }

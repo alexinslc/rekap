@@ -12,8 +12,8 @@ import (
 	"github.com/alexinslc/rekap/internal/config"
 )
 
-// SummaryData is provided by the caller -- we use an interface to avoid circular imports.
-// The caller passes section builders that close over the actual data.
+// Section represents a single summary section shown in the TUI.
+// Callers construct and pass populated sections into the UI model.
 type Section struct {
 	Name      string
 	Available bool
@@ -32,38 +32,51 @@ type Model struct {
 	ready     bool
 	tooSmall  bool
 	styles    tuiStyles
+	palette   colorPalette
 	date      string
 }
 
 func New(sections []Section, cfg *config.Config) Model {
-	applyThemeColors(cfg)
+	palette := colorsFromConfig(cfg)
 	return Model{
 		sections: sections,
-		styles:   buildStyles(),
+		styles:   buildStylesFromPalette(palette),
+		palette:  palette,
 		date:     time.Now().Format("Mon, Jan 2 2006"),
 	}
 }
 
-func applyThemeColors(cfg *config.Config) {
+type colorPalette struct {
+	primary   lipgloss.Color
+	secondary lipgloss.Color
+	accent    lipgloss.Color
+	success   lipgloss.Color
+	warning   lipgloss.Color
+	muted     lipgloss.Color
+	text      lipgloss.Color
+}
+
+func colorsFromConfig(cfg *config.Config) colorPalette {
 	if cfg == nil {
-		return
+		return colorPalette{
+			primary: "13", secondary: "14", accent: "11",
+			success: "10", warning: "9", muted: "240", text: "255",
+		}
 	}
 	if cfg.Accessibility.Enabled && cfg.Accessibility.HighContrast {
-		primaryColor = lipgloss.Color("15")
-		secondaryColor = lipgloss.Color("15")
-		accentColor = lipgloss.Color("15")
-		successColor = lipgloss.Color("15")
-		warningColor = lipgloss.Color("15")
-		mutedColor = lipgloss.Color("250")
-		textColor = lipgloss.Color("15")
-	} else {
-		primaryColor = lipgloss.Color(cfg.Colors.Primary)
-		secondaryColor = lipgloss.Color(cfg.Colors.Secondary)
-		accentColor = lipgloss.Color(cfg.Colors.Accent)
-		successColor = lipgloss.Color(cfg.Colors.Success)
-		warningColor = lipgloss.Color(cfg.Colors.Warning)
-		mutedColor = lipgloss.Color(cfg.Colors.Muted)
-		textColor = lipgloss.Color(cfg.Colors.Text)
+		return colorPalette{
+			primary: "15", secondary: "15", accent: "15",
+			success: "15", warning: "15", muted: "250", text: "15",
+		}
+	}
+	return colorPalette{
+		primary:   lipgloss.Color(cfg.Colors.Primary),
+		secondary: lipgloss.Color(cfg.Colors.Secondary),
+		accent:    lipgloss.Color(cfg.Colors.Accent),
+		success:   lipgloss.Color(cfg.Colors.Success),
+		warning:   lipgloss.Color(cfg.Colors.Warning),
+		muted:     lipgloss.Color(cfg.Colors.Muted),
+		text:      lipgloss.Color(cfg.Colors.Text),
 	}
 }
 
@@ -79,7 +92,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tooSmall = msg.Width < minTermWidth
 
 		contentWidth := msg.Width - sidebarWidth - 3 // border + padding
-		contentHeight := msg.Height - 3               // title + footer
+		if contentWidth < 0 {
+			contentWidth = 0
+		}
+		contentHeight := msg.Height - 3 // title + footer
+		if contentHeight < 0 {
+			contentHeight = 0
+		}
 
 		if !m.ready {
 			m.viewport = viewport.New(contentWidth, contentHeight)
@@ -169,7 +188,7 @@ func (m Model) View() string {
 		Width(m.width).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderBottom(true).
-		BorderForeground(mutedColor).
+		BorderForeground(m.palette.muted).
 		Render(title)
 
 	// Sidebar

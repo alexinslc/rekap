@@ -7,27 +7,11 @@ import (
 
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/config"
+	"github.com/alexinslc/rekap/internal/summary"
 	"github.com/alexinslc/rekap/internal/ui"
 )
 
-// SummaryData mirrors cmd/rekap.SummaryData to avoid circular imports.
-// The caller passes this from the cmd package.
-type SummaryData struct {
-	Uptime        collectors.UptimeResult
-	Battery       collectors.BatteryResult
-	Screen        collectors.ScreenResult
-	Apps          collectors.AppsResult
-	Focus         collectors.FocusResult
-	Media         collectors.MediaResult
-	Network       collectors.NetworkResult
-	Browsers      collectors.BrowsersResult
-	Notifications collectors.NotificationsResult
-	Issues        collectors.IssuesResult
-	Fragmentation collectors.FragmentationResult
-	Burnout       collectors.BurnoutResult
-}
-
-func BuildSections(data *SummaryData, cfg *config.Config) []Section {
+func BuildSections(data *summary.Data, cfg *config.Config) []Section {
 	s := &sectionBuilder{data: data, cfg: cfg}
 	return []Section{
 		s.system(),
@@ -42,7 +26,7 @@ func BuildSections(data *SummaryData, cfg *config.Config) []Section {
 }
 
 type sectionBuilder struct {
-	data *SummaryData
+	data *summary.Data
 	cfg  *config.Config
 }
 
@@ -266,7 +250,8 @@ func (s *sectionBuilder) network() Section {
 
 func (s *sectionBuilder) wellness() Section {
 	fragAvail := s.data.Fragmentation.Available
-	burnoutAvail := s.data.Burnout.Available && len(s.data.Burnout.Warnings) > 0
+	burnoutAvail := s.data.Burnout.Available
+	hasWarnings := burnoutAvail && len(s.data.Burnout.Warnings) > 0
 	if !fragAvail && !burnoutAvail {
 		return Section{Name: "Wellness", Available: false, HintText: "No wellness data available"}
 	}
@@ -287,7 +272,7 @@ func (s *sectionBuilder) wellness() Section {
 		expanded.WriteString(fmt.Sprintf("  Switches: %.1f/hr (weight: 20%%)\n", b.AppSwitchesPerHour))
 	}
 
-	if burnoutAvail {
+	if hasWarnings {
 		summary.WriteString(fmt.Sprintf("Warnings:      %d\n", len(s.data.Burnout.Warnings)))
 
 		expanded.WriteString("\nBurnout Warnings:\n")
@@ -300,7 +285,7 @@ func (s *sectionBuilder) wellness() Section {
 		for _, w := range sorted {
 			expanded.WriteString(fmt.Sprintf("  [%s] %s\n", w.Severity, w.Message))
 		}
-	} else if fragAvail {
+	} else {
 		summary.WriteString("Warnings:      none\n")
 	}
 
