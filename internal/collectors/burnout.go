@@ -12,8 +12,7 @@ type BurnoutWarning struct {
 	Type        string // "long_day", "high_switching", "tab_overload", "late_night", "no_breaks"
 	Message     string
 	Severity    string // "low", "medium", "high"
-	Detected    bool
-	MetricValue int // The actual value that triggered the warning
+	MetricValue int    // The actual value that triggered the warning
 }
 
 // BurnoutResult contains burnout detection information
@@ -58,7 +57,6 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 				Type:        "long_day",
 				Message:     fmt.Sprintf("Long work day: %dh+ screen time", longDayHours),
 				Severity:    "medium",
-				Detected:    true,
 				MetricValue: longDayHours,
 			})
 		}
@@ -77,7 +75,6 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 					Type:        "high_switching",
 					Message:     fmt.Sprintf("High task switching: %d app switches/hour", appSwitchRate),
 					Severity:    "medium",
-					Detected:    true,
 					MetricValue: appSwitchRate,
 				})
 			}
@@ -90,7 +87,6 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 				Type:        "late_night",
 				Message:     fmt.Sprintf("Late night work: %d minutes past midnight", lateNightMinutes),
 				Severity:    "high",
-				Detected:    true,
 				MetricValue: lateNightMinutes,
 			})
 		}
@@ -102,7 +98,6 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 				Type:        "no_breaks",
 				Message:     fmt.Sprintf("No breaks: %dh+ continuous focus", longestStreak/60),
 				Severity:    "high",
-				Detected:    true,
 				MetricValue: longestStreak / 60,
 			})
 		}
@@ -114,7 +109,6 @@ func CollectBurnout(ctx context.Context, screen ScreenResult, browsers BrowsersR
 			Type:        "tab_overload",
 			Message:     fmt.Sprintf("Browser overload: %d open tabs", browsers.TotalTabs),
 			Severity:    "low",
-			Detected:    true,
 			MetricValue: browsers.TotalTabs,
 		})
 	}

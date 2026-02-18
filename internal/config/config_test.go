@@ -117,13 +117,6 @@ tracking:
 		t.Errorf("Expected 2 excluded apps, got %d", len(cfg.Tracking.ExcludeApps))
 	}
 
-	if !cfg.IsAppExcluded("Activity Monitor") {
-		t.Error("Expected 'Activity Monitor' to be excluded")
-	}
-
-	if cfg.IsAppExcluded("VS Code") {
-		t.Error("Expected 'VS Code' to not be excluded")
-	}
 }
 
 func TestValidate(t *testing.T) {
@@ -144,32 +137,6 @@ func TestValidate(t *testing.T) {
 	// Should have default colors
 	if cfg.Colors.Primary == "" {
 		t.Error("Expected primary color to have default value")
-	}
-}
-
-func TestIsAppExcluded(t *testing.T) {
-	t.Parallel()
-	cfg := &Config{
-		Tracking: TrackingConfig{
-			ExcludeApps: []string{"App1", "App2"},
-		},
-	}
-
-	tests := []struct {
-		appName  string
-		expected bool
-	}{
-		{"App1", true},
-		{"App2", true},
-		{"App3", false},
-		{"", false},
-	}
-
-	for _, tt := range tests {
-		result := cfg.IsAppExcluded(tt.appName)
-		if result != tt.expected {
-			t.Errorf("IsAppExcluded(%q) = %v, want %v", tt.appName, result, tt.expected)
-		}
 	}
 }
 

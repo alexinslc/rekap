@@ -41,41 +41,19 @@ func CheckContextOverload(apps AppsResult, browsers BrowsersResult) ContextOverl
 		result.UniqueDomains = uniqueDomains
 
 		// Build warning message
-		if appsOverload && tabsOverload {
-			result.WarningMessage = formatOverloadMessage(activeApps, totalTabs)
-		} else if appsOverload {
-			result.WarningMessage = formatOverloadMessage(activeApps, 0)
-		} else if tabsOverload {
-			result.WarningMessage = formatOverloadMessage(0, totalTabs)
-		} else if domainsOverload {
-			result.WarningMessage = formatDomainsOverloadMessage(uniqueDomains)
+		switch {
+		case appsOverload && tabsOverload:
+			result.WarningMessage = formatWithCount(activeApps, "app") + " + " + formatWithCount(totalTabs, "tab") + " active"
+		case appsOverload:
+			result.WarningMessage = formatWithCount(activeApps, "app") + " active"
+		case tabsOverload:
+			result.WarningMessage = formatWithCount(totalTabs, "tab") + " active"
+		case domainsOverload:
+			result.WarningMessage = formatWithCount(uniqueDomains, "domain") + " active"
 		}
 	}
 
 	return result
-}
-
-func formatOverloadMessage(activeApps, totalTabs int) string {
-	if activeApps > 0 && totalTabs > 0 {
-		return formatAppsTabs(activeApps, totalTabs)
-	} else if activeApps > 0 {
-		return formatAppsOnly(activeApps)
-	} else if totalTabs > 0 {
-		return formatTabsOnly(totalTabs)
-	}
-	return ""
-}
-
-func formatAppsTabs(apps, tabs int) string {
-	return formatWithCount(apps, "app") + " + " + formatWithCount(tabs, "tab") + " active"
-}
-
-func formatAppsOnly(apps int) string {
-	return formatWithCount(apps, "app") + " active"
-}
-
-func formatTabsOnly(tabs int) string {
-	return formatWithCount(tabs, "tab") + " active"
 }
 
 func formatWithCount(count int, singular string) string {
@@ -83,8 +61,4 @@ func formatWithCount(count int, singular string) string {
 		return "1 " + singular
 	}
 	return fmt.Sprintf("%d", count) + " " + singular + "s"
-}
-
-func formatDomainsOverloadMessage(domains int) string {
-	return formatWithCount(domains, "domain") + " active"
 }

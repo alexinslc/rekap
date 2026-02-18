@@ -31,16 +31,11 @@ type AppsResult struct {
 }
 
 // CollectApps retrieves top app usage from Screen Time database
-// excludedApps is an optional list of app names to filter out
-func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
+func CollectApps(ctx context.Context, excludedApps []string) AppsResult {
 	result := AppsResult{Available: false, Source: "ScreenTime"}
+	result.ExcludedApps = excludedApps
 
-	// Flatten excluded apps list if provided
-	var excluded []string
-	if len(excludedApps) > 0 {
-		excluded = excludedApps[0]
-		result.ExcludedApps = excluded
-	}
+	excluded := excludedApps
 
 	db, err := openKnowledgeDB()
 	if err != nil {

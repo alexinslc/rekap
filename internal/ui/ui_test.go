@@ -75,14 +75,6 @@ func TestRenderHint(t *testing.T) {
 	}
 }
 
-func TestRenderError(t *testing.T) {
-	t.Parallel()
-	result := RenderError("Test error message")
-	if result == "" {
-		t.Error("RenderError should not return empty string")
-	}
-}
-
 func TestRenderWarning(t *testing.T) {
 	t.Parallel()
 	result := RenderWarning("Context overload: 7 apps + 45 tabs active")
@@ -215,14 +207,6 @@ func TestRenderHeader(t *testing.T) {
 	}
 }
 
-func TestRenderDivider(t *testing.T) {
-	t.Parallel()
-	result := RenderDivider()
-	if result == "" {
-		t.Error("RenderDivider should not return empty string")
-	}
-}
-
 func TestRenderHighlight(t *testing.T) {
 	t.Parallel()
 	result := RenderHighlight("✨", "Important Text")
@@ -284,8 +268,3 @@ func TestApplyColors(t *testing.T) {
 	ApplyColors(customCfg)
 }
 
-func TestClearScreen(t *testing.T) {
-	t.Parallel()
-	// Just test that the function doesn't panic
-	ClearScreen()
-}

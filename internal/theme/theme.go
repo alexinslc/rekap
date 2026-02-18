@@ -22,8 +22,7 @@ type ThemeColors struct {
 	Secondary string `yaml:"secondary"`
 	Accent    string `yaml:"accent"`
 	Success   string `yaml:"success"`
-	Error     string `yaml:"error,omitempty"` // Support both error and warning
-	Warning   string `yaml:"warning,omitempty"`
+	Warning   string `yaml:"warning"`
 	Muted     string `yaml:"muted"`
 	Text      string `yaml:"text"`
 }
@@ -204,13 +203,8 @@ func (t *Theme) Validate() error {
 	if t.Colors.Success == "" {
 		return fmt.Errorf("theme missing required color: success")
 	}
-	// Support both error and warning fields for compatibility
-	if t.Colors.Warning == "" && t.Colors.Error == "" {
-		return fmt.Errorf("theme missing required color: warning or error")
-	}
-	// If error is specified but warning isn't, use error for warning
-	if t.Colors.Warning == "" && t.Colors.Error != "" {
-		t.Colors.Warning = t.Colors.Error
+	if t.Colors.Warning == "" {
+		return fmt.Errorf("theme missing required color: warning")
 	}
 	if t.Colors.Muted == "" {
 		return fmt.Errorf("theme missing required color: muted")

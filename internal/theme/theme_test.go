@@ -100,7 +100,7 @@ func TestThemeValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error instead of warning",
+			name: "missing warning",
 			theme: Theme{
 				Name: "Test",
 				Colors: ThemeColors{
@@ -108,12 +108,11 @@ func TestThemeValidate(t *testing.T) {
 					Secondary: "#00ffff",
 					Accent:    "#ffff00",
 					Success:   "#00ff00",
-					Error:     "#ff0000",
 					Muted:     "#808080",
 					Text:      "#ffffff",
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 

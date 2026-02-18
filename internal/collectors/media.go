@@ -9,11 +9,10 @@ import (
 
 // MediaResult contains now playing information
 type MediaResult struct {
-	Track           string
-	App             string
-	DurationMinutes int
-	Available       bool
-	Error           error
+	Track     string
+	App       string
+	Available bool
+	Error     error
 }
 
 // CollectMedia retrieves currently or last played media information
@@ -43,8 +42,6 @@ func CollectMedia(ctx context.Context) MediaResult {
 				result.Track = parts[0]
 				result.App = parts[1]
 				result.Available = true
-				// Duration tracking would require persistent monitoring
-				result.DurationMinutes = 0
 				return result
 			}
 		}
@@ -73,7 +70,6 @@ func CollectMedia(ctx context.Context) MediaResult {
 				result.Track = parts[0]
 				result.App = parts[1]
 				result.Available = true
-				result.DurationMinutes = 0
 				return result
 			}
 		}
@@ -105,7 +101,6 @@ func CollectMedia(ctx context.Context) MediaResult {
 			result.Track = track
 			result.App = app
 			result.Available = true
-			result.DurationMinutes = 0
 			return result
 		}
 	}

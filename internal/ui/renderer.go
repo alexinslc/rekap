@@ -37,20 +37,11 @@ var (
 			MarginTop(1).
 			MarginBottom(1)
 
-	// subtitleStyle is currently unused but reserved for future use
-	_ = lipgloss.NewStyle().
-		Foreground(mutedColor).
-		Italic(true)
-
 	dataStyle = lipgloss.NewStyle().
 			Foreground(textColor)
 
 	labelStyle = lipgloss.NewStyle().
 			Foreground(secondaryColor)
-
-	// valueStyle is currently unused but reserved for future use
-	_ = lipgloss.NewStyle().
-		Foreground(textColor)
 
 	highlightStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -67,9 +58,6 @@ var (
 	hintStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
 			Italic(true)
-
-	dividerStyle = lipgloss.NewStyle().
-			Foreground(mutedColor)
 
 	warningSubtleStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("214")). // Orange
@@ -140,9 +128,6 @@ func ApplyColors(cfg *config.Config) {
 		Foreground(mutedColor).
 		Italic(true)
 
-	dividerStyle = lipgloss.NewStyle().
-		Foreground(mutedColor)
-
 	warningSubtleStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(cfg.Colors.Warning)).
 		Italic(true)
@@ -187,11 +172,6 @@ func RenderHeader(text string) string {
 		return headerStyle.Render(">> " + text + " <<")
 	}
 	return headerStyle.Render(text)
-}
-
-// RenderDivider renders a visual divider
-func RenderDivider() string {
-	return dividerStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }
 
 // RenderSummaryLine formats the main summary line with enhanced styling
@@ -251,14 +231,6 @@ func RenderHint(text string) string {
 	return hintStyle.Render("💡 " + text)
 }
 
-// RenderError formats an error message
-func RenderError(text string) string {
-	if accessibilityEnabled {
-		return errorStyle.Render("[ERROR] " + text)
-	}
-	return errorStyle.Render("✗ " + text)
-}
-
 // RenderWarning formats a warning message
 func RenderWarning(text string) string {
 	return errorStyle.Render("⚠️ " + text)
@@ -294,13 +266,6 @@ func FormatTime(t time.Time, timeFormat string) string {
 		return t.Format("15:04")
 	}
 	return t.Format("3:04 PM")
-}
-
-// ClearScreen clears the terminal screen (if TTY)
-func ClearScreen() {
-	if IsTTY() {
-		fmt.Print("\033[H\033[2J")
-	}
 }
 
 // removeEmoji strips emoji characters from text
