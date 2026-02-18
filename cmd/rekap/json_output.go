@@ -77,6 +77,7 @@ type NetworkJSON struct {
 	NetworkName   string `json:"network_name"`
 	BytesReceived int64  `json:"bytes_received"`
 	BytesSent     int64  `json:"bytes_sent"`
+	SinceBoot     bool   `json:"since_boot"`
 }
 
 type BrowserJSON struct {
@@ -206,6 +207,7 @@ func printJSON(data *SummaryData) {
 			NetworkName:   data.Network.NetworkName,
 			BytesReceived: data.Network.BytesReceived,
 			BytesSent:     data.Network.BytesSent,
+			SinceBoot:     data.Network.SinceBoot,
 		}
 	}
 

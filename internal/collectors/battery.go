@@ -1,12 +1,14 @@
 package collectors
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // BatteryResult contains battery usage information
@@ -34,8 +36,6 @@ func CollectBattery(ctx context.Context) BatteryResult {
 	outputStr := string(output)
 
 	// Parse current percentage
-	// Output looks like: "Now drawing from 'Battery Power' -InternalBattery-0 (id=1234567)	85%; discharging; 3:45 remaining"
-	// or: "Now drawing from 'AC Power' -InternalBattery-0 (id=1234567)	100%; charged; 0:00 remaining present: true"
 	re := regexp.MustCompile(`(\d+)%`)
 	matches := re.FindStringSubmatch(outputStr)
 	if len(matches) < 2 {
@@ -51,12 +51,77 @@ func CollectBattery(ctx context.Context) BatteryResult {
 
 	result.CurrentPct = currentPct
 	result.IsPlugged = strings.Contains(outputStr, "AC Power") || strings.Contains(outputStr, "charged")
-
-	// TODO: Parse pmset -g log for start percentage and plug events since midnight
-	// For now, use current percentage as start (will be improved)
-	result.StartPct = currentPct
-	result.PlugCount = 0
-
 	result.Available = true
+
+	// Parse pmset log for start percentage and plug events since midnight
+	startPct, plugCount := parsePmsetLog(ctx)
+	if startPct >= 0 {
+		result.StartPct = startPct
+	} else {
+		result.StartPct = currentPct
+	}
+	result.PlugCount = plugCount
+
 	return result
+}
+
+// pmset log charge pattern: "Using AC(Charge: 80)" or "Using AC (Charge:80%)" or "Using Batt(Charge: 100)"
+var chargePattern = regexp.MustCompile(`Using (AC|Batt).*?Charge:\s*(\d+)`)
+
+// pmset log timestamp pattern: "2026-02-17 14:30:22 -0700"
+var timestampPattern = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})`)
+
+// parsePmsetLog reads pmset log to find the first battery charge after midnight
+// and count AC plug-in events. Returns (startPct, plugCount) where startPct is -1
+// if no data found.
+func parsePmsetLog(ctx context.Context) (int, int) {
+	// Use grep to filter relevant lines before processing (keeps it fast on large logs)
+	cmd := exec.CommandContext(ctx, "bash", "-c", "pmset -g log 2>/dev/null | grep -E 'Using (AC|Batt)'")
+	output, err := cmd.Output()
+	if err != nil {
+		return -1, 0
+	}
+
+	today := time.Now().Format("2006-01-02")
+	startPct := -1
+	plugCount := 0
+	lastSource := "" // "AC" or "Batt"
+
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Only process lines from today
+		tsMatches := timestampPattern.FindStringSubmatch(line)
+		if len(tsMatches) < 2 {
+			continue
+		}
+		if !strings.HasPrefix(tsMatches[1], today) {
+			continue
+		}
+
+		chargeMatches := chargePattern.FindStringSubmatch(line)
+		if len(chargeMatches) < 3 {
+			continue
+		}
+
+		source := chargeMatches[1] // "AC" or "Batt"
+		pct, err := strconv.Atoi(chargeMatches[2])
+		if err != nil {
+			continue
+		}
+
+		// First charge reading of the day is our start percentage
+		if startPct < 0 {
+			startPct = pct
+		}
+
+		// Count transitions from Batt to AC as plug events
+		if source == "AC" && lastSource == "Batt" {
+			plugCount++
+		}
+		lastSource = source
+	}
+
+	return startPct, plugCount
 }

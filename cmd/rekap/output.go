@@ -60,6 +60,11 @@ func printQuiet(cfg *config.Config, data *SummaryData) {
 		fmt.Printf("network_name=%s\n", data.Network.NetworkName)
 		fmt.Printf("network_bytes_received=%d\n", data.Network.BytesReceived)
 		fmt.Printf("network_bytes_sent=%d\n", data.Network.BytesSent)
+		if data.Network.SinceBoot {
+			fmt.Printf("network_since_boot=1\n")
+		} else {
+			fmt.Printf("network_since_boot=0\n")
+		}
 	}
 
 	if data.Browsers.Available {
@@ -245,11 +250,16 @@ func printHuman(cfg *config.Config, data *SummaryData) {
 		fmt.Println()
 		fmt.Println(ui.RenderHeader("NETWORK ACTIVITY"))
 
-		text := fmt.Sprintf("%s: \"%s\" • %s down / %s up",
+		qualifier := ""
+		if data.Network.SinceBoot {
+			qualifier = " (since boot)"
+		}
+		text := fmt.Sprintf("%s: \"%s\" • %s down / %s up%s",
 			data.Network.InterfaceName,
 			data.Network.NetworkName,
 			collectors.FormatBytes(data.Network.BytesReceived),
-			collectors.FormatBytes(data.Network.BytesSent))
+			collectors.FormatBytes(data.Network.BytesSent),
+			qualifier)
 		fmt.Println(ui.RenderDataPoint("🌐", text))
 	}
 
