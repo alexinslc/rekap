@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -288,6 +289,39 @@ func (c *Config) CategorizeDomain(domain string) string {
 
 	// Default to neutral if not categorized
 	return "neutral"
+}
+
+// ValidateStrict checks config values and returns a list of issues
+// Unlike Validate(), it does not silently fix invalid values
+func ValidateStrict(c *Config) []string {
+	var errors []string
+
+	if c.Display.TimeFormat != "" && c.Display.TimeFormat != "12h" && c.Display.TimeFormat != "24h" {
+		errors = append(errors, fmt.Sprintf("display.time_format: invalid value %q (must be \"12h\" or \"24h\")", c.Display.TimeFormat))
+	}
+
+	if c.Fragmentation.FocusedMax <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.focused_max: must be > 0, got %d", c.Fragmentation.FocusedMax))
+	}
+	if c.Fragmentation.ModerateMax <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.moderate_max: must be > 0, got %d", c.Fragmentation.ModerateMax))
+	}
+	if c.Fragmentation.FragmentedMin <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.fragmented_min: must be > 0, got %d", c.Fragmentation.FragmentedMin))
+	}
+
+	if c.Fragmentation.FocusedMax > 0 && c.Fragmentation.ModerateMax > 0 && c.Fragmentation.FragmentedMin > 0 {
+		if c.Fragmentation.FocusedMax > c.Fragmentation.ModerateMax {
+			errors = append(errors, fmt.Sprintf("fragmentation: focused_max (%d) must be <= moderate_max (%d)",
+				c.Fragmentation.FocusedMax, c.Fragmentation.ModerateMax))
+		}
+		if c.Fragmentation.ModerateMax >= c.Fragmentation.FragmentedMin {
+			errors = append(errors, fmt.Sprintf("fragmentation: moderate_max (%d) must be < fragmented_min (%d)",
+				c.Fragmentation.ModerateMax, c.Fragmentation.FragmentedMin))
+		}
+	}
+
+	return errors
 }
 
 // matchDomainPattern matches a domain against a pattern

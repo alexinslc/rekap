@@ -25,8 +25,8 @@ type SummaryData struct {
 	Burnout       collectors.BurnoutResult
 }
 
-func runSummary(quiet bool, cfg *config.Config) {
-	if !quiet {
+func runSummary(quiet bool, asJSON bool, cfg *config.Config) {
+	if !quiet && !asJSON {
 		ui.ApplyColors(cfg)
 	}
 
@@ -81,9 +81,12 @@ func runSummary(quiet bool, cfg *config.Config) {
 	burnoutConfig := collectors.DefaultBurnoutConfig()
 	data.Burnout = collectors.CollectBurnout(ctx, data.Screen, data.Browsers, burnoutConfig)
 
-	if quiet {
+	switch {
+	case asJSON:
+		printJSON(&data)
+	case quiet:
 		printQuiet(cfg, &data)
-	} else {
+	default:
 		printHuman(cfg, &data)
 	}
 }

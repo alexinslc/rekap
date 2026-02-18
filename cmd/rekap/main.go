@@ -17,6 +17,7 @@ const version = "0.1.0"
 
 func main() {
 	var quietFlag bool
+	var jsonFlag bool
 	var themeFlag string
 	var accessibleFlag bool
 
@@ -44,13 +45,15 @@ func main() {
 				cfg.Accessibility.HighContrast = true
 			}
 
-			runSummary(quietFlag, cfg)
+			runSummary(quietFlag, jsonFlag, cfg)
 			return nil
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output machine-parsable key=value format")
+	rootCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output structured JSON to stdout")
 	rootCmd.Flags().StringVar(&themeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
+	rootCmd.MarkFlagsMutuallyExclusive("quiet", "json")
 	rootCmd.PersistentFlags().BoolVar(&accessibleFlag, "accessible", false, "Enable accessibility mode (color-blind friendly, high contrast)")
 
 	initCmd := &cobra.Command{
@@ -103,7 +106,7 @@ func main() {
 	}
 	demoCmd.Flags().StringVar(&demoThemeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
 
-	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd)
+	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd, newConfigCmd())
 
 	if err := fang.Execute(
 		context.Background(),
