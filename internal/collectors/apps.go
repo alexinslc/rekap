@@ -35,8 +35,6 @@ func CollectApps(ctx context.Context, excludedApps []string) AppsResult {
 	result := AppsResult{Available: false, Source: "ScreenTime"}
 	result.ExcludedApps = excludedApps
 
-	excluded := excludedApps
-
 	db, err := openKnowledgeDB()
 	if err != nil {
 		result.Error = err
