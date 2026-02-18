@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/config"
 	"github.com/alexinslc/rekap/internal/ui"
+	"github.com/alexinslc/rekap/internal/ui/tui"
 )
 
 // SummaryData holds all collector results for a single run
@@ -25,10 +30,8 @@ type SummaryData struct {
 	Burnout       collectors.BurnoutResult
 }
 
-func runSummary(quiet bool, asJSON bool, cfg *config.Config) {
-	if !quiet && !asJSON {
-		ui.ApplyColors(cfg)
-	}
+func runSummary(quiet bool, asJSON bool, print bool, cfg *config.Config) {
+	ui.ApplyColors(cfg)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -86,7 +89,33 @@ func runSummary(quiet bool, asJSON bool, cfg *config.Config) {
 		printJSON(&data)
 	case quiet:
 		printQuiet(cfg, &data)
-	default:
+	case print || !ui.IsTTY():
 		printHuman(cfg, &data)
+	default:
+		runTUI(cfg, &data)
+	}
+}
+
+func runTUI(cfg *config.Config, data *SummaryData) {
+	tuiData := &tui.SummaryData{
+		Uptime:        data.Uptime,
+		Battery:       data.Battery,
+		Screen:        data.Screen,
+		Apps:          data.Apps,
+		Focus:         data.Focus,
+		Media:         data.Media,
+		Network:       data.Network,
+		Browsers:      data.Browsers,
+		Notifications: data.Notifications,
+		Issues:        data.Issues,
+		Fragmentation: data.Fragmentation,
+		Burnout:       data.Burnout,
+	}
+	sections := tui.BuildSections(tuiData, cfg)
+	m := tui.New(sections, cfg)
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
+		os.Exit(1)
 	}
 }
