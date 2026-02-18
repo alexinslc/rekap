@@ -9,6 +9,6 @@ colors:
   secondary: "#00a8e8"  # Sky blue
   accent: "#00c9ff"     # Bright cyan
   success: "#00ffa3"    # Sea foam green
-  error: "#ff6b6b"      # Coral red
+  warning: "#ff6b6b"    # Coral red
   muted: "#6c757d"      # Gray blue
   text: "#ffffff"       # White

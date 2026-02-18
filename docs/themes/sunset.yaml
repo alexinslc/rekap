@@ -9,6 +9,6 @@ colors:
   secondary: "#f7931e"  # Golden orange
   accent: "#fdc500"     # Yellow
   success: "#c1d82f"    # Yellow-green
-  error: "#e63946"      # Red
+  warning: "#e63946"    # Red
   muted: "#6c757d"      # Gray
   text: "#ffffff"       # White

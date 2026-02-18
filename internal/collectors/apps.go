@@ -89,7 +89,7 @@ func CollectApps(ctx context.Context, excludedApps []string) AppsResult {
 		appName := resolveAppName(bundleID)
 
 		// Skip if app is in exclusion list
-		if isExcluded(appName, excluded) {
+		if isExcluded(appName, excludedApps) {
 			continue
 		}
 
@@ -108,7 +108,7 @@ func CollectApps(ctx context.Context, excludedApps []string) AppsResult {
 	result.Available = len(apps) > 0
 
 	// Calculate app switching statistics
-	switchStats := calculateAppSwitching(ctx, db, startTimestamp, endTimestamp, excluded)
+	switchStats := calculateAppSwitching(ctx, db, startTimestamp, endTimestamp, excludedApps)
 	result.TotalSwitches = switchStats.totalSwitches
 	result.AvgMinsBetween = switchStats.avgMinsBetween
 	result.SwitchesPerHour = switchStats.switchesPerHour
