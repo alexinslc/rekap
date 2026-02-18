@@ -301,32 +301,37 @@ type issuePattern struct {
 	idGroup int // which capture group contains the ID
 }
 
-// Issue tracker URL patterns
+// Issue tracker URL patterns (unified set used by both extraction and detection)
 var issuePatterns = []issuePattern{
 	{
 		tracker: "GitHub",
-		pattern: regexp.MustCompile(`github\.com/([^/]+)/([^/]+)/issues/(\d+)`),
-		idGroup: 0, // Use full match as ID
+		pattern: regexp.MustCompile(`github\.com/([^/]+)/([^/]+)/(issues|pull)/(\d+)`),
+		idGroup: 0,
 	},
 	{
 		tracker: "Jira",
-		pattern: regexp.MustCompile(`([^/]+\.)?atlassian\.net/browse/([A-Z]+-\d+)`),
-		idGroup: 2, // Project key + number
+		pattern: regexp.MustCompile(`(atlassian\.net|jira\.[^/]+)/browse/([A-Z]+-\d+)`),
+		idGroup: 2,
 	},
 	{
 		tracker: "Linear",
 		pattern: regexp.MustCompile(`linear\.app/([^/]+/)?issue/([A-Z]+-[A-Z0-9]+)`),
-		idGroup: 2, // Issue ID
+		idGroup: 2,
 	},
 	{
 		tracker: "GitLab",
-		pattern: regexp.MustCompile(`gitlab\.com/([^/]+)/([^/]+)/-/issues/(\d+)`),
-		idGroup: 0, // Use full match as ID
+		pattern: regexp.MustCompile(`gitlab\.com/([^/]+)/([^/]+)/(?:-/)?(issues|merge_requests)/(\d+)`),
+		idGroup: 0,
+	},
+	{
+		tracker: "Bitbucket",
+		pattern: regexp.MustCompile(`bitbucket\.org/([^/]+)/([^/]+)/issues/(\d+)`),
+		idGroup: 0,
 	},
 	{
 		tracker: "Azure DevOps",
-		pattern: regexp.MustCompile(`dev\.azure\.com/([^/]+)/([^/]+)/_workitems/edit/(\d+)`),
-		idGroup: 3, // Work item ID
+		pattern: regexp.MustCompile(`dev\.azure\.com/([^/]+)/([^/]+)/_?workitems/(?:edit/)?(\d+)`),
+		idGroup: 3,
 	},
 }
 
@@ -417,21 +422,13 @@ func parseHistoryDB(ctx context.Context, dbPath string, since time.Time, browser
 		return nil
 	}
 
-	// Copy database to temp location to avoid locking issues
-	tempFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("rekap_%s_history_*.db", browserType))
+	tempPath, err := copyToTemp(dbPath)
 	if err != nil {
 		return nil
 	}
-	defer os.Remove(tempFile.Name())
-	tempFile.Close() // Close before copying to it
+	defer os.Remove(tempPath)
 
-	// Use cp command to copy the file
-	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
-	if err := cmd.Run(); err != nil {
-		return nil
-	}
-
-	db, err := sql.Open("sqlite", tempFile.Name())
+	db, err := sql.Open("sqlite", tempPath)
 	if err != nil {
 		return nil
 	}
@@ -463,20 +460,13 @@ func parseSafariHistoryDB(ctx context.Context, dbPath string, since time.Time) [
 		return nil
 	}
 
-	// Copy database to temp location
-	tempFile, err := os.CreateTemp(os.TempDir(), "rekap_safari_history_*.db")
+	tempPath, err := copyToTemp(dbPath)
 	if err != nil {
 		return nil
 	}
-	defer os.Remove(tempFile.Name())
-	tempFile.Close() // Close before copying to it
+	defer os.Remove(tempPath)
 
-	cmd := exec.CommandContext(ctx, "cp", dbPath, tempFile.Name())
-	if err := cmd.Run(); err != nil {
-		return nil
-	}
-
-	db, err := sql.Open("sqlite", tempFile.Name())
+	db, err := sql.Open("sqlite", tempPath)
 	if err != nil {
 		return nil
 	}
@@ -548,9 +538,11 @@ func extractIssuesFromRows(rows *sql.Rows) []IssueVisit {
 		}
 	}
 
-	// Convert map to slice
+	// Convert map to slice, filtering out zero-visit entries
 	for _, issue := range issueMap {
-		issues = append(issues, *issue)
+		if issue.VisitCount > 0 {
+			issues = append(issues, *issue)
+		}
 	}
 
 	return issues
@@ -755,75 +747,50 @@ func copyToTemp(srcPath string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-// Precompiled regexes for common issue trackers
-var issueURLRegexes = []*regexp.Regexp{
-	// Jira: https://jira.example.com/browse/PROJ-123
-	regexp.MustCompile(`(atlassian\.net|jira\.[^/]+)/browse/[A-Z]+-\d+`),
-	// GitHub: /issues/, /pull/
-	regexp.MustCompile(`github\.com/.+/(issues|pull)/\d+`),
-	// Linear: /issue/
-	regexp.MustCompile(`linear\.app/.+/issue/`),
-	// GitLab: /issues/, /merge_requests/
-	regexp.MustCompile(`gitlab\.com/.+/(issues|merge_requests)/\d+`),
-	// Bitbucket: /issues/
-	regexp.MustCompile(`bitbucket\.org/.+/issues/\d+`),
-	// Azure DevOps: /_workitems/ or /workitems/
-	regexp.MustCompile(`dev\.azure\.com/.+/_?workitems/\d+`),
-}
-
-// isIssueURL checks if a URL is an issue/ticket URL
+// isIssueURL checks if a URL is an issue/ticket URL using the unified issuePatterns
 func isIssueURL(urlStr string) bool {
-	for _, re := range issueURLRegexes {
-		if re.MatchString(urlStr) {
+	for _, p := range issuePatterns {
+		if p.pattern.MatchString(urlStr) {
 			return true
 		}
 	}
 	return false
 }
 
+// Pre-compiled regexes for extractIssueIdentifier
+var (
+	issueIDJiraRe      = regexp.MustCompile(`/browse/([A-Z]+-\d+)`)
+	issueIDGitHubRe    = regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+	issueIDLinearRe    = regexp.MustCompile(`linear\.app/[^/]+/issue/([^/\?]+)`)
+	issueIDGitLabRe    = regexp.MustCompile(`gitlab\.com/([^/]+/[^/]+)/(issues|merge_requests)/(\d+)`)
+	issueIDBitbucketRe = regexp.MustCompile(`bitbucket\.org/([^/]+/[^/]+)/issues/(\d+)`)
+	issueIDAzureRe     = regexp.MustCompile(`dev\.azure\.com/[^/]+/[^/]+/_?workitems/(\d+)`)
+)
+
 // extractIssueIdentifier extracts a clean issue identifier from a URL
 func extractIssueIdentifier(urlStr string) string {
-	// Jira: extract PROJ-123 from URL
-	jiraRe := regexp.MustCompile(`/browse/([A-Z]+-\d+)`)
-	if matches := jiraRe.FindStringSubmatch(urlStr); len(matches) > 1 {
-		return matches[1]
+	if m := issueIDJiraRe.FindStringSubmatch(urlStr); len(m) > 1 {
+		return m[1]
 	}
-
-	// GitHub: extract owner/repo#123 from issues or pulls
-	githubIssueRe := regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
-	if matches := githubIssueRe.FindStringSubmatch(urlStr); len(matches) > 3 {
-		return matches[1] + "#" + matches[3]
+	if m := issueIDGitHubRe.FindStringSubmatch(urlStr); len(m) > 3 {
+		return m[1] + "#" + m[3]
 	}
-
-	// Linear: extract issue ID from URL
-	linearRe := regexp.MustCompile(`linear\.app/[^/]+/issue/([^/\?]+)`)
-	if matches := linearRe.FindStringSubmatch(urlStr); len(matches) > 1 {
-		return matches[1]
+	if m := issueIDLinearRe.FindStringSubmatch(urlStr); len(m) > 1 {
+		return m[1]
 	}
-
-	// GitLab: extract owner/repo#123
-	gitlabRe := regexp.MustCompile(`gitlab\.com/([^/]+/[^/]+)/(issues|merge_requests)/(\d+)`)
-	if matches := gitlabRe.FindStringSubmatch(urlStr); len(matches) > 3 {
-		issueType := "!"
-		if matches[2] == "issues" {
-			issueType = "#"
+	if m := issueIDGitLabRe.FindStringSubmatch(urlStr); len(m) > 3 {
+		sep := "!"
+		if m[2] == "issues" {
+			sep = "#"
 		}
-		return matches[1] + issueType + matches[3]
+		return m[1] + sep + m[3]
 	}
-
-	// Bitbucket: extract owner/repo#123
-	bitbucketRe := regexp.MustCompile(`bitbucket\.org/([^/]+/[^/]+)/issues/(\d+)`)
-	if matches := bitbucketRe.FindStringSubmatch(urlStr); len(matches) > 2 {
-		return matches[1] + "#" + matches[2]
+	if m := issueIDBitbucketRe.FindStringSubmatch(urlStr); len(m) > 2 {
+		return m[1] + "#" + m[2]
 	}
-
-	// Azure DevOps: extract workitem ID
-	azureRe := regexp.MustCompile(`dev\.azure\.com/[^/]+/[^/]+/_?workitems/(\d+)`)
-	if matches := azureRe.FindStringSubmatch(urlStr); len(matches) > 1 {
-		return "WI-" + matches[1]
+	if m := issueIDAzureRe.FindStringSubmatch(urlStr); len(m) > 1 {
+		return "WI-" + m[1]
 	}
-
-	// Fallback: return the URL as-is
 	return urlStr
 }
 

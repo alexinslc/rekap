@@ -4,13 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
+	"regexp"
 	"strings"
-	"time"
-
-	_ "modernc.org/sqlite"
+	"sync"
 )
 
 // AppUsage represents usage time for a single app
@@ -45,24 +42,9 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 		result.ExcludedApps = excluded
 	}
 
-	// Try KnowledgeC database first
-	homeDir, err := os.UserHomeDir()
+	db, err := openKnowledgeDB()
 	if err != nil {
-		result.Error = fmt.Errorf("failed to get home directory: %w", err)
-		return result
-	}
-
-	dbPath := filepath.Join(homeDir, "Library", "Application Support", "Knowledge", "knowledgeC.db")
-
-	// Check if database exists
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		result.Error = fmt.Errorf("screen Time database not found (requires Full Disk Access)")
-		return result
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		result.Error = fmt.Errorf("failed to open Screen Time database: %w", err)
+		result.Error = err
 		return result
 	}
 	defer func() {
@@ -71,13 +53,7 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 		}
 	}()
 
-	// Calculate today's timestamp range in Core Data format (seconds since 2001-01-01)
-	now := time.Now()
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	coreDataEpoch := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	startTimestamp := midnight.Sub(coreDataEpoch).Seconds()
-	endTimestamp := now.Sub(coreDataEpoch).Seconds()
+	startTimestamp, endTimestamp := todayTimestampRange()
 
 	// Query app usage from ZOBJECT table
 	// ZSTREAMNAME contains app usage data, ZVALUESTRING has bundle IDs
@@ -158,21 +134,39 @@ func isExcluded(appName string, excludedApps []string) bool {
 	return false
 }
 
-// resolveAppName converts a bundle ID to a human-readable app name
+// validBundleID matches reverse-DNS bundle identifiers (alphanumeric, dots, hyphens, underscores)
+var validBundleID = regexp.MustCompile(`^[a-zA-Z0-9.\-_]+$`)
+
+// appNameCache stores resolved app names to avoid repeated osascript calls
+var appNameCache sync.Map
+
+// resolveAppName converts a bundle ID to a human-readable app name.
+// Results are cached globally so each bundle ID is resolved at most once per run.
 func resolveAppName(bundleID string) string {
-	// Try to get app name from system
-	cmd := exec.Command("osascript", "-e", fmt.Sprintf(`tell application "Finder" to get name of application file id "%s"`, bundleID))
-	output, err := cmd.Output()
-	if err == nil {
-		name := strings.TrimSpace(string(output))
-		if name != "" {
-			return strings.TrimSuffix(name, ".app")
+	if cached, ok := appNameCache.Load(bundleID); ok {
+		return cached.(string)
+	}
+
+	name := resolveAppNameUncached(bundleID)
+	appNameCache.Store(bundleID, name)
+	return name
+}
+
+func resolveAppNameUncached(bundleID string) string {
+	// Only shell out to osascript if the bundle ID is safe (no injection risk)
+	if validBundleID.MatchString(bundleID) {
+		cmd := exec.Command("osascript", "-e",
+			fmt.Sprintf(`tell application "Finder" to get name of application file id "%s"`, bundleID))
+		output, err := cmd.Output()
+		if err == nil {
+			name := strings.TrimSpace(string(output))
+			if name != "" {
+				return strings.TrimSuffix(name, ".app")
+			}
 		}
 	}
 
-	// Fallback: try to extract from bundle ID
-	// com.apple.Safari -> Safari
-	// com.microsoft.VSCode -> VSCode
+	// Fallback: extract last component from bundle ID
 	parts := strings.Split(bundleID, ".")
 	if len(parts) > 0 {
 		return parts[len(parts)-1]
@@ -191,16 +185,6 @@ type appSwitchingStats struct {
 // calculateAppSwitching calculates app switching frequency and patterns
 func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endTimestamp float64, excludedApps []string) appSwitchingStats {
 	stats := appSwitchingStats{available: false}
-
-	// System apps to exclude from switching calculation
-	systemApps := map[string]bool{
-		"com.apple.finder":               true,
-		"com.apple.systempreferences":    true,
-		"com.apple.preferences":          true,
-		"com.apple.dock":                 true,
-		"com.apple.notificationcenterui": true,
-		"com.apple.Spotlight":            true,
-	}
 
 	// Query all app usage intervals ordered by time
 	query := `
@@ -230,7 +214,6 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 	}
 
 	var events []focusEvent
-	nameCache := make(map[string]string)
 
 	for rows.Next() {
 		var bundleID string
@@ -245,13 +228,8 @@ func calculateAppSwitching(ctx context.Context, db *sql.DB, startTimestamp, endT
 			continue
 		}
 
-		// Skip excluded apps - use cached app name to avoid redundant system calls
-		appName, ok := nameCache[bundleID]
-		if !ok {
-			appName = resolveAppName(bundleID)
-			nameCache[bundleID] = appName
-		}
-		if isExcluded(appName, excludedApps) {
+		// Skip excluded apps (resolveAppName is globally cached)
+		if isExcluded(resolveAppName(bundleID), excludedApps) {
 			continue
 		}
 

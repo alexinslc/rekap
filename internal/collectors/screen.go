@@ -25,20 +25,24 @@ func CollectScreen(ctx context.Context) ScreenResult {
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	// Parse pmset log for display events since midnight
-	cmd := exec.CommandContext(ctx, "sh", "-c", fmt.Sprintf("pmset -g log | grep -i 'display' | grep '%s'", midnight.Format("2006-01-02")))
+	// Get pmset log and filter for display events in Go (avoids sh -c)
+	cmd := exec.CommandContext(ctx, "pmset", "-g", "log")
 	output, err := cmd.Output()
 	if err != nil {
-		// pmset log might not be available or grep found nothing
-		// Try alternative: assume screen has been on since midnight (rough estimate)
 		result.ScreenOnMinutes = int(time.Since(midnight).Minutes())
 		result.Available = true
 		result.Error = fmt.Errorf("pmset log unavailable, using rough estimate: %w", err)
 		return result
 	}
 
-	outputStr := string(output)
-	lines := strings.Split(outputStr, "\n")
+	todayStr := midnight.Format("2006-01-02")
+	var lines []string
+	for _, line := range strings.Split(string(output), "\n") {
+		lower := strings.ToLower(line)
+		if strings.Contains(lower, "display") && strings.Contains(line, todayStr) {
+			lines = append(lines, line)
+		}
+	}
 
 	var totalMinutes int
 	var lastOnTime time.Time

@@ -61,16 +61,14 @@ func CalculateFragmentation(ctx context.Context, apps AppsResult, browsers Brows
 	// Count unique domains
 	breakdown.UniqueDomains = len(browsers.TopDomains)
 
-	// Calculate app switches per hour (estimate based on app count and time awake)
-	if uptime.Available && uptime.AwakeMinutes > 0 {
+	// Use real app switching data if available, otherwise estimate
+	if apps.SwitchingAvailable && apps.SwitchesPerHour > 0 {
+		breakdown.AppSwitchesPerHour = apps.SwitchesPerHour
+	} else if uptime.Available && uptime.AwakeMinutes > 0 {
 		hoursAwake := float64(uptime.AwakeMinutes) / 60.0
 		if hoursAwake > 0 {
-			// Rough estimate: assumes each unique app represents switching activity distributed over awake hours
 			breakdown.AppSwitchesPerHour = float64(breakdown.UniqueApps) / hoursAwake
 		}
-	} else {
-		// If no uptime data, assume 4 hours as default
-		breakdown.AppSwitchesPerHour = float64(breakdown.UniqueApps) / 4.0
 	}
 
 	result.Breakdown = breakdown
