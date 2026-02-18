@@ -82,12 +82,18 @@ func parsePmsetLog(ctx context.Context) (int, int) {
 		return -1, 0
 	}
 
+	return parsePmsetLogOutput(string(output))
+}
+
+// parsePmsetLogOutput parses filtered pmset log output for today's battery data.
+// Returns (startPct, plugCount) where startPct is -1 if no data found.
+func parsePmsetLogOutput(output string) (int, int) {
 	today := time.Now().Format("2006-01-02")
 	startPct := -1
 	plugCount := 0
 	lastSource := "" // "AC" or "Batt"
 
-	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	scanner := bufio.NewScanner(strings.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
 

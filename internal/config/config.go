@@ -300,14 +300,14 @@ func ValidateStrict(c *Config) []string {
 		errors = append(errors, fmt.Sprintf("display.time_format: invalid value %q (must be \"12h\" or \"24h\")", c.Display.TimeFormat))
 	}
 
-	if c.Fragmentation.FocusedMax < 0 {
-		errors = append(errors, fmt.Sprintf("fragmentation.focused_max: must be >= 0, got %d", c.Fragmentation.FocusedMax))
+	if c.Fragmentation.FocusedMax <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.focused_max: must be > 0, got %d", c.Fragmentation.FocusedMax))
 	}
-	if c.Fragmentation.ModerateMax < 0 {
-		errors = append(errors, fmt.Sprintf("fragmentation.moderate_max: must be >= 0, got %d", c.Fragmentation.ModerateMax))
+	if c.Fragmentation.ModerateMax <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.moderate_max: must be > 0, got %d", c.Fragmentation.ModerateMax))
 	}
-	if c.Fragmentation.FragmentedMin < 0 {
-		errors = append(errors, fmt.Sprintf("fragmentation.fragmented_min: must be >= 0, got %d", c.Fragmentation.FragmentedMin))
+	if c.Fragmentation.FragmentedMin <= 0 {
+		errors = append(errors, fmt.Sprintf("fragmentation.fragmented_min: must be > 0, got %d", c.Fragmentation.FragmentedMin))
 	}
 
 	if c.Fragmentation.FocusedMax > 0 && c.Fragmentation.ModerateMax > 0 && c.Fragmentation.FragmentedMin > 0 {

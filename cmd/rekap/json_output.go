@@ -279,10 +279,12 @@ func printJSON(data *SummaryData) {
 		out.Burnout = burnoutJSON
 	}
 
-	overload := collectors.CheckContextOverload(data.Apps, data.Browsers)
-	out.ContextOverload = &ContextOverloadJSON{
-		IsOverloaded: overload.IsOverloaded,
-		Message:      overload.WarningMessage,
+	if data.Apps.Available && data.Browsers.Available {
+		overload := collectors.CheckContextOverload(data.Apps, data.Browsers)
+		out.ContextOverload = &ContextOverloadJSON{
+			IsOverloaded: overload.IsOverloaded,
+			Message:      overload.WarningMessage,
+		}
 	}
 
 	enc := json.NewEncoder(os.Stdout)

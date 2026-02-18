@@ -146,7 +146,50 @@ func saveNetworkBaseline(iface string, bytesRecv, bytesSent int64) error {
 		return err
 	}
 
-	return os.WriteFile(path, data, 0644)
+	// Atomic write: write to temp file, then rename into place
+	tmpFile, err := os.CreateTemp(dir, "network-baseline-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmpFile.Name()
+
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+
+	// Clean up old baseline files (older than 7 days)
+	cleanOldBaselines(dir)
+
+	return nil
+}
+
+func cleanOldBaselines(dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	cutoff := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasPrefix(name, "network-") && strings.HasSuffix(name, ".json") {
+			// Extract date from "network-YYYY-MM-DD.json"
+			date := strings.TrimPrefix(name, "network-")
+			date = strings.TrimSuffix(date, ".json")
+			if len(date) == 10 && date < cutoff {
+				os.Remove(filepath.Join(dir, name))
+			}
+		}
+	}
 }
 
 // getActiveInterface returns the active network interface name and type
