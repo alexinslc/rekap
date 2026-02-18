@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a5cd02194895",
+  "session_id": "9f71cf34-e2f3-4eee-88a9-511e23aa8e21",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T20:33:04.603777Z",
+  "branch": "feat/interactive-tui-awake-time",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "internal/ui/tui/model.go",
+    "go.sum",
+    "internal/collectors/uptime_test.go",
+    "internal/summary/types.go",
+    "internal/ui/tui/sections.go",
+    "internal/ui/tui/styles.go",
+    "cmd/rekap/summary.go",
+    "go.mod",
+    "internal/collectors/uptime.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "732057247b45",
+  "token_usage": {
+    "input_tokens": 1813,
+    "cache_creation_tokens": 291389,
+    "cache_read_tokens": 12839816,
+    "output_tokens": 18818,
+    "api_call_count": 119
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T20:33:03.712905Z",
+    "agent_lines": 0,
+    "human_added": 15,
+    "human_modified": 125,
+    "human_removed": 0,
+    "total_committed": 15,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-alexlutz-projects-rekap/9f71cf34-e2f3-4eee-88a9-511e23aa8e21.jsonl"
+}

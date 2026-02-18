@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.5",
+  "checkpoint_id": "a5cd02194895",
+  "strategy": "manual-commit",
+  "branch": "feat/interactive-tui-awake-time",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/rekap/summary.go",
+    "go.mod",
+    "go.sum",
+    "internal/collectors/uptime.go",
+    "internal/collectors/uptime_test.go",
+    "internal/summary/types.go",
+    "internal/ui/tui/model.go",
+    "internal/ui/tui/sections.go",
+    "internal/ui/tui/styles.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a5/cd02194895/0/metadata.json",
+      "transcript": "/a5/cd02194895/0/full.jsonl",
+      "context": "/a5/cd02194895/0/context.md",
+      "content_hash": "/a5/cd02194895/0/content_hash.txt",
+      "prompt": "/a5/cd02194895/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1813,
+    "cache_creation_tokens": 291389,
+    "cache_read_tokens": 12839816,
+    "output_tokens": 18818,
+    "api_call_count": 119
+  }
+}
