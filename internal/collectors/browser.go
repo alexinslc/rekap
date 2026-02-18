@@ -320,7 +320,7 @@ var issuePatterns = []issuePattern{
 	},
 	{
 		tracker: "GitLab",
-		pattern: regexp.MustCompile(`gitlab\.com/([^/]+)/([^/]+)/-?/?(issues|merge_requests)/(\d+)`),
+		pattern: regexp.MustCompile(`gitlab\.com/([^/]+)/([^/]+)/(?:-/)?(issues|merge_requests)/(\d+)`),
 		idGroup: 0,
 	},
 	{
