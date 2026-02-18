@@ -18,16 +18,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// BrowserTab represents a single browser tab
-type BrowserTab struct {
-	Title  string
-	URL    string
-	Domain string
-}
-
 // BrowserResult contains browser tab information and history
 type BrowserResult struct {
-	Tabs      []BrowserTab
 	TabCount  int
 	Domains   map[string]int // domain -> tab count
 	Browser   string
@@ -232,16 +224,10 @@ return ""
 			continue
 		}
 
-		title := strings.TrimSpace(parts[0])
 		urlStr := strings.TrimSpace(parts[1])
 
 		domain := extractDomain(urlStr)
 
-		result.Tabs = append(result.Tabs, BrowserTab{
-			Title:  title,
-			URL:    urlStr,
-			Domain: domain,
-		})
 		result.TabCount++
 
 		if domain != "" {
@@ -740,6 +726,11 @@ func copyToTemp(srcPath string) (string, error) {
 
 	_, err = io.Copy(tmpFile, src)
 	if err != nil {
+		os.Remove(tmpFile.Name())
+		return "", err
+	}
+
+	if err := os.Chmod(tmpFile.Name(), 0600); err != nil {
 		os.Remove(tmpFile.Name())
 		return "", err
 	}

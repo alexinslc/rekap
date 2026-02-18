@@ -31,16 +31,9 @@ type AppsResult struct {
 }
 
 // CollectApps retrieves top app usage from Screen Time database
-// excludedApps is an optional list of app names to filter out
-func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
+func CollectApps(ctx context.Context, excludedApps []string) AppsResult {
 	result := AppsResult{Available: false, Source: "ScreenTime"}
-
-	// Flatten excluded apps list if provided
-	var excluded []string
-	if len(excludedApps) > 0 {
-		excluded = excludedApps[0]
-		result.ExcludedApps = excluded
-	}
+	result.ExcludedApps = excludedApps
 
 	db, err := openKnowledgeDB()
 	if err != nil {
@@ -96,7 +89,7 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 		appName := resolveAppName(bundleID)
 
 		// Skip if app is in exclusion list
-		if isExcluded(appName, excluded) {
+		if isExcluded(appName, excludedApps) {
 			continue
 		}
 
@@ -115,7 +108,7 @@ func CollectApps(ctx context.Context, excludedApps ...[]string) AppsResult {
 	result.Available = len(apps) > 0
 
 	// Calculate app switching statistics
-	switchStats := calculateAppSwitching(ctx, db, startTimestamp, endTimestamp, excluded)
+	switchStats := calculateAppSwitching(ctx, db, startTimestamp, endTimestamp, excludedApps)
 	result.TotalSwitches = switchStats.totalSwitches
 	result.AvgMinsBetween = switchStats.avgMinsBetween
 	result.SwitchesPerHour = switchStats.switchesPerHour

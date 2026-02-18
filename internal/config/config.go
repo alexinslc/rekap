@@ -248,16 +248,6 @@ func (c *Config) ShouldShowBattery() bool {
 	return *c.Display.ShowBattery
 }
 
-// IsAppExcluded returns whether an app should be excluded from tracking
-func (c *Config) IsAppExcluded(appName string) bool {
-	for _, excluded := range c.Tracking.ExcludeApps {
-		if excluded == appName {
-			return true
-		}
-	}
-	return false
-}
-
 // ApplyTheme applies a theme's colors to the config, overriding existing colors
 func (c *Config) ApplyTheme(t theme.Theme) {
 	c.Colors.Primary = t.Colors.Primary

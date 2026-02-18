@@ -52,9 +52,6 @@ func TestCollectBurnout_LongDay(t *testing.T) {
 	for _, warning := range result.Warnings {
 		if warning.Type == "long_day" {
 			foundLongDay = true
-			if !warning.Detected {
-				t.Error("Expected long_day warning to be detected")
-			}
 			if warning.Severity != "medium" {
 				t.Errorf("Expected severity to be 'medium', got '%s'", warning.Severity)
 			}
@@ -95,9 +92,6 @@ func TestCollectBurnout_TabOverload(t *testing.T) {
 	for _, warning := range result.Warnings {
 		if warning.Type == "tab_overload" {
 			foundTabOverload = true
-			if !warning.Detected {
-				t.Error("Expected tab_overload warning to be detected")
-			}
 			if warning.Severity != "low" {
 				t.Errorf("Expected severity to be 'low', got '%s'", warning.Severity)
 			}

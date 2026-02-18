@@ -92,7 +92,7 @@ colors:
   secondary: "#00a8e8"
   accent: "#00c9ff"
   success: "#00ffa3"
-  error: "#ff6b6b"
+  warning: "#ff6b6b"
   muted: "#6c757d"
   text: "#ffffff"
 ```
@@ -104,7 +104,7 @@ colors:
 - **colors.secondary**: Secondary text and labels
 - **colors.accent**: Highlighted content (focus streaks, etc.)
 - **colors.success**: Success messages and positive indicators
-- **colors.error** or **colors.warning**: Error messages and warnings
+- **colors.warning**: Error messages and warnings
 - **colors.muted**: Subdued text (hints, metadata)
 - **colors.text**: Main body text
 
@@ -178,7 +178,7 @@ colors:
   secondary: "#00a8e8"
   accent: "#00c9ff"
   success: "#00ffa3"
-  error: "#ff6b6b"
+  warning: "#ff6b6b"
   muted: "#6c757d"
   text: "#ffffff"
 ```
@@ -195,7 +195,7 @@ colors:
   secondary: "#f7931e"
   accent: "#fdc500"
   success: "#c1d82f"
-  error: "#e63946"
+  warning: "#e63946"
   muted: "#6c757d"
   text: "#ffffff"
 ```
@@ -212,7 +212,7 @@ colors:
   secondary: "#4a7c59"
   accent: "#87a96b"
   success: "#76b947"
-  error: "#8b4513"
+  warning: "#8b4513"
   muted: "#556b2f"
   text: "#f5f5dc"
 ```
@@ -229,7 +229,7 @@ colors:
   secondary: "#00ffff"
   accent: "#ffff00"
   success: "#00ff00"
-  error: "#ff0066"
+  warning: "#ff0066"
   muted: "#8b00ff"
   text: "#ffffff"
 ```

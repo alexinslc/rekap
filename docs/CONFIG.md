@@ -39,7 +39,7 @@ colors:
   secondary: "#00a8e8"
   accent: "#00c9ff"
   success: "#00ffa3"
-  error: "#ff6b6b"
+  warning: "#ff6b6b"
   muted: "#6c757d"
   text: "#ffffff"
 ```
@@ -75,7 +75,7 @@ colors:
   secondary: "#00ffff"  # Required: secondary text/labels
   accent: "#ffff00"     # Required: highlights and focus items
   success: "#00ff00"    # Required: success messages
-  error: "#ff0000"      # Required: errors and warnings (can also use 'warning')
+  warning: "#ff0000"    # Required: errors and warnings
   muted: "#808080"      # Required: subdued text
   text: "#ffffff"       # Required: main text color
 ```
