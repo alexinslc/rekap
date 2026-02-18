@@ -2,33 +2,24 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/alexinslc/rekap/internal/collectors"
 	"github.com/alexinslc/rekap/internal/config"
+	"github.com/alexinslc/rekap/internal/summary"
 	"github.com/alexinslc/rekap/internal/ui"
+	"github.com/alexinslc/rekap/internal/ui/tui"
 )
 
-// SummaryData holds all collector results for a single run
-type SummaryData struct {
-	Uptime        collectors.UptimeResult
-	Battery       collectors.BatteryResult
-	Screen        collectors.ScreenResult
-	Apps          collectors.AppsResult
-	Focus         collectors.FocusResult
-	Media         collectors.MediaResult
-	Network       collectors.NetworkResult
-	Browsers      collectors.BrowsersResult
-	Notifications collectors.NotificationsResult
-	Issues        collectors.IssuesResult
-	Fragmentation collectors.FragmentationResult
-	Burnout       collectors.BurnoutResult
-}
+// SummaryData is an alias for the shared summary.Data type.
+type SummaryData = summary.Data
 
-func runSummary(quiet bool, asJSON bool, cfg *config.Config) {
-	if !quiet && !asJSON {
-		ui.ApplyColors(cfg)
-	}
+func runSummary(quiet bool, asJSON bool, print bool, cfg *config.Config) {
+	ui.ApplyColors(cfg)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -86,7 +77,19 @@ func runSummary(quiet bool, asJSON bool, cfg *config.Config) {
 		printJSON(&data)
 	case quiet:
 		printQuiet(cfg, &data)
-	default:
+	case print || !ui.IsTTY():
 		printHuman(cfg, &data)
+	default:
+		runTUI(cfg, &data)
+	}
+}
+
+func runTUI(cfg *config.Config, data *SummaryData) {
+	sections := tui.BuildSections(data, cfg)
+	m := tui.New(sections, cfg)
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
+		os.Exit(1)
 	}
 }

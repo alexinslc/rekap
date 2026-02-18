@@ -10,15 +10,19 @@ import (
 	"github.com/alexinslc/rekap/internal/ui"
 )
 
-func runDemo(cfg *config.Config) {
+func runDemo(cfg *config.Config, print bool) {
 	ui.ApplyColors(cfg)
 
-	fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
-	fmt.Println(ui.RenderHint("Showing randomized sample data"))
-	fmt.Println()
-
 	data := buildDemoData(cfg)
-	printHuman(cfg, &data)
+
+	if print || !ui.IsTTY() {
+		fmt.Println(ui.RenderTitle("🎭 rekap demo mode", false))
+		fmt.Println(ui.RenderHint("Showing randomized sample data"))
+		fmt.Println()
+		printHuman(cfg, &data)
+	} else {
+		runTUI(cfg, &data)
+	}
 }
 
 func buildDemoData(cfg *config.Config) SummaryData {

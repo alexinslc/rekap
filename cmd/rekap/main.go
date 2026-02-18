@@ -18,6 +18,7 @@ const version = "0.1.0"
 func main() {
 	var quietFlag bool
 	var jsonFlag bool
+	var printFlag bool
 	var themeFlag string
 	var accessibleFlag bool
 
@@ -45,15 +46,16 @@ func main() {
 				cfg.Accessibility.HighContrast = true
 			}
 
-			runSummary(quietFlag, jsonFlag, cfg)
+			runSummary(quietFlag, jsonFlag, printFlag, cfg)
 			return nil
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Output machine-parsable key=value format")
 	rootCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output structured JSON to stdout")
+	rootCmd.Flags().BoolVar(&printFlag, "print", false, "Output static text instead of interactive TUI")
 	rootCmd.Flags().StringVar(&themeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
-	rootCmd.MarkFlagsMutuallyExclusive("quiet", "json")
+	rootCmd.MarkFlagsMutuallyExclusive("quiet", "json", "print")
 	rootCmd.PersistentFlags().BoolVar(&accessibleFlag, "accessible", false, "Enable accessibility mode (color-blind friendly, high contrast)")
 
 	initCmd := &cobra.Command{
@@ -76,6 +78,7 @@ func main() {
 	}
 
 	var demoThemeFlag string
+	var demoPrintFlag bool
 	demoCmd := &cobra.Command{
 		Use:   "demo",
 		Short: "See sample output with fake data",
@@ -100,11 +103,12 @@ func main() {
 				cfg.Accessibility.HighContrast = true
 			}
 
-			runDemo(cfg)
+			runDemo(cfg, demoPrintFlag)
 			return nil
 		},
 	}
 	demoCmd.Flags().StringVar(&demoThemeFlag, "theme", "", "Color theme (built-in: default, minimal, hacker, pastel, nord, dracula, solarized) or path to theme file")
+	demoCmd.Flags().BoolVar(&demoPrintFlag, "print", false, "Output static text instead of interactive TUI")
 
 	rootCmd.AddCommand(initCmd, doctorCmd, demoCmd, newConfigCmd())
 
