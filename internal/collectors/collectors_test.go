@@ -586,9 +586,9 @@ func TestCollectNotifications(t *testing.T) {
 func TestResolveAppName(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name       string
-		bundleID   string
-		wantAny    []string // Accept any of these as valid results
+		name     string
+		bundleID string
+		wantAny  []string // Accept any of these as valid results
 	}{
 		{
 			name:     "Apple bundle ID",

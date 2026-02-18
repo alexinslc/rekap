@@ -267,4 +267,3 @@ func TestApplyColors(t *testing.T) {
 	}
 	ApplyColors(customCfg)
 }
-
