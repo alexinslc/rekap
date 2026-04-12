@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.5.4",
+  "checkpoint_id": "bc6d20c79464",
+  "session_id": "4679a1d9-dbde-4f7c-8ef4-80b935bc0149",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-12T04:30:15.867004Z",
+  "branch": "chore/combine-dependabot-updates",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "internal/collectors/uptime_test.go",
+    ".github/workflows/release.yml",
+    ".github/workflows/ci.yml"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "6ddf1bfcc5c0",
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 76726,
+    "cache_read_tokens": 755530,
+    "output_tokens": 6324,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-12T04:30:15.799805Z",
+    "agent_lines": 5,
+    "agent_removed": 5,
+    "human_added": 29,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 34,
+    "total_lines_changed": 69,
+    "agent_percentage": 14.492753623188406,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 180,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/agents/entire-search.md": 25,
+        ".claude/settings.json": 84,
+        ".claude/settings.local.json": 10,
+        ".github/hooks/entire.json": 61
+      }
+    }
+  ]
+}

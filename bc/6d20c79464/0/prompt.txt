@@ -1,0 +1,9 @@
+review this project and then I want you to spin up agents for all of the open dependabot PRs and fix them all without causing conflicts, get them merged.
+
+---
+
+review this project and then I want you to spin up agents for all of the open dependabot PRs and fix them all without causing conflicts, get them merged.
+
+---
+
+i install go locally, that should help
