@@ -43,8 +43,8 @@ func TestParseSleepWakeEvents(t *testing.T) {
 			wantMins: 450, // 7h + 30m
 		},
 		{
-			name: "open sleep interval (machine still sleeping)",
-			output: `2026-02-18 13:00:00 -0700  Sleep  Entering Sleep state`,
+			name:     "open sleep interval (machine still sleeping)",
+			output:   `2026-02-18 13:00:00 -0700  Sleep  Entering Sleep state`,
 			start:    start,
 			end:      end,
 			wantMins: 60, // 1 hour until end
